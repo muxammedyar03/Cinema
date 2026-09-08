@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin — Super / Billing / Lockout (mockup)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --void: #171310;
+        --panel: #201a15;
+        --panel-2: #14100d;
+        --paper: #f3ecdf;
+        --faded: #a79c89;
+        --faint: #6b6255;
+        --brass: #e3a63c;
+        --teal: #4c8479;
+        --ok: #7fa66b;
+        --warn: #cd9a3b;
+        --bad: #c1543f;
+        --line: rgba(243, 236, 223, 0.1);
+        --line-strong: rgba(243, 236, 223, 0.18);
+        --g-ops: #4c8479;
+        --g-platforma: #7a6b9c;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      body {
+        font-family: "Archivo", sans-serif;
+        background: radial-gradient(ellipse 60% 40% at 100% -8%, rgba(227, 166, 60, 0.09), transparent 55%),
+          radial-gradient(ellipse 45% 35% at 0% 100%, rgba(122, 107, 156, 0.08), transparent 55%), var(--void);
+        color: var(--paper);
+        min-height: 100vh;
+      }
+      .app {
+        display: grid;
+        grid-template-columns: 252px 1fr;
+        min-height: 100vh;
+        transition: grid-template-columns 0.2s ease;
+      }
+      .app.sidebar-collapsed {
+        grid-template-columns: 72px 1fr;
+      }
+      aside {
+        background: var(--panel-2);
+        border-right: 1px solid var(--line);
+        padding: 20px 12px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+      .brand-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 6px 4px 18px 10px;
+      }
+      .brand {
+        font-family: "Syne", sans-serif;
+        font-size: 21px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      .brand-sub {
+        font-size: 11px;
+        color: var(--faint);
+        margin-top: 3px;
+      }
+      .collapse-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        border: 1px solid var(--line-strong);
+        background: var(--panel);
+        color: var(--paper);
+        cursor: pointer;
+        flex-shrink: 0;
+        display: grid;
+        place-items: center;
+      }
+      .collapse-btn:hover {
+        border-color: var(--brass);
+        color: var(--brass);
+      }
+      .nav-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11.5px;
+        color: var(--faint);
+        font-weight: 500;
+        padding: 16px 10px 7px;
+        white-space: nowrap;
+      }
+      .nav-group::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--tick, var(--faded));
+        flex-shrink: 0;
+      }
+      aside button.nav {
+        position: relative;
+        text-align: left;
+        background: none;
+        border: 0;
+        color: var(--faded);
+        font: 500 13.5px "Archivo", sans-serif;
+        padding: 9px 10px 9px 15px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        white-space: nowrap;
+      }
+      aside button.nav .ico {
+        width: 17px;
+        height: 17px;
+        flex-shrink: 0;
+        opacity: 0.85;
+      }
+      aside button.nav .ico svg {
+        width: 100%;
+        height: 100%;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      aside button.nav::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 7px;
+        bottom: 7px;
+        width: 3px;
+        border-radius: 2px;
+        background: var(--accent, var(--brass));
+        opacity: 0;
+      }
+      aside button.nav:hover,
+      aside button.nav.on {
+        color: var(--paper);
+        background: rgba(243, 236, 223, 0.05);
+      }
+      aside button.nav.on {
+        font-weight: 600;
+      }
+      aside button.nav.on::before,
+      aside button.nav:hover::before {
+        opacity: 1;
+      }
+      aside .who {
+        margin-top: auto;
+        padding: 14px 10px 4px;
+        font-size: 12px;
+        color: var(--faded);
+        border-top: 1px solid var(--line);
+        line-height: 1.5;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .who .avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        background: var(--brass);
+        color: var(--void);
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .app.sidebar-collapsed .brand-text,
+      .app.sidebar-collapsed .nav-group,
+      .app.sidebar-collapsed aside button.nav span:not(.ico),
+      .app.sidebar-collapsed .who span:not(.avatar) {
+        display: none;
+      }
+      .app.sidebar-collapsed aside button.nav {
+        justify-content: center;
+        padding: 10px;
+      }
+      .app.sidebar-collapsed aside button.nav::before {
+        display: none;
+      }
+      .app.sidebar-collapsed .brand-row {
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+      }
+      .app.sidebar-collapsed .who {
+        justify-content: center;
+      }
+      main {
+        padding: 30px 34px 70px;
+        min-width: 0;
+      }
+      .privacy-banner {
+        margin-bottom: 18px;
+        padding: 12px 14px;
+        border-radius: 10px;
+        border: 1px solid rgba(122, 107, 156, 0.35);
+        background: rgba(122, 107, 156, 0.12);
+        color: var(--faded);
+        font-size: 12.5px;
+        line-height: 1.45;
+      }
+      .privacy-banner strong {
+        color: var(--paper);
+      }
+      .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 16px;
+        margin-bottom: 22px;
+        flex-wrap: wrap;
+      }
+      h1 {
+        font-family: "Syne", sans-serif;
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      .top p {
+        color: var(--faded);
+        font-size: 13px;
+        margin-top: 5px;
+        max-width: 560px;
+        line-height: 1.5;
+      }
+      .btn {
+        height: 38px;
+        padding: 0 16px;
+        border-radius: 8px;
+        font: 600 13px "Archivo", sans-serif;
+        cursor: pointer;
+        border: 1px solid transparent;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .btn.pri {
+        background: var(--brass);
+        color: var(--void);
+      }
+      .btn.ghost {
+        background: transparent;
+        border-color: var(--line-strong);
+        color: var(--paper);
+      }
+      .btn.sm {
+        height: 31px;
+        padding: 0 12px;
+        font-size: 12px;
+      }
+      .btn.warn {
+        background: transparent;
+        border-color: rgba(193, 84, 63, 0.5);
+        color: var(--bad);
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 22px;
+      }
+      @media (max-width: 1100px) {
+        .stats {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      .stat {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 16px 18px;
+      }
+      .stat b {
+        display: block;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 24px;
+        font-weight: 500;
+        margin-bottom: 4px;
+      }
+      .stat span {
+        color: var(--faded);
+        font-size: 12px;
+      }
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 14px;
+        margin-bottom: 14px;
+      }
+      @media (max-width: 980px) {
+        .grid-2 {
+          grid-template-columns: 1fr;
+        }
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        overflow: hidden;
+      }
+      .card-h {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--line);
+      }
+      .card-h h2 {
+        font-size: 14px;
+        font-weight: 600;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      th {
+        text-align: left;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--faint);
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--line);
+      }
+      td {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: middle;
+      }
+      tr:last-child td {
+        border-bottom: 0;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        height: 22px;
+        padding: 0 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .badge.ok {
+        background: rgba(127, 166, 107, 0.16);
+        color: var(--ok);
+      }
+      .badge.warn {
+        background: rgba(205, 154, 59, 0.16);
+        color: var(--warn);
+      }
+      .badge.bad {
+        background: rgba(193, 84, 63, 0.16);
+        color: var(--bad);
+      }
+      .badge.muted {
+        background: rgba(243, 236, 223, 0.06);
+        color: var(--faded);
+      }
+      .panel {
+        display: none;
+      }
+      .panel.on {
+        display: block;
+      }
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        padding: 18px;
+      }
+      label.field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--faded);
+      }
+      label.field.full {
+        grid-column: 1 / -1;
+      }
+      input,
+      select,
+      textarea {
+        background: var(--panel-2);
+        border: 1px solid var(--line-strong);
+        color: var(--paper);
+        border-radius: 8px;
+        padding: 10px 12px;
+        font: 500 13px "Archivo", sans-serif;
+      }
+      textarea {
+        min-height: 88px;
+        resize: vertical;
+      }
+      .card-foot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 18px;
+        border-top: 1px solid var(--line);
+        font-size: 12px;
+        color: var(--faded);
+      }
+      .link-more {
+        color: var(--brass);
+        font-weight: 600;
+        background: none;
+        border: 0;
+        cursor: pointer;
+        font: inherit;
+      }
+      .note-foot {
+        margin-top: 28px;
+        font-size: 12px;
+        color: var(--faint);
+      }
+      .note-foot a {
+        color: var(--brass);
+      }
+      /* Lockout full-page mock */
+      .lockout {
+        min-height: calc(100vh - 60px);
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+      .lockout-card {
+        width: min(520px, 100%);
+        background: var(--panel);
+        border: 1px solid rgba(193, 84, 63, 0.35);
+        border-radius: 18px;
+        padding: 36px 32px;
+        text-align: center;
+      }
+      .lockout-card .icon {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto 18px;
+        border-radius: 16px;
+        background: rgba(193, 84, 63, 0.14);
+        color: var(--bad);
+        display: grid;
+        place-items: center;
+        font-size: 24px;
+      }
+      .lockout-card h1 {
+        font-size: 22px;
+        margin-bottom: 10px;
+      }
+      .lockout-card p {
+        color: var(--faded);
+        font-size: 14px;
+        line-height: 1.55;
+        margin-bottom: 18px;
+      }
+      .lockout-meta {
+        text-align: left;
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin-bottom: 20px;
+        font-size: 13px;
+      }
+      .lockout-meta div {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 6px 0;
+        color: var(--faded);
+      }
+      .lockout-meta b {
+        color: var(--paper);
+        font-weight: 600;
+      }
+      .lockout-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .lockout-actions .btn {
+        justify-content: center;
+        width: 100%;
+      }
+      .mode-bar {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+      }
+      .mode-bar button {
+        height: 34px;
+        padding: 0 12px;
+        border-radius: 999px;
+        border: 1px solid var(--line-strong);
+        background: transparent;
+        color: var(--faded);
+        font: 600 12px "Archivo", sans-serif;
+        cursor: pointer;
+      }
+      .mode-bar button.on {
+        background: rgba(227, 166, 60, 0.15);
+        border-color: rgba(227, 166, 60, 0.45);
+        color: var(--brass);
+      }
+      .chips {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+      }
+      .chip {
+        height: 30px;
+        padding: 0 12px;
+        border-radius: 999px;
+        border: 1px solid var(--line-strong);
+        background: transparent;
+        color: var(--faded);
+        font: 500 12px "Archivo", sans-serif;
+        cursor: pointer;
+      }
+      .chip.on {
+        border-color: rgba(227, 166, 60, 0.45);
+        color: var(--brass);
+        background: rgba(227, 166, 60, 0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app" id="appShell">
+      <aside>
+        <div class="brand-row">
+          <div class="brand-text">
+            <div class="brand">Cinema</div>
+            <div class="brand-sub">Platform console</div>
+          </div>
+          <button class="collapse-btn" type="button" id="sidebarToggle" title="Свернуть меню" aria-label="Свернуть меню">
+            ☰
+          </button>
+        </div>
+
+        <div class="nav-group" style="--tick: var(--g-platforma)">Платформа</div>
+        <button class="nav on" type="button" data-panel="super-dash" style="--accent: var(--g-platforma)">
+          <span class="ico"><svg viewBox="0 0 20 20"><rect x="2" y="2" width="7" height="7" rx="1.5"/><rect x="11" y="2" width="7" height="7" rx="1.5"/><rect x="2" y="11" width="7" height="7" rx="1.5"/><rect x="11" y="11" width="7" height="7" rx="1.5"/></svg></span>
+          <span>Панель</span>
+        </button>
+        <button class="nav" type="button" data-panel="clients" style="--accent: var(--g-platforma)">
+          <span class="ico"><svg viewBox="0 0 20 20"><path d="M10 2 2 6l8 4 8-4-8-4Z"/><path d="M2 10l8 4 8-4"/><path d="M2 14l8 4 8-4"/></svg></span>
+          <span>Клиенты</span>
+        </button>
+        <button class="nav" type="button" data-panel="billing" style="--accent: var(--g-platforma)">
+          <span class="ico"><svg viewBox="0 0 20 20"><rect x="2" y="5" width="16" height="10" rx="2"/><path d="M2 9h16"/></svg></span>
+          <span>Биллинг</span>
+        </button>
+        <button class="nav" type="button" data-panel="invoices" style="--accent: var(--g-platforma)">
+          <span class="ico"><svg viewBox="0 0 20 20"><path d="M5 3h10v14l-2-1.2L11 17l-2-1.2L7 17l-2-1.2V3Z"/><path d="M7.5 7h5M7.5 10h5M7.5 13h3"/></svg></span>
+          <span>Инвойсы</span>
+        </button>
+        <button class="nav" type="button" data-panel="commission" style="--accent: var(--g-platforma)">
+          <span class="ico"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7.5"/><path d="M10 6.3v7.4M12.1 8.3c0-1-1-1.7-2.1-1.7S7.9 7.3 7.9 8.3c0 2 4.2 1.3 4.2 3.3 0 1-1 1.7-2.1 1.7s-2.1-.7-2.1-1.7"/></svg></span>
+          <span>Комиссия</span>
+        </button>
+        <button class="nav" type="button" data-panel="notifications" style="--accent: var(--g-platforma)">
+          <span class="ico"><svg viewBox="0 0 20 20"><path d="M10 17a1.5 1.5 0 0 0 1.4-1H8.6A1.5 1.5 0 0 0 10 17Z"/><path d="M5 14h10l-1.2-1.5V9a3.8 3.8 0 1 0-7.6 0v3.5L5 14Z"/></svg></span>
+          <span>Уведомления</span>
+        </button>
+        <button class="nav" type="button" data-panel="admins" style="--accent: var(--g-platforma)">
+          <span class="ico"><svg viewBox="0 0 20 20"><circle cx="7" cy="13" r="3.5"/><path d="M9.8 10.2 16 4"/><path d="M13 7l2 2"/><path d="M15.3 4.7l2 2"/></svg></span>
+          <span>Админы клиентов</span>
+        </button>
+
+        <div class="nav-group" style="--tick: var(--bad)">Preview</div>
+        <button class="nav" type="button" data-panel="lockout" style="--accent: var(--bad)">
+          <span class="ico"><svg viewBox="0 0 20 20"><rect x="4" y="9" width="12" height="8" rx="1.5"/><path d="M7 9V6.5a3 3 0 0 1 6 0V9"/></svg></span>
+          <span>Lockout клиента</span>
+        </button>
+        <button class="nav" type="button" data-panel="cinema-orders" style="--accent: var(--g-ops)">
+          <span class="ico"><svg viewBox="0 0 20 20"><path d="M4 5h12M4 10h12M4 15h8"/></svg></span>
+          <span>Cinema: заказы (4+Ещё)</span>
+        </button>
+
+        <div class="who">
+          <span class="avatar">S</span>
+          <span>super@cinema.local<br />Супер-админ</span>
+        </div>
+      </aside>
+
+      <main>
+        <div class="mode-bar">
+          <button type="button" class="on" data-panel="super-dash">Super Admin UI</button>
+          <button type="button" data-panel="lockout">Клиент: доступ закрыт</button>
+          <button type="button" data-panel="cinema-orders">Cinema: последние заказы</button>
+        </div>
+
+        <!-- SUPER DASHBOARD: aggregates only, no client PII / order detail -->
+        <section class="panel on" id="super-dash">
+          <div class="privacy-banner">
+            <strong>Конфиденциальность:</strong> Super Admin не видит заказы, клиентов-покупателей, билеты, выручку и P&amp;L конкретного кинотеатра.
+            Только агрегаты платформы, биллинг подписки и комиссия с билета.
+          </div>
+          <div class="top">
+            <div>
+              <h1>Платформа</h1>
+              <p>8 сентября · все клиенты · Asia/Tashkent · без доступа к приватным данным кинотеатров</p>
+            </div>
+            <div class="top-actions">
+              <button class="btn ghost" type="button" data-panel="clients">+ Клиент</button>
+              <button class="btn pri" type="button" data-panel="billing">Биллинг</button>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="stat"><b>14</b><span>Активных клиентов</span></div>
+            <div class="stat"><b>3</b><span>Просроченная подписка</span></div>
+            <div class="stat"><b>1 842</b><span>Заказов сегодня (кол-во)</span></div>
+            <div class="stat"><b>312</b><span>Активных сеансов (кол-во)</span></div>
+          </div>
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-h">
+                <h2>Клиенты · сегодня</h2>
+                <button class="btn sm ghost" type="button" data-panel="clients">Все</button>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Клиент</th>
+                    <th>Заказы / день</th>
+                    <th>Акт. сеансы</th>
+                    <th>Подписка</th>
+                    <th>Просрочка</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><b>Magic Cinema</b></td>
+                    <td>126</td>
+                    <td>8</td>
+                    <td><span class="badge ok">PAID</span></td>
+                    <td>—</td>
+                  </tr>
+                  <tr>
+                    <td><b>Star Hall</b></td>
+                    <td>84</td>
+                    <td>5</td>
+                    <td><span class="badge warn">LATE</span></td>
+                    <td>4 дня</td>
+                  </tr>
+                  <tr>
+                    <td><b>Nova Park</b></td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td><span class="badge bad">LOCKED</span></td>
+                    <td>12 дней</td>
+                  </tr>
+                  <tr>
+                    <td><b>City Mall</b></td>
+                    <td>41</td>
+                    <td>3</td>
+                    <td><span class="badge ok">PAID</span></td>
+                    <td>—</td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="card-foot">
+                <span>Агрегаты без сумм выручки клиента и без деталей заказов</span>
+                <button class="link-more" type="button" data-panel="clients">Ещё</button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-h"><h2>Требуют внимания</h2></div>
+              <table>
+                <tbody>
+                  <tr>
+                    <td>Инвойсы к оплате</td>
+                    <td style="text-align: right"><span class="badge warn">5</span></td>
+                  </tr>
+                  <tr>
+                    <td>Авто-lock за порогом</td>
+                    <td style="text-align: right"><span class="badge bad">1</span></td>
+                  </tr>
+                  <tr>
+                    <td>Уведомления сегодня</td>
+                    <td style="text-align: right">28 · TG + app</td>
+                  </tr>
+                  <tr>
+                    <td>Комиссия / билет</td>
+                    <td style="text-align: right"><b>500 сум</b></td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="card-foot">
+                <span>Порог блокировки: 7 дней</span>
+                <button class="link-more" type="button" data-panel="notifications">Настройки</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- CLIENTS -->
+        <section class="panel" id="clients">
+          <div class="top">
+            <div>
+              <h1>Клиенты</h1>
+              <p>Кинотеатры-подписчики · без доступа к их заказам, билетам и кассе</p>
+            </div>
+            <button class="btn pri" type="button">+ Новый клиент</button>
+          </div>
+          <div class="chips">
+            <button class="chip on" type="button">Все</button>
+            <button class="chip" type="button">ACTIVE</button>
+            <button class="chip" type="button">LATE</button>
+            <button class="chip" type="button">LOCKED</button>
+          </div>
+          <div class="card">
+            <table>
+              <thead>
+                <tr>
+                  <th>Клиент</th>
+                  <th>План / мес</th>
+                  <th>Комиссия</th>
+                  <th>Заказы сегодня</th>
+                  <th>Акт. сеансы</th>
+                  <th>Статус доступа</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <b>Magic Cinema</b><br /><small style="color: var(--faint)">Tashkent · Asia/Tashkent</small>
+                  </td>
+                  <td>2 500 000 сум</td>
+                  <td>500 сум / билет</td>
+                  <td>126</td>
+                  <td>8</td>
+                  <td><span class="badge ok">ACTIVE</span></td>
+                  <td><button class="btn sm ghost" type="button" data-panel="billing">Биллинг</button></td>
+                </tr>
+                <tr>
+                  <td>
+                    <b>Star Hall</b><br /><small style="color: var(--faint)">Samarkand</small>
+                  </td>
+                  <td>1 800 000 сум</td>
+                  <td>500 сум / билет</td>
+                  <td>84</td>
+                  <td>5</td>
+                  <td><span class="badge warn">LATE · 4 дн</span></td>
+                  <td><button class="btn sm warn" type="button" data-panel="invoices">Инвойс</button></td>
+                </tr>
+                <tr>
+                  <td>
+                    <b>Nova Park</b><br /><small style="color: var(--faint)">доступ отозван автоматически</small>
+                  </td>
+                  <td>2 000 000 сум</td>
+                  <td>450 сум / билет</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td><span class="badge bad">LOCKED</span></td>
+                  <td><button class="btn sm ghost" type="button" data-panel="lockout">Preview</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- BILLING -->
+        <section class="panel" id="billing">
+          <div class="top">
+            <div>
+              <h1>Биллинг</h1>
+              <p>Месячный план клиента · оплачено / не оплачено · дни просрочки</p>
+            </div>
+          </div>
+          <div class="stats" style="grid-template-columns: repeat(3, 1fr)">
+            <div class="stat"><b>11</b><span>Оплачено в этом месяце</span></div>
+            <div class="stat"><b>2</b><span>Ожидают оплату</span></div>
+            <div class="stat"><b>1</b><span>Авто-lock</span></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><h2>Подписки · сентябрь 2026</h2></div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Клиент</th>
+                  <th>План</th>
+                  <th>Срок</th>
+                  <th>Статус</th>
+                  <th>Кечиккиш</th>
+                  <th>Действие</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><b>Magic Cinema</b></td>
+                  <td>2 500 000 сум / мес</td>
+                  <td>01–30 сен</td>
+                  <td><span class="badge ok">PAID · 01 сен</span></td>
+                  <td>0</td>
+                  <td><button class="btn sm ghost" type="button">Чек</button></td>
+                </tr>
+                <tr>
+                  <td><b>Star Hall</b></td>
+                  <td>1 800 000 сум / мес</td>
+                  <td>01–30 сен</td>
+                  <td><span class="badge warn">UNPAID</span></td>
+                  <td><b style="color: var(--warn)">4 дня</b></td>
+                  <td><button class="btn sm ghost" type="button" data-panel="notifications">Напомнить</button></td>
+                </tr>
+                <tr>
+                  <td><b>Nova Park</b></td>
+                  <td>2 000 000 сум / мес</td>
+                  <td>01–30 сен</td>
+                  <td><span class="badge bad">LOCKED</span></td>
+                  <td><b style="color: var(--bad)">12 дней</b></td>
+                  <td><button class="btn sm warn" type="button">Разблокировать</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- INVOICES -->
+        <section class="panel" id="invoices">
+          <div class="top">
+            <div>
+              <h1>Инвойсы</h1>
+              <p>Ежемесячные счета подписки · история оплат</p>
+            </div>
+            <button class="btn pri" type="button">+ Инвойс</button>
+          </div>
+          <div class="card">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Клиент</th>
+                  <th>Период</th>
+                  <th>Сумма</th>
+                  <th>Статус</th>
+                  <th>Due</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>INV-2409-014</td>
+                  <td>Star Hall</td>
+                  <td>Сен 2026</td>
+                  <td>1 800 000</td>
+                  <td><span class="badge warn">DUE</span></td>
+                  <td>01 сен · +4 дн</td>
+                </tr>
+                <tr>
+                  <td>INV-2409-011</td>
+                  <td>Magic Cinema</td>
+                  <td>Сен 2026</td>
+                  <td>2 500 000</td>
+                  <td><span class="badge ok">PAID</span></td>
+                  <td>01 сен</td>
+                </tr>
+                <tr>
+                  <td>INV-2408-009</td>
+                  <td>Nova Park</td>
+                  <td>Авг 2026</td>
+                  <td>2 000 000</td>
+                  <td><span class="badge bad">OVERDUE</span></td>
+                  <td>01 авг · +12 дн</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- COMMISSION -->
+        <section class="panel" id="commission">
+          <div class="top">
+            <div>
+              <h1>Комиссия с билета</h1>
+              <p>Глобальный default + override на клиента · без просмотра их кассы</p>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-h"><h2>Глобальные настройки</h2></div>
+              <div class="form-grid">
+                <label class="field">
+                  Default комиссия / билет (сум)
+                  <input type="number" value="500" />
+                </label>
+                <label class="field">
+                  Валюта
+                  <select><option>UZS</option></select>
+                </label>
+                <label class="field full">
+                  Примечание
+                  <textarea>Списывается с каждого проданного билета (SEAT + GA). Не показывается клиенту как чужая выручка.</textarea>
+                </label>
+              </div>
+              <div class="card-foot">
+                <span>Изменения применяются к новым продажам</span>
+                <button class="btn sm pri" type="button">Сохранить</button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-h"><h2>Override клиентов</h2></div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Клиент</th>
+                    <th>Комиссия</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Magic Cinema</td>
+                    <td>500 (default)</td>
+                    <td><button class="btn sm ghost" type="button">Изменить</button></td>
+                  </tr>
+                  <tr>
+                    <td>Nova Park</td>
+                    <td><b>450</b></td>
+                    <td><button class="btn sm ghost" type="button">Изменить</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- NOTIFICATIONS -->
+        <section class="panel" id="notifications">
+          <div class="top">
+            <div>
+              <h1>Уведомления · просрочка</h1>
+              <p>Каждый день просрочки → Telegram + in-app. После порога → авто-отзыв доступа.</p>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-h"><h2>Правила</h2></div>
+            <div class="form-grid">
+              <label class="field">
+                Дней до авто-lock
+                <input type="number" value="7" />
+              </label>
+              <label class="field">
+                Время ежедневной рассылки (Asia/Tashkent)
+                <input type="time" value="09:00" />
+              </label>
+              <label class="field">
+                Каналы
+                <select>
+                  <option>Telegram + App</option>
+                  <option>Только Telegram</option>
+                  <option>Только App</option>
+                </select>
+              </label>
+              <label class="field">
+                Повтор, если уже LATE
+                <select>
+                  <option>Каждый день</option>
+                  <option>Раз в 2 дня</option>
+                </select>
+              </label>
+              <label class="field full">
+                Текст (шаблон)
+                <textarea>Подписка Cinema Platform просрочена на {{days}} дн. Оплатите инвойс {{invoice}}, иначе доступ будет закрыт через {{left}} дн.</textarea>
+              </label>
+            </div>
+            <div class="card-foot">
+              <span>Worker: daily cron · auto suspend cinema access</span>
+              <button class="btn sm pri" type="button">Сохранить</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ADMINS -->
+        <section class="panel" id="admins">
+          <div class="top">
+            <div>
+              <h1>Админы клиентов</h1>
+              <p>Учётные записи Cinema Admin · без доступа к их operational данным</p>
+            </div>
+            <button class="btn pri" type="button">+ Пригласить</button>
+          </div>
+          <div class="card">
+            <table>
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>Клиент</th>
+                  <th>Роль</th>
+                  <th>Доступ</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>admin@magic.local</td>
+                  <td>Magic Cinema</td>
+                  <td>Cinema Admin</td>
+                  <td><span class="badge ok">OK</span></td>
+                </tr>
+                <tr>
+                  <td>boss@nova.local</td>
+                  <td>Nova Park</td>
+                  <td>Cinema Admin</td>
+                  <td><span class="badge bad">LOCKED (billing)</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- LOCKOUT PAGE (what cinema client sees) -->
+        <section class="panel" id="lockout">
+          <div class="lockout">
+            <div class="lockout-card">
+              <div class="icon">🔒</div>
+              <h1>Подписка просрочена</h1>
+              <p>
+                Доступ к панели кинотеатра временно закрыт из‑за неоплаченной подписки.
+                Продажи, сеансы и отчёты недоступны, пока не будет оплачен инвойс.
+              </p>
+              <div class="lockout-meta">
+                <div><span>Клиент</span><b>Nova Park</b></div>
+                <div><span>Инвойс</span><b>INV-2408-009 · 2 000 000 сум</b></div>
+                <div><span>Просрочка</span><b style="color: var(--bad)">12 дней</b></div>
+                <div><span>Порог авто-lock</span><b>7 дней</b></div>
+              </div>
+              <div class="lockout-actions">
+                <button class="btn pri" type="button">Перейти к оплате</button>
+                <button class="btn ghost" type="button">Нужна помощь? Написать в поддержку</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- CINEMA: recent orders 4 + Ещё -->
+        <section class="panel" id="cinema-orders">
+          <div class="privacy-banner" style="border-color: rgba(76, 132, 121, 0.35); background: rgba(76, 132, 121, 0.1)">
+            <strong>Cinema Admin dashboard:</strong> карточка «Последние заказы» показывает только 4 последних заказа своего кинотеатра. «Ещё» → полная страница заказов.
+          </div>
+          <div class="top">
+            <div>
+              <h1>Сегодня</h1>
+              <p>8 сентября · Magic Cinema · Asia/Tashkent</p>
+            </div>
+          </div>
+          <div class="card" style="max-width: 720px">
+            <div class="card-h">
+              <h2>Последние заказы</h2>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Фильм</th>
+                  <th>Клиент</th>
+                  <th>Сумма</th>
+                  <th>Статус</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>2108</td>
+                  <td>Dune: Part Two</td>
+                  <td>Ali</td>
+                  <td>180 000</td>
+                  <td><span class="badge warn">PENDING_PAYMENT</span></td>
+                </tr>
+                <tr>
+                  <td>2107</td>
+                  <td>Проект конец света</td>
+                  <td>Dilshod</td>
+                  <td>95 000</td>
+                  <td><span class="badge muted">EXPIRED</span></td>
+                </tr>
+                <tr>
+                  <td>2106</td>
+                  <td>Dune: Part Two</td>
+                  <td>Sara</td>
+                  <td>135 000</td>
+                  <td><span class="badge ok">PAID</span></td>
+                </tr>
+                <tr>
+                  <td>2105</td>
+                  <td>Проект конец света</td>
+                  <td>Bek</td>
+                  <td>67 500</td>
+                  <td><span class="badge warn">PENDING_PAYMENT</span></td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="card-foot">
+              <span>Показаны 4 из N заказов</span>
+              <button class="link-more" type="button">Ещё → /orders</button>
+            </div>
+          </div>
+        </section>
+
+        <p class="note-foot">
+          Mockup: Super Admin privacy + billing lockout ·
+          <a href="./admin-New.html">Полный admin mockup</a> ·
+          <a href="./index.html">Индекс</a>
+        </p>
+      </main>
+    </div>
+
+    <script>
+      const shell = document.getElementById("appShell");
+      const toggle = document.getElementById("sidebarToggle");
+      const KEY = "cinema-admin-sidebar-collapsed";
+
+      if (localStorage.getItem(KEY) === "1") shell.classList.add("sidebar-collapsed");
+
+      toggle.addEventListener("click", () => {
+        shell.classList.toggle("sidebar-collapsed");
+        localStorage.setItem(KEY, shell.classList.contains("sidebar-collapsed") ? "1" : "0");
+      });
+
+      function show(id) {
+        document.querySelectorAll(".panel").forEach((p) => p.classList.toggle("on", p.id === id));
+        document.querySelectorAll("aside button.nav").forEach((b) => {
+          b.classList.toggle("on", b.getAttribute("data-panel") === id);
+        });
+        document.querySelectorAll(".mode-bar button").forEach((b) => {
+          b.classList.toggle("on", b.getAttribute("data-panel") === id);
+        });
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      document.body.addEventListener("click", (e) => {
+        const t = e.target.closest("[data-panel]");
+        if (t && t.getAttribute("data-panel")) show(t.getAttribute("data-panel"));
+      });
+
+      document.querySelectorAll(".chips").forEach((group) => {
+        group.querySelectorAll(".chip").forEach((c) => {
+          c.onclick = () => {
+            group.querySelectorAll(".chip").forEach((x) => x.classList.remove("on"));
+            c.classList.add("on");
+          };
+        });
+      });
+    </script>
+  </body>
+</html>

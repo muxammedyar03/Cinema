@@ -1,0 +1,26 @@
+{
+	"name": "@cinema/mini-app",
+	"version": "0.0.0",
+	"private": true,
+	"scripts": {
+		"dev": "next dev --port 3002",
+		"build": "next build",
+		"start": "next start --port 3002"
+	},
+	"dependencies": {
+		"@cinema/ui": "workspace:*",
+		"lucide-react": "^1.42.0",
+		"next": "^15.4.6",
+		"react": "^19.1.1",
+		"react-dom": "^19.1.1"
+	},
+	"devDependencies": {
+		"@tailwindcss/postcss": "^4.3.3",
+		"@types/node": "^22.15.32",
+		"@types/react": "^19.1.9",
+		"@types/react-dom": "^19.1.7",
+		"postcss": "^8.5.28",
+		"tailwindcss": "^4.3.3",
+		"typescript": "^5.8.3"
+	}
+}

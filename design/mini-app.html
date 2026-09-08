@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="uz">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cinema — Mini App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #000000;
+        --surface: #121212;
+        --elev: #1a1a1a;
+        --glass: rgba(28, 28, 28, 0.72);
+        --text: #ffffff;
+        --muted: #9a9a9a;
+        --orange: #ff6a1a;
+        --orange-deep: #e55a10;
+        --line: rgba(255, 255, 255, 0.08);
+        --avail: transparent;
+        --avail-border: rgba(255, 255, 255, 0.35);
+        --held: #3a3a3a;
+        --sold: #2a2a2a;
+        --blocked: #1a1a1a;
+        --selected: var(--orange);
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      body {
+        min-height: 100vh;
+        font-family: Outfit, sans-serif;
+        background:
+          radial-gradient(ellipse 80% 50% at 50% -10%, #3a1808 0%, transparent 55%),
+          #0a0a0a;
+        color: var(--text);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 48px;
+        justify-content: center;
+        align-items: flex-start;
+        padding: 40px 24px 64px;
+      }
+      .stage {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+      }
+      .label {
+        font-size: 11px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: #6a6a6a;
+        font-weight: 500;
+      }
+      .phone {
+        width: 390px;
+        height: 844px;
+        background: var(--bg);
+        border-radius: 44px;
+        border: 10px solid #1c1c1c;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        box-shadow:
+          0 0 0 1px #333,
+          0 40px 80px rgba(0, 0, 0, 0.55);
+      }
+      .notch {
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 110px;
+        height: 28px;
+        background: #000;
+        border-radius: 20px;
+        z-index: 20;
+      }
+      .scroll {
+        flex: 1;
+        overflow-y: auto;
+        padding-bottom: 88px;
+      }
+      .scroll::-webkit-scrollbar {
+        width: 0;
+      }
+      .screen {
+        display: none;
+        min-height: 100%;
+      }
+      .screen.on {
+        display: block;
+      }
+
+      /* —— Home hero —— */
+      .hero {
+        position: relative;
+        height: 520px;
+        overflow: hidden;
+      }
+      .hero-img {
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(180deg, transparent 28%, #000 92%),
+          radial-gradient(90% 70% at 70% 20%, #4a2818 0%, #1a0c08 45%, #000 100%);
+      }
+      .hero-img.a {
+        background:
+          linear-gradient(180deg, transparent 20%, #000 88%),
+          radial-gradient(100% 80% at 60% 10%, #5a3a22 0%, #1a100c 40%, #000 100%);
+      }
+      .hero-img.b {
+        background:
+          linear-gradient(180deg, transparent 20%, #000 88%),
+          radial-gradient(90% 70% at 40% 15%, #2a3a58 0%, #0c1018 50%, #000 100%);
+      }
+      .topbar {
+        position: absolute;
+        top: 48px;
+        left: 0;
+        right: 0;
+        padding: 0 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        z-index: 2;
+      }
+      .brand {
+        font-family: Syne, sans-serif;
+        font-weight: 800;
+        font-size: 26px;
+        letter-spacing: -0.04em;
+        background: linear-gradient(135deg, #fff 30%, var(--orange));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .icon-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 1px solid var(--line);
+        background: var(--glass);
+        backdrop-filter: blur(12px);
+        color: #fff;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+      }
+      .hero-copy {
+        position: absolute;
+        left: 20px;
+        right: 20px;
+        bottom: 28px;
+        z-index: 2;
+      }
+      .hero-copy .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+      .hero-copy .tag .stars {
+        color: var(--orange);
+        letter-spacing: 1px;
+      }
+      .hero-copy h1 {
+        font-family: Syne, sans-serif;
+        font-size: 32px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        line-height: 1.05;
+        margin-bottom: 14px;
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        height: 48px;
+        padding: 0 28px;
+        border: 0;
+        border-radius: 999px;
+        background: var(--orange);
+        color: #0a0a0a;
+        font: 700 15px Outfit, sans-serif;
+        cursor: pointer;
+        box-shadow: 0 8px 28px rgba(255, 106, 26, 0.35);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .cta:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 32px rgba(255, 106, 26, 0.45);
+      }
+      .cta.block {
+        width: 100%;
+      }
+      .cta.ghost {
+        background: var(--glass);
+        color: #fff;
+        border: 1px solid var(--line);
+        box-shadow: none;
+        backdrop-filter: blur(10px);
+      }
+
+      .section {
+        padding: 8px 20px 24px;
+      }
+      .section-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 14px;
+      }
+      .section-head h2 {
+        font-family: Syne, sans-serif;
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      .section-head a {
+        color: var(--orange);
+        font-size: 13px;
+        text-decoration: none;
+        font-weight: 500;
+      }
+      .rail {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+      }
+      .rail::-webkit-scrollbar {
+        height: 0;
+      }
+      .card {
+        flex-shrink: 0;
+        width: 128px;
+        cursor: pointer;
+      }
+      .card .thumb {
+        height: 178px;
+        border-radius: 14px;
+        overflow: hidden;
+        position: relative;
+        margin-bottom: 8px;
+      }
+      .card .thumb span {
+        position: absolute;
+        left: 8px;
+        bottom: 8px;
+        font-size: 10px;
+        background: rgba(0, 0, 0, 0.65);
+        backdrop-filter: blur(6px);
+        padding: 3px 8px;
+        border-radius: 999px;
+        color: #fff;
+      }
+      .thumb.t1 {
+        background: radial-gradient(80% 80% at 50% 20%, #5a3a28, #120c08);
+      }
+      .thumb.t2 {
+        background: radial-gradient(80% 80% at 40% 10%, #2a4060, #080c14);
+      }
+      .thumb.t3 {
+        background: radial-gradient(80% 80% at 60% 20%, #3a2848, #0c0810);
+      }
+      .thumb.t4 {
+        background: radial-gradient(80% 80% at 50% 30%, #284838, #08100c);
+      }
+      .card p {
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .card small {
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .filters {
+        display: flex;
+        gap: 8px;
+        padding: 4px 20px 16px;
+        overflow-x: auto;
+      }
+      .chip {
+        flex-shrink: 0;
+        border: 1px solid var(--line);
+        background: transparent;
+        color: var(--muted);
+        border-radius: 999px;
+        padding: 8px 16px;
+        font: 500 13px Outfit, sans-serif;
+        cursor: pointer;
+      }
+      .chip.on {
+        background: var(--orange);
+        border-color: var(--orange);
+        color: #0a0a0a;
+        font-weight: 600;
+      }
+
+      /* —— Detail —— */
+      .detail-hero {
+        position: relative;
+        height: 420px;
+      }
+      .detail-hero .hero-img {
+        background:
+          linear-gradient(180deg, transparent 15%, #000 95%),
+          radial-gradient(100% 80% at 55% 15%, #5a3a22 0%, #1a100c 45%, #000 100%);
+      }
+      .back-fab {
+        position: absolute;
+        top: 52px;
+        left: 16px;
+        z-index: 3;
+      }
+      .glass-sheet {
+        margin: -48px 16px 0;
+        position: relative;
+        z-index: 2;
+        background: var(--glass);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        padding: 22px 20px;
+      }
+      .glass-sheet h1 {
+        font-family: Syne, sans-serif;
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        margin-bottom: 6px;
+      }
+      .meta-row {
+        display: flex;
+        gap: 10px;
+        color: var(--muted);
+        font-size: 13px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .meta-row .stars {
+        color: var(--orange);
+      }
+      .desc {
+        color: #c8c8c8;
+        font-size: 14px;
+        line-height: 1.55;
+        margin-bottom: 18px;
+      }
+      .sessions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      .sess {
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+        border-radius: 12px;
+        padding: 10px 12px;
+        font-size: 13px;
+        text-align: left;
+        cursor: pointer;
+        min-width: 108px;
+      }
+      .sess small {
+        display: block;
+        color: var(--muted);
+        margin-top: 3px;
+        font-size: 11px;
+      }
+      .sess.pick,
+      .sess:hover {
+        border-color: var(--orange);
+        color: var(--orange);
+      }
+      .price-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin: 8px 0 14px;
+      }
+      .price {
+        font-variant-numeric: tabular-nums;
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--orange);
+      }
+      .old {
+        text-decoration: line-through;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      /* —— Seats —— */
+      .seats-head {
+        padding: 56px 20px 8px;
+        text-align: center;
+      }
+      .seats-head h1 {
+        font-family: Syne, sans-serif;
+        font-size: 20px;
+        font-weight: 700;
+      }
+      .seats-head p {
+        color: var(--muted);
+        font-size: 13px;
+        margin-top: 4px;
+      }
+      .screen-arc {
+        height: 36px;
+        margin: 8px 36px 28px;
+        border-radius: 50%;
+        border: 2px solid transparent;
+        border-top: 3px solid rgba(255, 106, 26, 0.55);
+        box-shadow: 0 -8px 24px rgba(255, 106, 26, 0.12);
+        position: relative;
+      }
+      .screen-arc::after {
+        content: "SCREEN";
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 10px;
+        letter-spacing: 0.2em;
+        color: #666;
+      }
+      .map {
+        padding: 0 20px 12px;
+      }
+      .row {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .seat {
+        width: 26px;
+        height: 26px;
+        border-radius: 7px;
+        border: 1.5px solid var(--avail-border);
+        background: var(--avail);
+        cursor: pointer;
+        transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+      }
+      .seat.h {
+        background: var(--held);
+        border-color: #444;
+      }
+      .seat.s {
+        background: var(--sold);
+        border-color: #333;
+        opacity: 0.55;
+        cursor: default;
+      }
+      .seat.k {
+        background: var(--blocked);
+        border-color: #222;
+        opacity: 0.35;
+        cursor: default;
+      }
+      .seat.me {
+        background: var(--orange);
+        border-color: var(--orange);
+        box-shadow: 0 0 16px rgba(255, 106, 26, 0.55);
+      }
+      .legend {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 14px 18px;
+        padding: 12px 20px 8px;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .legend i {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        margin-right: 6px;
+        vertical-align: -2px;
+        border: 1.5px solid transparent;
+      }
+      .legend .i-a {
+        border-color: var(--avail-border);
+        background: transparent;
+      }
+      .legend .i-r {
+        background: var(--held);
+        border-color: #444;
+      }
+      .legend .i-me {
+        background: var(--orange);
+        border-color: var(--orange);
+      }
+      .book-bar {
+        margin: 12px 16px 0;
+        padding: 14px 16px;
+        background: var(--glass);
+        backdrop-filter: blur(16px);
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .book-bar .sum {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .book-bar .sum b {
+        display: block;
+        color: #fff;
+        font-size: 18px;
+        font-weight: 700;
+        margin-top: 2px;
+      }
+      .book-bar .cta {
+        height: 44px;
+        padding: 0 22px;
+        flex-shrink: 0;
+      }
+      .timer {
+        text-align: center;
+        color: var(--orange);
+        font-variant-numeric: tabular-nums;
+        font-size: 12px;
+        padding: 10px 0 0;
+        opacity: 0.9;
+      }
+
+      /* —— Ticket —— */
+      .ticket-wrap {
+        padding: 64px 20px 24px;
+      }
+      .ticket {
+        background: linear-gradient(165deg, #1c1c1c, #121212);
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        padding: 28px 22px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+      .ticket::before {
+        content: "";
+        position: absolute;
+        inset: auto -20% -40% -20%;
+        height: 60%;
+        background: radial-gradient(circle, rgba(255, 106, 26, 0.18), transparent 65%);
+        pointer-events: none;
+      }
+      .ticket .sub {
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .ticket h2 {
+        font-family: Syne, sans-serif;
+        font-size: 26px;
+        font-weight: 700;
+        margin: 8px 0 16px;
+      }
+      .qr {
+        width: 168px;
+        height: 168px;
+        margin: 0 auto 16px;
+        border-radius: 16px;
+        background:
+          repeating-linear-gradient(90deg, #fff 0 7px, transparent 7px 11px),
+          repeating-linear-gradient(#fff 0 7px, transparent 7px 11px);
+        background-color: #0a0a0a;
+        background-blend-mode: difference;
+        border: 8px solid #fff;
+        position: relative;
+        z-index: 1;
+      }
+      .ticket dl {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        text-align: left;
+        margin-top: 8px;
+        font-size: 13px;
+        position: relative;
+        z-index: 1;
+      }
+      .ticket dt {
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .ticket dd {
+        margin: 3px 0 0;
+        font-weight: 600;
+      }
+
+      /* —— Profile —— */
+      .profile {
+        padding: 72px 20px 24px;
+        text-align: center;
+      }
+      .avatar {
+        width: 88px;
+        height: 88px;
+        border-radius: 50%;
+        margin: 0 auto 14px;
+        background:
+          radial-gradient(circle at 30% 30%, #ff9a5a, var(--orange) 45%, #8a3008);
+        border: 3px solid rgba(255, 106, 26, 0.4);
+        box-shadow: 0 0 32px rgba(255, 106, 26, 0.25);
+      }
+      .profile h1 {
+        font-family: Syne, sans-serif;
+        font-size: 22px;
+        font-weight: 700;
+      }
+      .profile .email {
+        color: var(--muted);
+        font-size: 13px;
+        margin: 4px 0 28px;
+      }
+      .menu {
+        text-align: left;
+        background: var(--glass);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        overflow: hidden;
+      }
+      .menu button {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 16px 18px;
+        background: none;
+        border: 0;
+        border-bottom: 1px solid var(--line);
+        color: #fff;
+        font: 500 15px Outfit, sans-serif;
+        cursor: pointer;
+        text-align: left;
+      }
+      .menu button:last-child {
+        border-bottom: 0;
+        color: #ff6a6a;
+      }
+      .menu button .ico {
+        width: 22px;
+        color: var(--orange);
+        font-size: 16px;
+      }
+      .menu button .chev {
+        margin-left: auto;
+        color: #555;
+      }
+
+      /* —— Dock —— */
+      .dock {
+        position: absolute;
+        bottom: 12px;
+        left: 16px;
+        right: 16px;
+        height: 64px;
+        background: var(--glass);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        padding: 0 8px;
+        z-index: 10;
+      }
+      .dock button {
+        background: none;
+        border: 0;
+        color: #6a6a6a;
+        font: 500 10px Outfit, sans-serif;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        min-width: 56px;
+        position: relative;
+      }
+      .dock button svg {
+        width: 22px;
+        height: 22px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.6;
+      }
+      .dock button.on {
+        color: var(--orange);
+      }
+      .dock button.on::after {
+        content: "";
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--orange);
+        box-shadow: 0 0 8px var(--orange);
+        position: absolute;
+        bottom: -2px;
+      }
+
+      .aside {
+        max-width: 300px;
+        padding-top: 48px;
+        color: #a8a8a8;
+        font-size: 14px;
+        line-height: 1.55;
+      }
+      .aside h2 {
+        font-family: Syne, sans-serif;
+        color: #fff;
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 10px;
+        letter-spacing: -0.02em;
+      }
+      .aside ul {
+        padding-left: 18px;
+        margin: 14px 0;
+      }
+      .navs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 18px;
+      }
+      .navs button {
+        background: #1a1a1a;
+        border: 1px solid var(--line);
+        color: #fff;
+        border-radius: 999px;
+        padding: 8px 14px;
+        cursor: pointer;
+        font: 500 12px Outfit, sans-serif;
+      }
+      .navs a {
+        color: var(--orange);
+        font-size: 13px;
+        align-self: center;
+        text-decoration: none;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="stage">
+      <div class="label">Telegram Mini App · Zyra look</div>
+      <div class="phone">
+        <div class="notch" aria-hidden="true"></div>
+        <div class="scroll">
+          <!-- HOME -->
+          <section class="screen on" id="catalog">
+            <div class="hero">
+              <div class="hero-img a"></div>
+              <div class="topbar">
+                <div class="brand">Cinema</div>
+                <button class="icon-btn" type="button" data-go="profile" aria-label="Profil">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <circle cx="12" cy="8" r="3.5" />
+                    <path d="M5 19c1.5-3.5 4-5 7-5s5.5 1.5 7 5" />
+                  </svg>
+                </button>
+              </div>
+              <div class="hero-copy">
+                <div class="tag"><span class="stars">★★★★★</span> 8.5 · Action</div>
+                <h1>Spider-Man:<br />No Way Home</h1>
+                <button class="cta" type="button" data-go="detail">Watch Now</button>
+              </div>
+            </div>
+            <div class="filters">
+              <button class="chip on" type="button">Barchasi</button>
+              <button class="chip" type="button">Magic</button>
+              <button class="chip" type="button">Star</button>
+              <button class="chip" type="button">Action</button>
+            </div>
+            <div class="section">
+              <div class="section-head">
+                <h2>Bu hafta</h2>
+                <a href="#">See all</a>
+              </div>
+              <div class="rail">
+                <article class="card" data-go="detail">
+                  <div class="thumb t1"><span>IMAX</span></div>
+                  <p>Avatar 3</p>
+                  <small>2s 35d · 8.5</small>
+                </article>
+                <article class="card" data-go="detail">
+                  <div class="thumb t2"><span>2D</span></div>
+                  <p>The Batman</p>
+                  <small>2s 56d · 8.1</small>
+                </article>
+                <article class="card" data-go="seats">
+                  <div class="thumb t3"><span>3D</span></div>
+                  <p>Dune: Part Three</p>
+                  <small>2s 46d · 8.7</small>
+                </article>
+                <article class="card" data-go="detail">
+                  <div class="thumb t4"><span>2D</span></div>
+                  <p>Superman</p>
+                  <small>2s 10d · 7.9</small>
+                </article>
+              </div>
+            </div>
+            <div class="section">
+              <div class="section-head">
+                <h2>Tez seanslar</h2>
+              </div>
+              <div class="sessions">
+                <button class="sess" type="button" data-go="seats">17:30<small>Magic · Hall 1</small></button>
+                <button class="sess" type="button" data-go="seats">20:00<small>Star · Hall 2</small></button>
+                <button class="sess" type="button" data-go="seats">22:30<small>Magic · Hall 1</small></button>
+              </div>
+            </div>
+          </section>
+
+          <!-- DETAIL -->
+          <section class="screen" id="detail">
+            <div class="detail-hero">
+              <div class="hero-img"></div>
+              <button class="icon-btn back-fab" type="button" data-go="catalog" aria-label="Orqaga">←</button>
+            </div>
+            <div class="glass-sheet">
+              <h1>Avatar 3</h1>
+              <div class="meta-row">
+                <span class="stars">★★★★★</span>
+                <span>8.5</span>
+                <span>·</span>
+                <span>2 soat 35 daq</span>
+                <span>·</span>
+                <span>12+</span>
+              </div>
+              <p class="desc">
+                Pandora yangi urush arafasida. Seanslar ikki kinoteatrda — joy tanlang yoki oddiy bilet oling.
+              </p>
+              <div class="sessions">
+                <button class="sess pick" type="button" data-go="seats">17:30<small>Magic · Hall 1</small></button>
+                <button class="sess" type="button" data-go="seats">20:00<small>Star · Hall 2</small></button>
+              </div>
+              <div class="price-row">
+                <span class="old">75 000</span>
+                <span class="price">67 500 so‘m</span>
+              </div>
+              <button class="cta block" type="button" data-go="seats">Joy tanlash</button>
+            </div>
+          </section>
+
+          <!-- SEATS -->
+          <section class="screen" id="seats">
+            <div class="seats-head">
+              <h1>Magic Cinema · 17:30</h1>
+              <p>Avatar 3 · Hall 1</p>
+            </div>
+            <div class="screen-arc"></div>
+            <div class="map" id="map"></div>
+            <div class="legend">
+              <span><i class="i-a"></i>Available</span>
+              <span><i class="i-r"></i>Reserved</span>
+              <span><i class="i-me"></i>Selected</span>
+            </div>
+            <p class="timer">Hold 09:14</p>
+            <div class="book-bar">
+              <div class="sum">A12 · Standard<b>67 500 so‘m</b></div>
+              <button class="cta" type="button" data-go="ticket">Book Now</button>
+            </div>
+          </section>
+
+          <!-- TICKET -->
+          <section class="screen" id="ticket">
+            <div class="ticket-wrap">
+              <div class="ticket">
+                <p class="sub">Bilet · #1245</p>
+                <h2>Avatar 3</h2>
+                <div class="qr"></div>
+                <dl>
+                  <div>
+                    <dt>Sana</dt>
+                    <dd>18-avg, 17:30</dd>
+                  </div>
+                  <div>
+                    <dt>Joy</dt>
+                    <dd>A12</dd>
+                  </div>
+                  <div>
+                    <dt>Kinoteatr</dt>
+                    <dd>Magic Cinema</dd>
+                  </div>
+                  <div>
+                    <dt>Zal</dt>
+                    <dd>Hall 1</dd>
+                  </div>
+                </dl>
+              </div>
+              <p class="desc" style="text-align: center; margin-top: 18px; color: var(--muted)">
+                Kirishda QR ni ko‘rsating.
+              </p>
+            </div>
+          </section>
+
+          <!-- PROFILE -->
+          <section class="screen" id="profile">
+            <div class="profile">
+              <div class="avatar"></div>
+              <h1>Muxammedyar</h1>
+              <p class="email">@muxammedyar</p>
+              <div class="menu">
+                <button type="button"><span class="ico">◇</span> Obuna <span class="chev">›</span></button>
+                <button type="button" data-go="ticket"><span class="ico">▤</span> Biletlarim <span class="chev">›</span></button>
+                <button type="button"><span class="ico">◎</span> Sozlamalar <span class="chev">›</span></button>
+                <button type="button"><span class="ico">?</span> Yordam <span class="chev">›</span></button>
+                <button type="button">Chiqish</button>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <nav class="dock">
+          <button class="on" type="button" data-go="catalog">
+            <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z" /></svg>
+            Home
+          </button>
+          <button type="button" data-go="detail">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+            Search
+          </button>
+          <button type="button" data-go="ticket">
+            <svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2" /><path d="M8 6v12M16 6v12" /></svg>
+            Tickets
+          </button>
+          <button type="button" data-go="profile">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5" /><path d="M5 19c1.5-3.5 4-5 7-5s5.5 1.5 7 5" /></svg>
+            Profile
+          </button>
+        </nav>
+      </div>
+    </div>
+
+    <aside class="aside">
+      <h2>Zyra uslubi</h2>
+      <p>Qora fon, yorqin orange CTA, glass dock va full-bleed hero. Brand birinchi viewportda.</p>
+      <ul>
+        <li>Accent <b style="color: #ff6a1a">#FF6A1A</b></li>
+        <li>Selected seat — solid orange + glow</li>
+        <li>Available — outline only</li>
+        <li>Bottom nav — glass pill</li>
+      </ul>
+      <div class="navs">
+        <button type="button" data-go="catalog">Home</button>
+        <button type="button" data-go="detail">Film</button>
+        <button type="button" data-go="seats">Seats</button>
+        <button type="button" data-go="ticket">QR</button>
+        <button type="button" data-go="profile">Profile</button>
+        <a href="./admin.html">Admin →</a>
+      </div>
+    </aside>
+
+    <script>
+      const map = document.getElementById("map");
+      const pattern = [
+        "aaaaaahaaa",
+        "aaassaaaaa",
+        "aaaaakaaaa",
+        "aaaaaaaaaa",
+        "aaaahaaaaa",
+        "aaaaaaaaaa",
+      ];
+      pattern.forEach((line, r) => {
+        const row = document.createElement("div");
+        row.className = "row";
+        [...line].forEach((ch, i) => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "seat " + ch;
+          if (r === 2 && i === 3) b.className = "seat me";
+          row.appendChild(b);
+        });
+        map.appendChild(row);
+      });
+
+      function show(id) {
+        document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("on", s.id === id));
+        document.querySelectorAll(".dock button").forEach((b) => {
+          b.classList.toggle("on", b.getAttribute("data-go") === id || (id === "detail" && b.getAttribute("data-go") === "detail" && false));
+        });
+        const dockMap = { catalog: "catalog", detail: "catalog", seats: "catalog", ticket: "ticket", profile: "profile" };
+        const active = dockMap[id] || id;
+        document.querySelectorAll(".dock button").forEach((b) => {
+          b.classList.toggle("on", b.getAttribute("data-go") === active);
+        });
+      }
+      document.body.addEventListener("click", (e) => {
+        const t = e.target.closest("[data-go]");
+        if (t) show(t.getAttribute("data-go"));
+      });
+      document.querySelectorAll(".filters .chip").forEach((c) => {
+        c.onclick = () => {
+          document.querySelectorAll(".filters .chip").forEach((x) => x.classList.remove("on"));
+          c.classList.add("on");
+        };
+      });
+    </script>
+  </body>
+</html>

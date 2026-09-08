@@ -1,0 +1,30 @@
+:root,
+[data-theme="light"] {
+	--bg: #f4f2ef;
+	--surface: #ffffff;
+	--elev: #f0ece7;
+	--glass: rgba(255, 255, 255, 0.85);
+	--ink: #141414;
+	--muted: #6b6b6b;
+	--line: rgba(20, 20, 20, 0.1);
+	--orange: #e85d0c;
+	--ok: #1f9d63;
+	--warn: #c48a0a;
+	--bad: #d64545;
+	--font-brand: "Syne", sans-serif;
+	--font-ui: "Outfit", sans-serif;
+}
+
+[data-theme="dark"] {
+	--bg: #050505;
+	--surface: #121212;
+	--elev: #1a1a1a;
+	--glass: rgba(28, 28, 28, 0.8);
+	--ink: #ffffff;
+	--muted: #8a8a8a;
+	--line: rgba(255, 255, 255, 0.08);
+	--orange: #ff6a1a;
+	--ok: #3dcf8e;
+	--warn: #f0b429;
+	--bad: #ff5a5a;
+}

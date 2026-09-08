@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="uz">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cinema — dizayn</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Syne:wght@700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #050505;
+        --ink: #ffffff;
+        --muted: #8a8a8a;
+        --orange: #ff6a1a;
+        --line: rgba(255, 255, 255, 0.08);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Outfit, sans-serif;
+        background:
+          radial-gradient(ellipse 70% 45% at 50% -5%, #3a1608 0%, transparent 55%),
+          var(--bg);
+        color: var(--ink);
+        min-height: 100vh;
+      }
+      main {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 56px 24px 80px;
+      }
+      .brand {
+        font-family: Syne, sans-serif;
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--orange);
+        margin-bottom: 12px;
+      }
+      h1 {
+        font-family: Syne, sans-serif;
+        font-size: 40px;
+        font-weight: 800;
+        margin: 0 0 10px;
+        letter-spacing: -0.04em;
+        line-height: 1.05;
+      }
+      .lede {
+        color: var(--muted);
+        max-width: 520px;
+        line-height: 1.55;
+        margin-bottom: 40px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      @media (max-width: 700px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      a.card {
+        display: block;
+        text-decoration: none;
+        color: inherit;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        overflow: hidden;
+        background: #121212;
+        transition: border-color 0.2s ease, transform 0.2s ease;
+      }
+      a.card:hover {
+        border-color: var(--orange);
+        transform: translateY(-2px);
+      }
+      .preview {
+        height: 200px;
+        padding: 24px;
+        position: relative;
+      }
+      .preview.dark {
+        background:
+          linear-gradient(180deg, transparent 30%, #121212 100%),
+          radial-gradient(90% 80% at 70% 20%, #5a2a12, #0a0a0a 70%);
+      }
+      .preview.ops {
+        background:
+          linear-gradient(135deg, #1a1a1a, #0a0a0a);
+      }
+      .preview strong {
+        display: block;
+        font-family: Syne, sans-serif;
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 6px;
+        letter-spacing: -0.03em;
+      }
+      .preview span {
+        font-size: 13px;
+        color: #b0b0b0;
+      }
+      .preview .pill {
+        position: absolute;
+        bottom: 24px;
+        left: 24px;
+        background: var(--orange);
+        color: #0a0a0a;
+        font: 700 12px Outfit, sans-serif;
+        padding: 8px 16px;
+        border-radius: 999px;
+      }
+      .meta {
+        padding: 16px 20px;
+        font-size: 14px;
+        color: var(--muted);
+        border-top: 1px solid var(--line);
+      }
+      .tokens {
+        margin-top: 52px;
+      }
+      h2 {
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #6a6a6a;
+        margin: 0 0 16px;
+      }
+      .swatches {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .swatch {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 4px;
+        border: 1.5px solid transparent;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="brand">Cinema</div>
+      <h1>Dark cinematic UI</h1>
+      <p class="lede">
+        Rasmdagi Zyra uslubi: qora fon, yorqin orange accent, glass nav, full-bleed hero. Mini App va Admin
+        bir xil tokenlar.
+      </p>
+      <div class="grid">
+        <a class="card" href="./mini-app.html">
+          <div class="preview dark">
+            <strong>Mini App</strong>
+            <span>Telegram · tomoshabin</span>
+            <div class="pill">Watch Now</div>
+          </div>
+          <div class="meta">Hero afisha, seat map, QR bilet, profile</div>
+        </a>
+        <a class="card" href="./admin-New.html">
+          <div class="preview ops">
+            <strong>Admin (to‘liq)</strong>
+            <span>RBAC · sidebar collapse · 4+Ещё</span>
+            <div class="pill">Dashboard</div>
+          </div>
+          <div class="meta">Cinema ops · Super faqat platforma (private data yo‘q)</div>
+        </a>
+        <a class="card" href="./admin-super-platform.html">
+          <div class="preview ops">
+            <strong>Super + Billing</strong>
+            <span>Klientlar · invoice · lockout</span>
+            <div class="pill">Platform</div>
+          </div>
+          <div class="meta">Komissiya, kechikish, Telegram/app notify, auto access revoke</div>
+        </a>
+        <a class="card" href="./admin.html">
+          <div class="preview dark">
+            <strong>Admin (eski)</strong>
+            <span>Legacy mock</span>
+            <div class="pill">Archive</div>
+          </div>
+          <div class="meta">Eski versiya</div>
+        </a>
+      </div>
+      <section class="tokens">
+        <h2>Seat holati — umumiy til</h2>
+        <div class="swatches">
+          <div class="swatch"><i class="dot" style="border-color: rgba(255,255,255,0.35)"></i> Available</div>
+          <div class="swatch"><i class="dot" style="background: #3a3a3a; border-color: #444"></i> Reserved</div>
+          <div class="swatch"><i class="dot" style="background: #2a2a2a; border-color: #333; opacity: 0.7"></i> Sold</div>
+          <div class="swatch"><i class="dot" style="background: #ff6a1a; border-color: #ff6a1a"></i> Selected</div>
+          <div class="swatch"><i class="dot" style="background: #ff6a1a; border-radius: 50%"></i> Accent #FF6A1A</div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

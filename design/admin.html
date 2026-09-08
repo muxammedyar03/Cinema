@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="uz">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin — Cinema (to‘liq mockup)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #050505;
+        --surface: #121212;
+        --elev: #1a1a1a;
+        --glass: rgba(28, 28, 28, 0.8);
+        --ink: #ffffff;
+        --muted: #8a8a8a;
+        --line: rgba(255, 255, 255, 0.08);
+        --orange: #ff6a1a;
+        --ok: #3dcf8e;
+        --warn: #f0b429;
+        --bad: #ff5a5a;
+        --avail-border: rgba(255, 255, 255, 0.35);
+        --held: #3a3a3a;
+        --sold: #2a2a2a;
+        --blocked: #1a1a1a;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      body {
+        font-family: Outfit, sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+        min-height: 100vh;
+      }
+      .app {
+        display: grid;
+        grid-template-columns: 260px 1fr;
+        min-height: 100vh;
+      }
+      aside {
+        background: #0a0a0a;
+        border-right: 1px solid var(--line);
+        padding: 22px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+      }
+      aside .brand {
+        font-family: Syne, sans-serif;
+        font-size: 22px;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        padding: 4px 10px 8px;
+        background: linear-gradient(135deg, #fff 40%, var(--orange));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .role-switch {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin: 0 4px 16px;
+        padding: 8px;
+        background: var(--elev);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+      }
+      .role-switch label {
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        padding: 0 4px 4px;
+      }
+      .role-switch select {
+        width: 100%;
+        background: #0a0a0a;
+        border: 1px solid var(--line);
+        color: #fff;
+        border-radius: 8px;
+        padding: 8px 10px;
+        font: 500 13px Outfit, sans-serif;
+      }
+      .nav-group {
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #555;
+        padding: 14px 12px 6px;
+        font-weight: 600;
+      }
+      aside button.nav {
+        text-align: left;
+        background: none;
+        border: 0;
+        color: var(--muted);
+        font: 500 13.5px Outfit, sans-serif;
+        padding: 10px 12px;
+        border-radius: 10px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      aside button.nav .ico {
+        width: 18px;
+        opacity: 0.7;
+        font-size: 14px;
+      }
+      aside button.nav.on,
+      aside button.nav:hover {
+        background: rgba(255, 106, 26, 0.12);
+        color: var(--orange);
+      }
+      aside button.nav[hidden] {
+        display: none;
+      }
+      .nav-group[hidden] {
+        display: none;
+      }
+      aside .who {
+        margin-top: auto;
+        padding: 14px 10px 4px;
+        font-size: 12px;
+        color: var(--muted);
+        border-top: 1px solid var(--line);
+        line-height: 1.45;
+      }
+      main {
+        padding: 28px 32px 64px;
+        background:
+          radial-gradient(ellipse 55% 35% at 100% 0%, rgba(255, 106, 26, 0.07), transparent 50%),
+          var(--bg);
+        min-width: 0;
+      }
+      .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 16px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+      }
+      h1 {
+        font-family: Syne, sans-serif;
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+      }
+      .top p {
+        color: var(--muted);
+        font-size: 13px;
+        margin-top: 4px;
+      }
+      .top-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .btn {
+        height: 40px;
+        padding: 0 18px;
+        border-radius: 999px;
+        font: 600 13px Outfit, sans-serif;
+        cursor: pointer;
+        border: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .btn.pri {
+        background: var(--orange);
+        color: #0a0a0a;
+      }
+      .btn.ghost {
+        background: transparent;
+        border: 1px solid var(--line);
+        color: #fff;
+      }
+      .btn.warn {
+        background: transparent;
+        border: 1px solid var(--bad);
+        color: var(--bad);
+      }
+      .btn.sm {
+        height: 32px;
+        padding: 0 12px;
+        font-size: 12px;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+      .stat {
+        background: var(--glass);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 16px 18px;
+      }
+      .stat b {
+        display: block;
+        font-size: 26px;
+        font-variant-numeric: tabular-nums;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      .stat span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .stat .delta {
+        font-size: 11px;
+        color: var(--ok);
+        margin-top: 4px;
+      }
+      .panel {
+        display: none;
+      }
+      .panel.on {
+        display: block;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        overflow: hidden;
+        margin-bottom: 16px;
+      }
+      .card-h {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--line);
+        flex-wrap: wrap;
+      }
+      .card-h h2 {
+        font-size: 14px;
+        font-weight: 600;
+        color: #d0d0d0;
+      }
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 16px;
+      }
+      .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      th {
+        text-align: left;
+        color: var(--muted);
+        font-weight: 500;
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--line);
+        white-space: nowrap;
+      }
+      td {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--line);
+        font-variant-numeric: tabular-nums;
+        vertical-align: middle;
+      }
+      tr:last-child td {
+        border-bottom: 0;
+      }
+      tr.click {
+        cursor: pointer;
+      }
+      tr.click:hover td {
+        background: rgba(255, 106, 26, 0.06);
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .badge.ok {
+        background: rgba(61, 207, 142, 0.15);
+        color: var(--ok);
+      }
+      .badge.warn {
+        background: rgba(240, 180, 41, 0.15);
+        color: var(--warn);
+      }
+      .badge.bad {
+        background: rgba(255, 90, 90, 0.15);
+        color: var(--bad);
+      }
+      .badge.muted {
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--muted);
+      }
+      .badge.orange {
+        background: rgba(255, 106, 26, 0.15);
+        color: var(--orange);
+      }
+      .form {
+        padding: 18px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px 16px;
+      }
+      .form .full {
+        grid-column: 1 / -1;
+      }
+      .field label {
+        display: block;
+        font-size: 11px;
+        color: var(--muted);
+        margin-bottom: 6px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .field input,
+      .field select,
+      .field textarea {
+        width: 100%;
+        background: #0a0a0a;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        color: #fff;
+        padding: 10px 12px;
+        font: 500 14px Outfit, sans-serif;
+      }
+      .field textarea {
+        min-height: 88px;
+        resize: vertical;
+      }
+      .field .hint {
+        font-size: 11px;
+        color: #666;
+        margin-top: 4px;
+      }
+      .price-preview {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        padding: 12px 14px;
+        background: #0a0a0a;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+      }
+      .price-preview .old {
+        text-decoration: line-through;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .price-preview .now {
+        color: var(--orange);
+        font-size: 22px;
+        font-weight: 700;
+      }
+      .split {
+        display: grid;
+        grid-template-columns: 1fr 280px;
+        min-height: 440px;
+      }
+      .map-wrap {
+        padding: 24px 12px;
+        text-align: center;
+      }
+      .screen-arc {
+        height: 28px;
+        margin: 0 48px 24px;
+        border-radius: 50%;
+        border-top: 3px solid rgba(255, 106, 26, 0.5);
+        box-shadow: 0 -8px 24px rgba(255, 106, 26, 0.1);
+      }
+      .row {
+        display: flex;
+        justify-content: center;
+        gap: 6px;
+        margin-bottom: 6px;
+      }
+      .seat {
+        width: 22px;
+        height: 22px;
+        border-radius: 5px;
+        border: 1.5px solid var(--avail-border);
+        background: transparent;
+        cursor: pointer;
+      }
+      .seat.h {
+        background: var(--held);
+        border-color: #444;
+      }
+      .seat.s {
+        background: var(--sold);
+        border-color: #333;
+        opacity: 0.55;
+      }
+      .seat.k {
+        background: var(--blocked);
+        border-color: #222;
+        opacity: 0.4;
+      }
+      .seat.me {
+        background: var(--orange);
+        border-color: var(--orange);
+        box-shadow: 0 0 12px rgba(255, 106, 26, 0.45);
+      }
+      .side {
+        border-left: 1px solid var(--line);
+        padding: 20px 18px;
+        font-size: 13px;
+        background: #0e0e0e;
+      }
+      .side dl {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px 12px;
+      }
+      .side dt {
+        color: var(--muted);
+      }
+      .side dd {
+        text-align: right;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+      .side .rev {
+        color: var(--orange);
+        font-size: 18px;
+      }
+      .side .actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 18px;
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        padding: 0 18px 16px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .legend i {
+        display: inline-block;
+        width: 11px;
+        height: 11px;
+        border-radius: 3px;
+        margin-right: 5px;
+        vertical-align: -1px;
+        border: 1.5px solid transparent;
+      }
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--line);
+        background: #0e0e0e;
+      }
+      .toolbar button {
+        height: 34px;
+        padding: 0 12px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: transparent;
+        color: #ccc;
+        font: 500 12px Outfit, sans-serif;
+        cursor: pointer;
+      }
+      .toolbar button.on {
+        background: rgba(255, 106, 26, 0.15);
+        border-color: var(--orange);
+        color: var(--orange);
+      }
+      .canvas {
+        min-height: 360px;
+        padding: 28px 16px 40px;
+        text-align: center;
+        background:
+          radial-gradient(circle at 50% 0%, rgba(255, 106, 26, 0.06), transparent 45%),
+          #0a0a0a;
+      }
+      .poster-up {
+        height: 140px;
+        border: 1px dashed rgba(255, 106, 26, 0.35);
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        font-size: 13px;
+        background: #0a0a0a;
+      }
+      .movie-row {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      .thumb {
+        width: 40px;
+        height: 56px;
+        border-radius: 6px;
+        background: radial-gradient(80% 80% at 50% 20%, #5a3a28, #120c08);
+        flex-shrink: 0;
+      }
+      .confirm {
+        padding: 18px;
+        border-top: 1px solid var(--line);
+        background: #0e0e0e;
+      }
+      .confirm h3 {
+        font-size: 16px;
+        margin-bottom: 6px;
+      }
+      .confirm p {
+        color: var(--muted);
+        font-size: 13px;
+        margin-bottom: 14px;
+        line-height: 1.45;
+      }
+      .scan {
+        max-width: 420px;
+        margin: 0 auto;
+        text-align: center;
+        padding: 32px 20px;
+      }
+      .scan-box {
+        width: 220px;
+        height: 220px;
+        margin: 0 auto 18px;
+        border: 2px solid rgba(255, 106, 26, 0.4);
+        border-radius: 20px;
+        background:
+          linear-gradient(#0a0a0a, #0a0a0a) padding-box,
+          linear-gradient(135deg, var(--orange), transparent) border-box;
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        position: relative;
+        overflow: hidden;
+      }
+      .scan-box::after {
+        content: "";
+        position: absolute;
+        left: 10%;
+        right: 10%;
+        height: 2px;
+        background: var(--orange);
+        box-shadow: 0 0 12px var(--orange);
+        animation: scan 2s ease-in-out infinite;
+      }
+      @keyframes scan {
+        0%,
+        100% {
+          top: 20%;
+        }
+        50% {
+          top: 75%;
+        }
+      }
+      .chips {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+      }
+      .chip {
+        border: 1px solid var(--line);
+        background: transparent;
+        color: var(--muted);
+        border-radius: 999px;
+        padding: 7px 14px;
+        font: 500 12px Outfit, sans-serif;
+        cursor: pointer;
+      }
+      .chip.on {
+        background: var(--orange);
+        border-color: var(--orange);
+        color: #0a0a0a;
+        font-weight: 600;
+      }
+      .note-foot {
+        margin-top: 28px;
+        font-size: 12px;
+        color: #666;
+      }
+      .note-foot a {
+        color: var(--orange);
+        text-decoration: none;
+        font-weight: 600;
+      }
+      .empty {
+        padding: 40px 20px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      @media (max-width: 1100px) {
+        .stats {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .grid-2,
+        .split,
+        .form {
+          grid-template-columns: 1fr;
+        }
+        .side {
+          border-left: 0;
+          border-top: 1px solid var(--line);
+        }
+      }
+      @media (max-width: 860px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+        aside {
+          position: relative;
+          height: auto;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside>
+        <div class="brand">Cinema</div>
+        <div class="role-switch">
+          <label>Rol (RBAC preview)</label>
+          <select id="roleSelect">
+            <option value="cinema">Cinema Admin</option>
+            <option value="staff">Staff</option>
+            <option value="super">Super Admin</option>
+          </select>
+        </div>
+
+        <div class="nav-group" data-roles="cinema,staff,super">Ops</div>
+        <button class="nav on" type="button" data-panel="dash" data-roles="cinema,super">
+          <span class="ico">▣</span> Dashboard
+        </button>
+        <button class="nav" type="button" data-panel="sessions" data-roles="cinema,super">
+          <span class="ico">◷</span> Seanslar
+        </button>
+        <button class="nav" type="button" data-panel="map" data-roles="cinema,staff,super">
+          <span class="ico">▦</span> Seans xaritasi
+        </button>
+        <button class="nav" type="button" data-panel="scan" data-roles="cinema,staff">
+          <span class="ico">▣</span> QR tekshiruv
+        </button>
+
+        <div class="nav-group" data-roles="cinema,super">Katalog</div>
+        <button class="nav" type="button" data-panel="movies" data-roles="cinema,super">
+          <span class="ico">▶</span> Filmlar
+        </button>
+        <button class="nav" type="button" data-panel="halls" data-roles="cinema">
+          <span class="ico">⌂</span> Zallar
+        </button>
+        <button class="nav" type="button" data-panel="layout" data-roles="cinema">
+          <span class="ico">✎</span> Layout editor
+        </button>
+
+        <div class="nav-group" data-roles="cinema,super">Savdo</div>
+        <button class="nav" type="button" data-panel="orders" data-roles="cinema,super">
+          <span class="ico">≡</span> Buyurtmalar
+        </button>
+        <button class="nav" type="button" data-panel="tickets" data-roles="cinema,super">
+          <span class="ico">🎟</span> Biletlar
+        </button>
+        <button class="nav" type="button" data-panel="refunds" data-roles="cinema,super">
+          <span class="ico">↺</span> Refundlar
+        </button>
+        <button class="nav" type="button" data-panel="reports" data-roles="cinema,super">
+          <span class="ico">▤</span> Hisobotlar
+        </button>
+
+        <div class="nav-group" data-roles="cinema">Jamoa</div>
+        <button class="nav" type="button" data-panel="staff" data-roles="cinema">
+          <span class="ico">☺</span> Staff
+        </button>
+
+        <div class="nav-group" data-roles="super">Platforma</div>
+        <button class="nav" type="button" data-panel="cinemas" data-roles="super">
+          <span class="ico">◎</span> Kinoteatrlar
+        </button>
+        <button class="nav" type="button" data-panel="admins" data-roles="super">
+          <span class="ico">★</span> Cinema adminlar
+        </button>
+        <button class="nav" type="button" data-panel="payments" data-roles="super">
+          <span class="ico">₴</span> Barcha to‘lovlar
+        </button>
+
+        <div class="who" id="whoBox">Magic Cinema<br />Cinema Admin · muxammedyar</div>
+      </aside>
+
+      <main>
+        <!-- DASHBOARD -->
+        <section class="panel on" id="dash">
+          <div class="top">
+            <div>
+              <h1>Bugun</h1>
+              <p>18-avgust · Magic Cinema · Asia/Tashkent</p>
+            </div>
+            <div class="top-actions">
+              <button class="btn ghost" type="button" data-panel="sessions">+ Seans</button>
+              <button class="btn pri" type="button" data-panel="map">Seans xaritasi</button>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="stat"><b>3</b><span>Seans</span><div class="delta">PUBLISHED</div></div>
+            <div class="stat"><b>184</b><span>Bilet sotilgan</span><div class="delta">+22 hold</div></div>
+            <div class="stat"><b>12.45M</b><span>Tushum, so‘m</span><div class="delta">Click + Payme</div></div>
+            <div class="stat"><b>2</b><span>Refund failed</span><div class="delta" style="color: var(--bad)">Diqqat</div></div>
+          </div>
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-h"><h2>Bugungi seanslar</h2><button class="btn sm ghost" type="button" data-panel="sessions">Barchasi</button></div>
+              <table>
+                <thead>
+                  <tr><th>Vaqt</th><th>Film</th><th>Zal</th><th>Sold</th><th>Hold</th><th>Left</th><th>Tushum</th></tr>
+                </thead>
+                <tbody>
+                  <tr class="click" data-panel="map">
+                    <td>17:30</td><td>Avatar 3</td><td>Hall 1</td><td>68</td><td>4</td><td>40</td><td>5 100 000</td>
+                  </tr>
+                  <tr class="click" data-panel="map">
+                    <td>20:00</td><td>Batman</td><td>Hall 1</td><td>91</td><td>2</td><td>19</td><td>6 140 000</td>
+                  </tr>
+                  <tr>
+                    <td>22:30</td><td>Superman</td><td>Hall 2</td><td>25</td><td>1</td><td>86</td><td>1 210 000</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="card">
+              <div class="card-h"><h2>Tezkor holat</h2></div>
+              <table>
+                <tbody>
+                  <tr><td>Active holds</td><td style="text-align:right"><span class="badge warn">7 · TTL 10 daq</span></td></tr>
+                  <tr><td>Blocked (VIP)</td><td style="text-align:right"><span class="badge muted">12 seat</span></td></tr>
+                  <tr><td>GA sotilgan</td><td style="text-align:right">34</td></tr>
+                  <tr><td>QR USED bugun</td><td style="text-align:right">41</td></tr>
+                  <tr><td>REFUND_FAILED</td><td style="text-align:right"><button class="btn sm warn" type="button" data-panel="refunds">Ko‘rish</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- SESSIONS -->
+        <section class="panel" id="sessions">
+          <div class="top">
+            <div>
+              <h1>Seanslar</h1>
+              <p>Narx va chegirma seansga tegishli · film entity alohida</p>
+            </div>
+            <div class="top-actions">
+              <button class="btn pri" type="button" id="toggleCreateSession">+ Create Session</button>
+            </div>
+          </div>
+          <div class="chips">
+            <button class="chip on" type="button">Bugun</button>
+            <button class="chip" type="button">Hafta</button>
+            <button class="chip" type="button">PUBLISHED</button>
+            <button class="chip" type="button">CANCELLED</button>
+          </div>
+          <div class="card" id="createSession" hidden>
+            <div class="card-h"><h2>Yangi seans</h2></div>
+            <div class="form">
+              <div class="field">
+                <label>Film</label>
+                <select>
+                  <option>Avatar 3</option>
+                  <option>Batman</option>
+                  <option>Superman</option>
+                  <option>+ Yangi film…</option>
+                </select>
+                <div class="hint">Mavjud Movie tanlanadi yoki yangi yaratiladi</div>
+              </div>
+              <div class="field">
+                <label>Zal</label>
+                <select><option>Hall 1 · capacity 120</option><option>Hall 2 · capacity 90</option></select>
+              </div>
+              <div class="field">
+                <label>Sana</label>
+                <input type="date" value="2026-08-18" />
+              </div>
+              <div class="field">
+                <label>Vaqt</label>
+                <input type="time" value="17:30" />
+              </div>
+              <div class="field">
+                <label>Narx (so‘m)</label>
+                <input type="number" value="75000" />
+              </div>
+              <div class="field">
+                <label>Chegirma %</label>
+                <input type="number" value="10" />
+              </div>
+              <div class="field full">
+                <label>Chegirmali narx</label>
+                <div class="price-preview"><span class="old">75 000</span><span class="now">67 500 so‘m</span></div>
+              </div>
+              <div class="field">
+                <label>Seat pricing (ixtiyoriy)</label>
+                <select><option>STANDARD = base</option><option>VIP = +20 000</option></select>
+              </div>
+              <div class="field">
+                <label>Holat</label>
+                <select><option>PUBLISHED</option><option>DRAFT</option></select>
+              </div>
+              <div class="field full" style="display: flex; gap: 8px">
+                <button class="btn pri" type="button">Create Session</button>
+                <button class="btn ghost" type="button" id="cancelCreateSession">Bekor</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-h"><h2>Ro‘yxat</h2></div>
+            <table>
+              <thead>
+                <tr><th>Sana</th><th>Vaqt</th><th>Film</th><th>Zal</th><th>Narx</th><th>Status</th><th></th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>18-avg</td><td>17:30</td><td>Avatar 3</td><td>Hall 1</td><td>67 500</td>
+                  <td><span class="badge ok">PUBLISHED</span></td>
+                  <td><button class="btn sm ghost" type="button" data-panel="map">Xarita</button></td>
+                </tr>
+                <tr>
+                  <td>18-avg</td><td>20:00</td><td>Batman</td><td>Hall 1</td><td>85 000</td>
+                  <td><span class="badge ok">PUBLISHED</span></td>
+                  <td><button class="btn sm ghost" type="button" data-panel="map">Xarita</button></td>
+                </tr>
+                <tr>
+                  <td>17-avg</td><td>19:00</td><td>Dune</td><td>Hall 2</td><td>70 000</td>
+                  <td><span class="badge bad">CANCELLED</span></td>
+                  <td><button class="btn sm ghost" type="button" data-panel="refunds">Refund</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- SESSION MAP -->
+        <section class="panel" id="map">
+          <div class="top">
+            <div>
+              <h1>Seans xaritasi</h1>
+              <p>Avatar 3 · 17:30 · Hall 1 · asosiy ish ekrani</p>
+            </div>
+            <div class="top-actions">
+              <button class="btn ghost" type="button">Block seat</button>
+              <button class="btn warn" type="button" id="showCancel">Cancel Session</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-h">
+              <h2>Live occupancy · poll 2–3s (MVP)</h2>
+              <span class="badge orange">4 hold · TTL</span>
+            </div>
+            <div class="split">
+              <div class="map-wrap">
+                <div class="screen-arc"></div>
+                <div id="seats"></div>
+              </div>
+              <div class="side">
+                <dl>
+                  <dt>Capacity</dt><dd>120</dd>
+                  <dt>Sold</dt><dd>68</dd>
+                  <dt>Held</dt><dd>4</dd>
+                  <dt>Blocked</dt><dd>8</dd>
+                  <dt>GA occupied</dt><dd>8</dd>
+                  <dt>Left</dt><dd>40</dd>
+                  <dt>Tushum</dt><dd class="rev">5 100 000</dd>
+                </dl>
+                <div class="actions">
+                  <button class="btn pri" type="button" style="width: 100%; justify-content: center">Joyni yopish</button>
+                  <button class="btn ghost" type="button" style="width: 100%; justify-content: center">Unblock</button>
+                </div>
+                <p style="margin-top: 16px; color: var(--muted); font-size: 12px; line-height: 1.4">
+                  remaining = capacity − (HELD+SOLD+BLOCKED + GA)
+                </p>
+              </div>
+            </div>
+            <div class="legend">
+              <span><i style="border-color: var(--avail-border)"></i>Available</span>
+              <span><i style="background: var(--held); border-color: #444"></i>Held</span>
+              <span><i style="background: var(--sold); border-color: #333; opacity: 0.7"></i>Sold</span>
+              <span><i style="background: var(--blocked); border-color: #222"></i>Blocked</span>
+              <span><i style="background: var(--orange); border-color: var(--orange)"></i>Tanlangan</span>
+            </div>
+            <div class="confirm" id="cancelSheet" hidden>
+              <h3>Seansni bekor qilish?</h3>
+              <p>68 paid tickets · 4 active holds. Seans CANCELLED bo‘ladi, to‘lovlar refund navbatiga tushadi, userlarga Telegram xabar ketadi.</p>
+              <div style="display: flex; gap: 8px">
+                <button class="btn warn" type="button">Tasdiqlash · Cancel</button>
+                <button class="btn ghost" type="button" id="hideCancel">Yopish</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- QR SCAN -->
+        <section class="panel" id="scan">
+          <div class="top">
+            <div>
+              <h1>QR tekshiruv</h1>
+              <p>Staff · kirishda bilet scan · alohida ilova yo‘q</p>
+            </div>
+          </div>
+          <div class="card">
+            <div class="scan">
+              <div class="scan-box">Kamera / QR</div>
+              <h2 style="font-family: Syne, sans-serif; font-size: 22px; margin-bottom: 6px">Ticket #1245</h2>
+              <p style="color: var(--muted); margin-bottom: 14px">Avatar 3 · A12 · Magic · Hall 1</p>
+              <span class="badge ok">VALID · ISSUED</span>
+              <div style="margin-top: 18px; display: flex; gap: 8px; justify-content: center">
+                <button class="btn pri" type="button">Kirishni tasdiqlash · USED</button>
+                <button class="btn ghost" type="button">Yana scan</button>
+              </div>
+              <p style="margin-top: 16px; color: var(--muted); font-size: 12px">Qayta scan: allaqachon USED — yangi kiritish yo‘q</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- MOVIES -->
+        <section class="panel" id="movies">
+          <div class="top">
+            <div>
+              <h1>Filmlar</h1>
+              <p>Platforma entity · poster / tavsif · seansga bog‘lanadi</p>
+            </div>
+            <div class="top-actions">
+              <button class="btn pri" type="button" id="toggleMovieForm">+ Film</button>
+            </div>
+          </div>
+          <div class="card" id="movieForm" hidden>
+            <div class="card-h"><h2>Yangi / tahrir film</h2></div>
+            <div class="form">
+              <div class="field"><label>Nomi</label><input value="Avatar 3" /></div>
+              <div class="field"><label>Davomiylik</label><input value="2soat 35daq" /></div>
+              <div class="field"><label>Reyting</label><input value="8.5" /></div>
+              <div class="field"><label>Yosh</label><input value="12+" /></div>
+              <div class="field full"><label>Tavsif</label><textarea>Pandora yangi urush arafasida…</textarea></div>
+              <div class="field full"><label>Poster</label><div class="poster-up">Upload poster · R2/S3</div></div>
+              <div class="field full" style="display: flex; gap: 8px">
+                <button class="btn pri" type="button">Saqlash</button>
+                <button class="btn ghost" type="button" id="cancelMovieForm">Bekor</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <table>
+              <thead><tr><th>Film</th><th>Davomiylik</th><th>Reyting</th><th>Seanslar</th><th></th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><div class="movie-row"><div class="thumb"></div><div><b>Avatar 3</b><div style="color:var(--muted);font-size:12px">12+</div></div></div></td>
+                  <td>2s 35d</td><td>8.5</td><td>6</td>
+                  <td><button class="btn sm ghost" type="button">Edit</button></td>
+                </tr>
+                <tr>
+                  <td><div class="movie-row"><div class="thumb" style="background:radial-gradient(80% 80% at 40% 10%,#2a4060,#080c14)"></div><div><b>Batman</b></div></div></td>
+                  <td>2s 56d</td><td>8.1</td><td>3</td>
+                  <td><button class="btn sm ghost" type="button">Edit</button></td>
+                </tr>
+                <tr>
+                  <td><div class="movie-row"><div class="thumb" style="background:radial-gradient(80% 80% at 60% 20%,#3a2848,#0c0810)"></div><div><b>Dune: Part Three</b></div></div></td>
+                  <td>2s 46d</td><td>8.7</td><td>2</td>
+                  <td><button class="btn sm ghost" type="button">Edit</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- HALLS -->
+        <section class="panel" id="halls">
+          <div class="top">
+            <div>
+              <h1>Zallar</h1>
+              <p>capacity ≠ seat count · sig‘im alohida maydon</p>
+            </div>
+            <div class="top-actions">
+              <button class="btn pri" type="button">+ Zal</button>
+            </div>
+          </div>
+          <div class="grid-3">
+            <div class="card" style="padding: 18px">
+              <h2 style="font-family: Syne, sans-serif; font-size: 18px; margin-bottom: 6px">Hall 1</h2>
+              <p style="color: var(--muted); font-size: 13px; margin-bottom: 14px">Capacity 120 · 110 kreslo · active layout v3</p>
+              <div style="display: flex; gap: 8px">
+                <button class="btn sm pri" type="button" data-panel="layout">Edit layout</button>
+                <button class="btn sm ghost" type="button">Sozlamalar</button>
+              </div>
+            </div>
+            <div class="card" style="padding: 18px">
+              <h2 style="font-family: Syne, sans-serif; font-size: 18px; margin-bottom: 6px">Hall 2</h2>
+              <p style="color: var(--muted); font-size: 13px; margin-bottom: 14px">Capacity 90 · 84 kreslo · active layout v1</p>
+              <div style="display: flex; gap: 8px">
+                <button class="btn sm pri" type="button" data-panel="layout">Edit layout</button>
+                <button class="btn sm ghost" type="button">Sozlamalar</button>
+              </div>
+            </div>
+            <div class="card" style="padding: 18px; border-style: dashed">
+              <h2 style="font-size: 16px; color: var(--muted); margin-bottom: 8px">+ Yangi zal</h2>
+              <p style="color: #666; font-size: 13px">Nomi, capacity, keyin layout editor</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- LAYOUT EDITOR -->
+        <section class="panel" id="layout">
+          <div class="top">
+            <div>
+              <h1>Layout editor</h1>
+              <p>Hall 1 · Select · Seat · Row · Delete · Undo · Save · seat-engine</p>
+            </div>
+            <div class="top-actions">
+              <button class="btn ghost" type="button">Undo</button>
+              <button class="btn pri" type="button">Save layout</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="toolbar">
+              <button class="on" type="button">Select</button>
+              <button type="button">Seat</button>
+              <button type="button">Row</button>
+              <button type="button">Delete</button>
+              <button type="button">Rotate</button>
+              <span style="flex:1"></span>
+              <button type="button">STANDARD</button>
+              <button type="button">VIP</button>
+              <button type="button">BLOCKED</button>
+            </div>
+            <div class="canvas">
+              <div class="screen-arc"></div>
+              <div id="layoutSeats"></div>
+              <p style="margin-top: 24px; color: var(--muted); font-size: 12px">
+                Seat ≠ availability. Holat session_seats da. Layout o‘zgarsa eski seanslar snapshotda qoladi.
+              </p>
+            </div>
+            <div class="form" style="border-top: 1px solid var(--line)">
+              <div class="field"><label>Hall capacity</label><input type="number" value="120" /></div>
+              <div class="field"><label>Seat count (read-only)</label><input value="110" disabled /></div>
+              <div class="field"><label>Tanlangan seat</label><input value="A12 · STANDARD" /></div>
+              <div class="field"><label>Type</label><select><option>STANDARD</option><option>VIP</option><option>BLOCKED</option></select></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ORDERS -->
+        <section class="panel" id="orders">
+          <div class="top">
+            <div>
+              <h1>Buyurtmalar</h1>
+              <p>SEAT va GENERAL_ADMISSION · hold → pay → ticket</p>
+            </div>
+          </div>
+          <div class="chips">
+            <button class="chip on" type="button">Barchasi</button>
+            <button class="chip" type="button">PAID</button>
+            <button class="chip" type="button">HELD</button>
+            <button class="chip" type="button">EXPIRED</button>
+            <button class="chip" type="button">REFUNDED</button>
+          </div>
+          <div class="card">
+            <table>
+              <thead>
+                <tr><th>Order</th><th>User</th><th>Seans</th><th>Tur</th><th>Summa</th><th>Status</th><th></th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>#1245</td><td>@ali</td><td>Avatar · 17:30</td><td>SEAT A12</td><td>67 500</td>
+                  <td><span class="badge ok">PAID</span></td>
+                  <td><button class="btn sm ghost" type="button" data-panel="tickets">Ticket</button></td>
+                </tr>
+                <tr>
+                  <td>#1246</td><td>@dilnoza</td><td>Batman · 20:00</td><td>GA ×2</td><td>150 000</td>
+                  <td><span class="badge warn">HELD</span></td>
+                  <td><span class="badge muted">09:14</span></td>
+                </tr>
+                <tr>
+                  <td>#1240</td><td>@jasur</td><td>Dune · 19:00</td><td>SEAT B4</td><td>70 000</td>
+                  <td><span class="badge bad">REFUND_PENDING</span></td>
+                  <td><button class="btn sm warn" type="button" data-panel="refunds">Refund</button></td>
+                </tr>
+                <tr>
+                  <td>#1238</td><td>@sara</td><td>Avatar · 17:30</td><td>SEAT C2</td><td>67 500</td>
+                  <td><span class="badge muted">EXPIRED</span></td>
+                  <td></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- TICKETS -->
+        <section class="panel" id="tickets">
+          <div class="top">
+            <div>
+              <h1>Biletlar</h1>
+              <p>Har bir odam uchun 1 qator · GA quantity:2 → 2 ticket</p>
+            </div>
+          </div>
+          <div class="card">
+            <table>
+              <thead>
+                <tr><th>Ticket</th><th>Order</th><th>Film</th><th>Joy</th><th>QR</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>T-9001</td><td>#1245</td><td>Avatar 3</td><td>A12</td><td>••••••</td>
+                  <td><span class="badge ok">ISSUED</span></td>
+                </tr>
+                <tr>
+                  <td>T-9002</td><td>#1246</td><td>Batman</td><td>GA</td><td>••••••</td>
+                  <td><span class="badge ok">ISSUED</span></td>
+                </tr>
+                <tr>
+                  <td>T-9003</td><td>#1246</td><td>Batman</td><td>GA</td><td>••••••</td>
+                  <td><span class="badge orange">USED</span></td>
+                </tr>
+                <tr>
+                  <td>T-8890</td><td>#1240</td><td>Dune</td><td>B4</td><td>—</td>
+                  <td><span class="badge bad">REFUNDED</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- REFUNDS -->
+        <section class="panel" id="refunds">
+          <div class="top">
+            <div>
+              <h1>Refundlar</h1>
+              <p>Alohida entity · FAILED yo‘qolmaydi · admin retry</p>
+            </div>
+          </div>
+          <div class="stats" style="grid-template-columns: repeat(3, 1fr)">
+            <div class="stat"><b>14</b><span>REFUNDED</span></div>
+            <div class="stat"><b>3</b><span>PENDING</span></div>
+            <div class="stat"><b>2</b><span style="color:var(--bad)">FAILED</span></div>
+          </div>
+          <div class="card">
+            <table>
+              <thead>
+                <tr><th>Refund</th><th>Payment</th><th>Order</th><th>Summa</th><th>Provider</th><th>Status</th><th></th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>R-221</td><td>P-880</td><td>#1240</td><td>70 000</td><td>Click</td>
+                  <td><span class="badge bad">FAILED</span></td>
+                  <td><button class="btn sm pri" type="button">Retry</button></td>
+                </tr>
+                <tr>
+                  <td>R-220</td><td>P-871</td><td>#1231</td><td>135 000</td><td>Payme</td>
+                  <td><span class="badge warn">PENDING</span></td>
+                  <td></td>
+                </tr>
+                <tr>
+                  <td>R-218</td><td>P-860</td><td>#1220</td><td>67 500</td><td>Click</td>
+                  <td><span class="badge ok">REFUNDED</span></td>
+                  <td></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- REPORTS -->
+        <section class="panel" id="reports">
+          <div class="top">
+            <div>
+              <h1>Hisobotlar</h1>
+              <p>Kunlik / haftalik tushum · seans bo‘yicha</p>
+            </div>
+            <div class="top-actions">
+              <button class="btn ghost" type="button">Export CSV</button>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="stat"><b>48.2M</b><span>Haftalik tushum</span></div>
+            <div class="stat"><b>912</b><span>Bilet</span></div>
+            <div class="stat"><b>4.1%</b><span>Refund rate</span></div>
+            <div class="stat"><b>0</b><span>Double-book</span><div class="delta">KPI = 0</div></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><h2>Seans bo‘yicha</h2></div>
+            <table>
+              <thead><tr><th>Sana</th><th>Seans</th><th>Occupancy</th><th>Revenue</th><th>GA</th></tr></thead>
+              <tbody>
+                <tr><td>18-avg</td><td>Avatar 17:30</td><td>67%</td><td>5 100 000</td><td>8</td></tr>
+                <tr><td>18-avg</td><td>Batman 20:00</td><td>84%</td><td>6 140 000</td><td>12</td></tr>
+                <tr><td>17-avg</td><td>Avatar 17:30</td><td>71%</td><td>5 400 000</td><td>6</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- STAFF -->
+        <section class="panel" id="staff">
+          <div class="top">
+            <div>
+              <h1>Staff</h1>
+              <p>Faqat o‘z cinema · xarita, block, QR · moliya yo‘q</p>
+            </div>
+            <div class="top-actions">
+              <button class="btn pri" type="button">+ Staff</button>
+            </div>
+          </div>
+          <div class="card">
+            <table>
+              <thead><tr><th>Ism</th><th>Email</th><th>Rol</th><th>Status</th><th></th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Dilshod</td><td>dilshod@magic.uz</td><td><span class="badge orange">STAFF</span></td>
+                  <td><span class="badge ok">Active</span></td>
+                  <td><button class="btn sm ghost" type="button">Edit</button></td>
+                </tr>
+                <tr>
+                  <td>Madina</td><td>madina@magic.uz</td><td><span class="badge orange">STAFF</span></td>
+                  <td><span class="badge ok">Active</span></td>
+                  <td><button class="btn sm ghost" type="button">Edit</button></td>
+                </tr>
+                <tr>
+                  <td>Muxammedyar</td><td>admin@magic.uz</td><td><span class="badge ok">CINEMA_ADMIN</span></td>
+                  <td><span class="badge ok">Active</span></td>
+                  <td></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- SUPER: CINEMAS -->
+        <section class="panel" id="cinemas">
+          <div class="top">
+            <div>
+              <h1>Kinoteatrlar</h1>
+              <p>Super Admin · ACTIVE / DISABLED · merchant</p>
+            </div>
+            <div class="top-actions">
+              <button class="btn pri" type="button">+ Cinema</button>
+            </div>
+          </div>
+          <div class="card">
+            <table>
+              <thead>
+                <tr><th>Cinema</th><th>Shahar</th><th>Zallar</th><th>Admin</th><th>Status</th><th></th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><b>Magic Cinema</b></td><td>Toshkent</td><td>2</td><td>admin@magic.uz</td>
+                  <td><span class="badge ok">ACTIVE</span></td>
+                  <td><button class="btn sm ghost" type="button">Edit</button></td>
+                </tr>
+                <tr>
+                  <td><b>Star Cinema</b></td><td>Toshkent</td><td>3</td><td>admin@star.uz</td>
+                  <td><span class="badge ok">ACTIVE</span></td>
+                  <td><button class="btn sm ghost" type="button">Edit</button></td>
+                </tr>
+                <tr>
+                  <td><b>Old Plaza</b></td><td>Samarqand</td><td>1</td><td>—</td>
+                  <td><span class="badge muted">DISABLED</span></td>
+                  <td><button class="btn sm pri" type="button">Enable</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card">
+            <div class="card-h"><h2>Yangi kinoteatr</h2></div>
+            <div class="form">
+              <div class="field"><label>Nomi</label><input placeholder="Cinema nomi" /></div>
+              <div class="field"><label>Shahar</label><input placeholder="Toshkent" /></div>
+              <div class="field"><label>Click merchant</label><input placeholder="merchant_id" /></div>
+              <div class="field"><label>Payme merchant</label><input placeholder="merchant_id" /></div>
+              <div class="field full"><label>Logo</label><div class="poster-up">Upload logo</div></div>
+              <div class="field full"><button class="btn pri" type="button">Cinema yaratish</button></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SUPER: ADMINS -->
+        <section class="panel" id="admins">
+          <div class="top">
+            <div>
+              <h1>Cinema adminlar</h1>
+              <p>CinemaStaff · CINEMA_ADMIN bog‘lash</p>
+            </div>
+            <div class="top-actions">
+              <button class="btn pri" type="button">+ Admin</button>
+            </div>
+          </div>
+          <div class="card">
+            <table>
+              <thead><tr><th>Email</th><th>Cinema</th><th>Rol</th><th></th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>admin@magic.uz</td><td>Magic Cinema</td><td>CINEMA_ADMIN</td>
+                  <td><button class="btn sm ghost" type="button">Reset parol</button></td>
+                </tr>
+                <tr>
+                  <td>admin@star.uz</td><td>Star Cinema</td><td>CINEMA_ADMIN</td>
+                  <td><button class="btn sm ghost" type="button">Reset parol</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- SUPER: PAYMENTS -->
+        <section class="panel" id="payments">
+          <div class="top">
+            <div>
+              <h1>Barcha to‘lovlar</h1>
+              <p>Platforma ko‘rinishi · barcha cinema</p>
+            </div>
+          </div>
+          <div class="card">
+            <table>
+              <thead>
+                <tr><th>Payment</th><th>Cinema</th><th>Order</th><th>Provider</th><th>Summa</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>P-880</td><td>Magic</td><td>#1245</td><td>Click</td><td>67 500</td>
+                  <td><span class="badge ok">PAID</span></td>
+                </tr>
+                <tr>
+                  <td>P-881</td><td>Star</td><td>#2102</td><td>Payme</td><td>85 000</td>
+                  <td><span class="badge ok">PAID</span></td>
+                </tr>
+                <tr>
+                  <td>P-882</td><td>Magic</td><td>#1247</td><td>Click</td><td>67 500</td>
+                  <td><span class="badge bad">FAILED</span></td>
+                </tr>
+                <tr>
+                  <td>P-883</td><td>Star</td><td>#2105</td><td>Payme</td><td>140 000</td>
+                  <td><span class="badge warn">PENDING</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <p class="note-foot">
+          To‘liq admin mockup · rejadagi barcha asosiy ekranlar.
+          <a href="./mini-app.html">Mini App</a> ·
+          <a href="./index.html">Indeks</a>
+        </p>
+      </main>
+    </div>
+
+    <script>
+      const headings = {
+        dash: ["Bugun", "18-avgust · Magic Cinema · Asia/Tashkent"],
+        sessions: ["Seanslar", "Narx va chegirma seansga tegishli"],
+        map: ["Seans xaritasi", "Avatar 3 · 17:30 · Hall 1"],
+        scan: ["QR tekshiruv", "Staff · kirishda bilet"],
+        movies: ["Filmlar", "Platforma entity"],
+        halls: ["Zallar", "capacity ≠ seat count"],
+        layout: ["Layout editor", "Hall 1 · seat-engine"],
+        orders: ["Buyurtmalar", "SEAT · GA"],
+        tickets: ["Biletlar", "1 odam = 1 ticket"],
+        refunds: ["Refundlar", "FAILED → retry"],
+        reports: ["Hisobotlar", "Kunlik / haftalik"],
+        staff: ["Staff", "CinemaStaff RBAC"],
+        cinemas: ["Kinoteatrlar", "Super Admin"],
+        admins: ["Cinema adminlar", "Super Admin"],
+        payments: ["Barcha to‘lovlar", "Platforma"],
+      };
+
+      const who = {
+        cinema: "Magic Cinema<br />Cinema Admin · muxammedyar",
+        staff: "Magic Cinema<br />Staff · dilshod",
+        super: "Platforma<br />Super Admin",
+      };
+
+      function show(id) {
+        document.querySelectorAll(".panel").forEach((p) => p.classList.toggle("on", p.id === id));
+        document.querySelectorAll("aside button.nav").forEach((b) => {
+          b.classList.toggle("on", b.getAttribute("data-panel") === id);
+        });
+        const top = document.querySelector(".panel.on .top h1");
+        if (top && headings[id]) {
+          /* headings already in each panel */
+        }
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      document.body.addEventListener("click", (e) => {
+        const t = e.target.closest("[data-panel]");
+        if (t && t.getAttribute("data-panel")) show(t.getAttribute("data-panel"));
+      });
+
+      function applyRole(role) {
+        document.getElementById("whoBox").innerHTML = who[role];
+        document.querySelectorAll("[data-roles]").forEach((el) => {
+          const roles = el.getAttribute("data-roles").split(",");
+          el.hidden = !roles.includes(role);
+        });
+        const first = document.querySelector(`aside button.nav:not([hidden])`);
+        if (first) show(first.getAttribute("data-panel"));
+      }
+
+      document.getElementById("roleSelect").addEventListener("change", (e) => applyRole(e.target.value));
+
+      document.getElementById("toggleCreateSession").onclick = () => {
+        const el = document.getElementById("createSession");
+        el.hidden = !el.hidden;
+      };
+      document.getElementById("cancelCreateSession").onclick = () => {
+        document.getElementById("createSession").hidden = true;
+      };
+      document.getElementById("toggleMovieForm").onclick = () => {
+        const el = document.getElementById("movieForm");
+        el.hidden = !el.hidden;
+      };
+      document.getElementById("cancelMovieForm").onclick = () => {
+        document.getElementById("movieForm").hidden = true;
+      };
+      document.getElementById("showCancel").onclick = () => {
+        document.getElementById("cancelSheet").hidden = false;
+      };
+      document.getElementById("hideCancel").onclick = () => {
+        document.getElementById("cancelSheet").hidden = true;
+      };
+
+      document.querySelectorAll(".chips").forEach((group) => {
+        group.querySelectorAll(".chip").forEach((c) => {
+          c.onclick = () => {
+            group.querySelectorAll(".chip").forEach((x) => x.classList.remove("on"));
+            c.classList.add("on");
+          };
+        });
+      });
+      document.querySelectorAll(".toolbar").forEach((group) => {
+        group.querySelectorAll("button").forEach((c) => {
+          c.onclick = () => {
+            if (["STANDARD", "VIP", "BLOCKED"].includes(c.textContent.trim())) return;
+            group.querySelectorAll("button").forEach((x) => {
+              if (!["STANDARD", "VIP", "BLOCKED"].includes(x.textContent.trim())) x.classList.remove("on");
+            });
+            c.classList.add("on");
+          };
+        });
+      });
+
+      function paintMap(rootId, pick) {
+        const root = document.getElementById(rootId);
+        if (!root || root.childElementCount) return;
+        const pattern = [
+          "aaaaaahaaa",
+          "aaassaaaaa",
+          "aaaaakaaaa",
+          "aaaaaaaaaa",
+          "aaaahaaaaa",
+          "aaaaaaaaaa",
+        ];
+        pattern.forEach((line, r) => {
+          const row = document.createElement("div");
+          row.className = "row";
+          [...line].forEach((ch, i) => {
+            const b = document.createElement("button");
+            b.type = "button";
+            b.className = "seat " + ch;
+            if (pick && r === pick[0] && i === pick[1]) b.className = "seat me";
+            row.appendChild(b);
+          });
+          root.appendChild(row);
+        });
+      }
+      paintMap("seats", [2, 3]);
+      paintMap("layoutSeats", null);
+
+      applyRole("cinema");
+    </script>
+  </body>
+</html>

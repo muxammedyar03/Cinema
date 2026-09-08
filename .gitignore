@@ -1,0 +1,13 @@
+node_modules
+dist
+.next
+.turbo
+coverage
+generated
+.env
+apps/api/.env
+apps/api/uploads
+*.log
+.DS_Store
+*.md
+.env.example

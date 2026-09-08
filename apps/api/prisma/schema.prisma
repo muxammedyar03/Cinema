@@ -1,0 +1,415 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CUSTOMER
+  SUPER_ADMIN
+}
+
+enum StaffRole {
+  CINEMA_ADMIN
+  STAFF
+}
+
+enum CinemaStatus {
+  ACTIVE
+  DISABLED
+  LOCKED
+}
+
+enum InvoiceStatus {
+  DUE
+  PAID
+  OVERDUE
+  VOID
+}
+
+enum SeatType {
+  STANDARD
+  VIP
+  BLOCKED
+}
+
+enum SessionStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+  COMPLETED
+}
+
+enum SessionSeatStatus {
+  AVAILABLE
+  HELD
+  SOLD
+  BLOCKED
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID
+  EXPIRED
+  CANCELLED
+  REFUND_PENDING
+  REFUNDED
+}
+
+enum OrderItemType {
+  SEAT
+  GENERAL_ADMISSION
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUND_PENDING
+  REFUNDED
+  REFUND_FAILED
+}
+
+enum RefundStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
+enum TicketStatus {
+  ACTIVE
+  USED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentProvider {
+  CLICK
+  PAYME
+}
+
+enum MovieStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+model User {
+  id               String    @id @default(cuid())
+  email            String?   @unique
+  passwordHash     String?
+  telegramId       String?   @unique
+  telegramUsername String?
+  firstName        String?
+  lastName         String?
+  phone            String?
+  role             UserRole  @default(CUSTOMER)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  staffOf       CinemaStaff[]
+  orders        Order[]
+  notifications Notification[]
+}
+
+model Cinema {
+  id          String       @id @default(cuid())
+  name        String
+  address     String?
+  phone       String?
+  logoUrl     String?
+  description String?
+  timezone    String       @default("Asia/Tashkent")
+  status      CinemaStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  halls     Hall[]
+  staff     CinemaStaff[]
+  sessions  Session[]
+  orders    Order[]
+  movies    Movie[]
+  billing   CinemaBilling?
+  invoices  SubscriptionInvoice[]
+}
+
+model CinemaStaff {
+  id        String    @id @default(cuid())
+  cinemaId  String
+  userId    String
+  role      StaffRole
+  createdAt DateTime  @default(now())
+
+  cinema Cinema @relation(fields: [cinemaId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([cinemaId, userId])
+}
+
+model PlatformSettings {
+  id                     String   @id @default("default")
+  defaultCommissionUzs   Int      @default(500)
+  lockAfterDays          Int      @default(7)
+  notifyHourTashkent     Int      @default(9)
+  notifyTelegram         Boolean  @default(true)
+  notifyApp              Boolean  @default(true)
+  lateMessageTemplate    String   @default("Подписка Cinema Platform просрочена на {{days}} дн. Оплатите инвойс {{invoice}}, иначе доступ будет закрыт через {{left}} дн.")
+  updatedAt              DateTime @updatedAt
+}
+
+model CinemaBilling {
+  cinemaId               String   @id
+  monthlyPlanUzs         Int      @default(2500000)
+  commissionPerTicketUzs Int?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  cinema Cinema @relation(fields: [cinemaId], references: [id], onDelete: Cascade)
+}
+
+model SubscriptionInvoice {
+  id                 String        @id @default(cuid())
+  cinemaId           String
+  periodYear         Int
+  periodMonth        Int
+  amountUzs          Int
+  status             InvoiceStatus @default(DUE)
+  dueAt              DateTime
+  paidAt             DateTime?
+  lockedAt           DateTime?
+  lastLateNotifiedOn DateTime?
+  publicNumber       String        @unique
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  cinema Cinema @relation(fields: [cinemaId], references: [id], onDelete: Cascade)
+
+  @@unique([cinemaId, periodYear, periodMonth])
+  @@index([status, dueAt])
+}
+
+model Hall {
+  id        String   @id @default(cuid())
+  cinemaId  String
+  name      String
+  capacity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cinema   Cinema       @relation(fields: [cinemaId], references: [id])
+  layouts  HallLayout[]
+  seats    Seat[]
+  sessions Session[]
+}
+
+model HallLayout {
+  id           String   @id @default(cuid())
+  hallId       String
+  version      Int      @default(1)
+  canvasWidth  Int      @default(1000)
+  canvasHeight Int      @default(800)
+  screenJson   Json?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  hall  Hall   @relation(fields: [hallId], references: [id])
+  seats Seat[]
+
+  @@unique([hallId, version])
+}
+
+model Seat {
+  id        String   @id @default(cuid())
+  hallId    String
+  layoutId  String
+  rowLabel  String
+  number    Int
+  type      SeatType @default(STANDARD)
+  x         Float
+  y         Float
+  rotation  Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  hall         Hall          @relation(fields: [hallId], references: [id])
+  layout       HallLayout    @relation(fields: [layoutId], references: [id])
+  sessionSeats SessionSeat[]
+
+  @@unique([layoutId, rowLabel, number])
+}
+
+model Movie {
+  id             String      @id @default(cuid())
+  cinemaId       String
+  title          String
+  description    String?
+  posterUrl      String?
+  durationMin    Int
+  rating         Decimal?    @db.Decimal(3, 1)
+  ageRating      String?
+  genres         String[]    @default([])
+  audioLanguages String[]    @default([])
+  releasedAt     DateTime?
+  status         MovieStatus @default(ACTIVE)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  cinema   Cinema    @relation(fields: [cinemaId], references: [id])
+  sessions Session[]
+
+  @@index([cinemaId, status])
+}
+
+model Session {
+  id              String        @id @default(cuid())
+  movieId         String
+  cinemaId        String
+  hallId          String
+  startsAt        DateTime
+  status          SessionStatus @default(DRAFT)
+  basePriceUzs    Int
+  discountPercent Int           @default(0)
+  cancelledAt     DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  movie        Movie            @relation(fields: [movieId], references: [id])
+  cinema       Cinema           @relation(fields: [cinemaId], references: [id])
+  hall         Hall             @relation(fields: [hallId], references: [id])
+  pricing      SessionPricing[]
+  sessionSeats SessionSeat[]
+  orders       Order[]
+  tickets      Ticket[]
+
+  @@index([cinemaId, startsAt])
+  @@index([status, startsAt])
+}
+
+model SessionPricing {
+  id        String   @id @default(cuid())
+  sessionId String
+  seatType  SeatType
+  priceUzs  Int
+
+  session Session @relation(fields: [sessionId], references: [id])
+
+  @@unique([sessionId, seatType])
+}
+
+model SessionSeat {
+  id            String            @id @default(cuid())
+  sessionId     String
+  seatId        String
+  status        SessionSeatStatus @default(AVAILABLE)
+  priceUzs      Int
+  holdExpiresAt DateTime?
+  orderItemId   String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  session   Session    @relation(fields: [sessionId], references: [id])
+  seat      Seat       @relation(fields: [seatId], references: [id])
+  orderItem OrderItem? @relation(fields: [orderItemId], references: [id])
+
+  @@unique([sessionId, seatId])
+  @@index([sessionId, status])
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  publicNumber  Int         @unique @default(autoincrement())
+  userId        String
+  cinemaId      String
+  sessionId     String
+  status        OrderStatus
+  totalUzs      Int
+  holdExpiresAt DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  user     User        @relation(fields: [userId], references: [id])
+  cinema   Cinema      @relation(fields: [cinemaId], references: [id])
+  session  Session     @relation(fields: [sessionId], references: [id])
+  items    OrderItem[]
+  payments Payment[]
+  tickets  Ticket[]
+  refunds  Refund[]
+}
+
+model OrderItem {
+  id           String        @id @default(cuid())
+  orderId      String
+  type         OrderItemType
+  quantity     Int           @default(1)
+  unitPriceUzs Int
+  seatId       String?
+
+  order        Order         @relation(fields: [orderId], references: [id])
+  sessionSeats SessionSeat[]
+}
+
+model Payment {
+  id                String          @id @default(cuid())
+  orderId           String
+  provider          PaymentProvider
+  providerPaymentId String?
+  amountUzs         Int
+  status            PaymentStatus   @default(PENDING)
+  rawPayload        Json?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  order   Order    @relation(fields: [orderId], references: [id])
+  refunds Refund[]
+
+  @@unique([provider, providerPaymentId])
+  @@index([orderId])
+}
+
+model Refund {
+  id               String       @id @default(cuid())
+  paymentId        String
+  orderId          String
+  amountUzs        Int
+  reason           String?
+  status           RefundStatus @default(PENDING)
+  providerRefundId String?
+  errorMessage     String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  payment Payment @relation(fields: [paymentId], references: [id])
+  order   Order   @relation(fields: [orderId], references: [id])
+}
+
+model Ticket {
+  id        String        @id @default(cuid())
+  orderId   String
+  sessionId String
+  type      OrderItemType
+  seatId    String?
+  code      String        @unique
+  status    TicketStatus  @default(ACTIVE)
+  usedAt    DateTime?
+  createdAt DateTime      @default(now())
+
+  order   Order   @relation(fields: [orderId], references: [id])
+  session Session @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId, status])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  channel   String    @default("TELEGRAM")
+  type      String
+  payload   Json
+  status    String
+  sentAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
