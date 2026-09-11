@@ -1,5 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import {
+	type DashboardKpis,
+	KpiCharts,
+	type KpiTrendPoint,
+	KpiWidgets,
+	money,
+} from "../components/dashboard-analytics";
 import { RevenueChart } from "../components/revenue-chart";
 import { Shell } from "../components/shell";
 import { assertBillingAccess } from "../lib/billing-access";
@@ -56,10 +63,26 @@ type Dashboard = {
 		cinemaName: string;
 	}>;
 	revenueTrend: Array<{ date: string; incomeUzs: number; expenseUzs: number; netUzs: number }>;
+	kpis: DashboardKpis;
+	kpiTrend: KpiTrendPoint[];
+	period?: { range: "daily" | "weekly"; timezone: string; start: string; end: string };
 };
 
-function money(n: number) {
-	return `${n.toLocaleString("ru-RU")} сум`;
+function emptyKpis(): DashboardKpis {
+	return {
+		occupancyRate: null,
+		soldSeats: 0,
+		sellableSeats: 0,
+		sessions: 0,
+		conversionRate: null,
+		paidOrders: 0,
+		holdsResolved: 0,
+		pendingHolds: 0,
+		gmvUzs: null,
+		refundRate: null,
+		refundedAmountUzs: null,
+		refundedOrders: 0,
+	};
 }
 
 function timeLabel(iso: string) {
@@ -87,12 +110,20 @@ const cashPill = "rounded-[14px] border border-line bg-white/[0.02] px-3 py-2";
 const quickLink =
 	"inline-flex h-8 items-center rounded-full border border-line px-3 text-xs font-semibold text-muted hover:border-orange/40 hover:text-orange";
 
-export default async function HomePage() {
+export default async function HomePage({
+	searchParams,
+}: {
+	searchParams: Promise<{ range?: string }>;
+}) {
 	const user = await getMe();
 	if (!user) redirect("/login");
 	await assertBillingAccess(user);
-	const data = await serverApi<Dashboard>("/admin/dashboard");
+	const { range: rangeRaw } = await searchParams;
+	const range = rangeRaw === "weekly" ? "weekly" : "daily";
+	const data = await serverApi<Dashboard>(`/admin/dashboard?range=${range}`);
 	const { stats, cashflow, todaySessions, recentOrders, recentPayments, revenueTrend } = data;
+	const kpis = data.kpis ?? emptyKpis();
+	const kpiTrend = data.kpiTrend ?? [];
 	const publishedToday = todaySessions.filter((s) => s.status === "PUBLISHED").length;
 	const role = roleOf(user);
 	const cinemaName = primaryCinemaName(user);
@@ -130,6 +161,10 @@ export default async function HomePage() {
 						<b className="mb-1 block text-[26px] font-bold">{stats.sessionsPublished}</b>
 						<span className="text-xs text-muted">Активных сеансов (кол-во)</span>
 					</div>
+				</div>
+				<KpiWidgets kpis={kpis} hideMoney range={range} />
+				<div className="mb-4">
+					<KpiCharts points={kpiTrend} hideMoney range={range} />
 				</div>
 				<section className={ui.card}>
 					<div className={ui.cardH}>Клиенты и биллинг</div>
@@ -178,6 +213,11 @@ export default async function HomePage() {
 					<b className="mb-1 block text-[26px] font-bold">{money(stats.revenueTodayUzs)}</b>
 					<span className="text-xs text-muted">Выручка сегодня</span>
 				</div>
+			</div>
+
+			<KpiWidgets kpis={kpis} hideMoney={false} range={range} />
+			<div className="mb-4">
+				<KpiCharts points={kpiTrend} hideMoney={false} range={range} />
 			</div>
 
 			<div className="grid grid-cols-1 gap-3.5 lg:grid-cols-[1fr_1fr_1fr]">
