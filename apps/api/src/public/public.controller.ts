@@ -1,5 +1,8 @@
+import type { SessionUser } from "@cinema/types";
 import { catalogQuerySchema } from "@cinema/validation";
-import { Controller, Get, Param, Query } from "@nestjs/common";
+import { Controller, Get, Param, Query, UseGuards } from "@nestjs/common";
+import { CurrentUser } from "../auth/current-user.decorator";
+import { OptionalSessionGuard } from "../auth/optional-session.guard";
 import { PublicService } from "./public.service";
 
 @Controller("public")
@@ -18,6 +21,17 @@ export class PublicController {
 	@Get("cinemas")
 	cinemas() {
 		return this.pub.cinemas();
+	}
+
+	@Get("cinemas/:id/map")
+	cinemaMap(@Param("id") id: string) {
+		return this.pub.cinemaMap(id);
+	}
+
+	@Get("cinemas/:id")
+	@UseGuards(OptionalSessionGuard)
+	cinema(@Param("id") id: string, @CurrentUser() user?: SessionUser) {
+		return this.pub.cinema(id, user);
 	}
 
 	@Get("movies/:id")

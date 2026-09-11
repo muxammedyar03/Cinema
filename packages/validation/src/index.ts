@@ -186,3 +186,84 @@ export const holdGaSchema = z.object({
 });
 
 export type HoldGaInput = z.infer<typeof holdGaSchema>;
+
+export const MAP_PROVIDERS = ["google", "yandex"] as const;
+export const PROFILE_STEP_KEYS = [
+	"photos",
+	"location",
+	"instagram",
+	"phones",
+	"telegramContact",
+	"securityEmail",
+] as const;
+
+export const photoUploadUrlSchema = z.object({
+	contentType: z.string().min(1).max(80),
+	byteSize: z
+		.number()
+		.int()
+		.positive()
+		.max(5 * 1024 * 1024)
+		.optional(),
+});
+
+export const createCinemaPhotoSchema = z.object({
+	url: z.string().url().max(1000),
+	sortOrder: z.number().int().min(0).max(99).optional(),
+});
+
+export const reorderCinemaPhotosSchema = z.object({
+	photoIds: z.array(z.string().min(1)).min(1).max(12),
+});
+
+export const cinemaLocationSchema = z.object({
+	provider: z.enum(MAP_PROVIDERS),
+	lat: z.number().gte(-90).lte(90),
+	lng: z.number().gte(-180).lte(180),
+	address: z.string().trim().min(1).max(255),
+});
+
+export const patchCinemaProfileSchema = z.object({
+	name: z.string().min(2).max(120).optional(),
+	address: z.string().max(255).nullable().optional(),
+	description: z.string().max(2000).nullable().optional(),
+	logoUrl: z.string().url().max(500).nullable().optional(),
+	phones: z.array(z.string().trim().min(3).max(40)).max(8).optional(),
+	instagramUrl: z.string().trim().max(300).nullable().optional(),
+	telegramContact: z.string().trim().max(120).nullable().optional(),
+	lat: z.number().gte(-90).lte(90).nullable().optional(),
+	lng: z.number().gte(-180).lte(180).nullable().optional(),
+	mapProvider: z.enum(MAP_PROVIDERS).nullable().optional(),
+	markSteps: z
+		.object({
+			photos: z.boolean().optional(),
+			location: z.boolean().optional(),
+			instagram: z.boolean().optional(),
+			phones: z.boolean().optional(),
+			telegramContact: z.boolean().optional(),
+			securityEmail: z.boolean().optional(),
+		})
+		.optional(),
+});
+
+export const changePasswordSchema = z.object({
+	currentPassword: z.string().min(1).max(128),
+	newPassword: z.string().min(8).max(128),
+});
+
+export const linkEmailSchema = z.object({
+	email: z.string().email().max(160),
+});
+
+export const confirmEmailSchema = z.object({
+	token: z.string().trim().min(4).max(128),
+});
+
+export type PhotoUploadUrlInput = z.infer<typeof photoUploadUrlSchema>;
+export type CreateCinemaPhotoInput = z.infer<typeof createCinemaPhotoSchema>;
+export type ReorderCinemaPhotosInput = z.infer<typeof reorderCinemaPhotosSchema>;
+export type CinemaLocationInput = z.infer<typeof cinemaLocationSchema>;
+export type PatchCinemaProfileInput = z.infer<typeof patchCinemaProfileSchema>;
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type LinkEmailInput = z.infer<typeof linkEmailSchema>;
+export type ConfirmEmailInput = z.infer<typeof confirmEmailSchema>;

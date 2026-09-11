@@ -13,6 +13,9 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
 	);
 	const first = sessions[0];
 	const bg = movie.posterUrl ? `url(${movie.posterUrl})` : posterGradient(movie.id + movie.title);
+	const cinemas = [
+		...new Map(sessions.map((s) => [s.cinemaId, { id: s.cinemaId, name: s.cinemaName }])).values(),
+	];
 
 	return (
 		<>
@@ -47,6 +50,19 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
 					{movie.description ??
 						"Сеансы во всех активных кинотеатрах. Бронирование мест — в следующей фазе."}
 				</p>
+				{cinemas.length ? (
+					<div className="mb-4 flex flex-wrap gap-2">
+						{cinemas.map((cinema) => (
+							<Link
+								key={cinema.id}
+								href={`/cinemas/${cinema.id}`}
+								className="rounded-full border border-line bg-white/[0.03] px-3 py-1.5 text-[12px] font-semibold text-muted hover:border-orange/50 hover:text-orange"
+							>
+								{cinema.name}
+							</Link>
+						))}
+					</div>
+				) : null}
 				{sessions.length === 0 ? (
 					<p className={ui.empty}>Для этого фильма пока нет опубликованных сеансов.</p>
 				) : (

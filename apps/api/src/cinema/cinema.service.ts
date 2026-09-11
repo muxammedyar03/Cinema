@@ -188,6 +188,7 @@ export class CinemaService {
 		return this.prisma.cinema.create({
 			data: {
 				...data,
+				phones: data.phone ? [data.phone] : [],
 				billing: {
 					create: { monthlyPlanUzs: 2_500_000 },
 				},
@@ -219,6 +220,7 @@ export class CinemaService {
 					name: data.name,
 					address: data.address,
 					phone: data.phone,
+					phones: data.phone ? [data.phone] : [],
 					description: data.description,
 					timezone: data.timezone,
 					billing: {

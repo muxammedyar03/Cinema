@@ -14,6 +14,7 @@ type CinemaRow = {
 	phone: string | null;
 	address: string | null;
 	billing: { monthlyPlanUzs: number } | null;
+	profileComplete?: boolean;
 	_count: { halls: number; staff: number };
 	invoices: Array<{ status: string; daysLate?: number }>;
 };
@@ -71,6 +72,7 @@ export default async function ClientsPage() {
 								<th>Залы</th>
 								<th>Админы</th>
 								<th>Часовой пояс</th>
+								<th>Профиль</th>
 								<th>Статус</th>
 							</tr>
 						</thead>
@@ -92,6 +94,13 @@ export default async function ClientsPage() {
 									<td>{c._count.halls}</td>
 									<td>{c._count.staff}</td>
 									<td>{c.timezone}</td>
+									<td>
+										<Link href={`/clients/${c.id}/profile`}>
+											<span className={cx(ui.badge, c.profileComplete ? ui.badgeOk : ui.badgeWarn)}>
+												{c.profileComplete ? "полный" : "неполный"}
+											</span>
+										</Link>
+									</td>
 									<td>
 										<span className={statusCls(c.status)}>{c.status}</span>
 									</td>

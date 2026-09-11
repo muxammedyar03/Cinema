@@ -1,3 +1,4 @@
+import type { CinemaAdminProfile } from "@cinema/types";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Shell } from "../../../components/shell";
@@ -80,7 +81,10 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
 	if (roleOf(user) !== "super") redirect("/");
 
 	const { id } = await params;
-	const client = await serverApi<Dossier>(`/admin/cinemas/${id}/dossier`);
+	const [client, profile] = await Promise.all([
+		serverApi<Dossier>(`/admin/cinemas/${id}/dossier`),
+		serverApi<CinemaAdminProfile>(`/admin/cinemas/${id}/profile`).catch(() => null),
+	]);
 
 	return (
 		<Shell user={user}>
@@ -97,6 +101,22 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
 				</div>
 				<ClientActions clientId={client.id} status={client.status} />
 			</div>
+
+			{profile && !profile.profileCompletion.profileComplete ? (
+				<div className="mb-5 rounded-xl border border-orange/35 bg-orange/[0.08] px-[18px] py-4">
+					<div className="flex flex-wrap items-center justify-between gap-3">
+						<div>
+							<p className="text-sm font-semibold">Профиль кинотеатра не заполнен</p>
+							<p className="mt-1 text-[13px] text-muted">
+								Осталось: {profile.profileCompletion.missing.join(", ") || "шаги мастера"}
+							</p>
+						</div>
+						<Link className={cx(ui.btn, ui.btnPri)} href={`/clients/${id}/profile`}>
+							Заполнить профиль
+						</Link>
+					</div>
+				</div>
+			) : null}
 
 			<div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
 				{[

@@ -54,7 +54,7 @@ export function NewClientForm({ user }: { user: SessionUser }) {
 					},
 				}),
 			});
-			router.push(`/clients/${cinema.id}`);
+			router.push(`/clients/${cinema.id}/profile`);
 			router.refresh();
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Не удалось создать клиента");

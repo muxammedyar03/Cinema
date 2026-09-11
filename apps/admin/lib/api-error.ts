@@ -23,6 +23,18 @@ const RU: Record<string, string> = {
 	TICKET_NOT_FOUND: "Билет не найден",
 	TICKET_NOT_ACTIVE: "Билет недействителен",
 	FORBIDDEN: "Нет доступа к этому билету",
+	STEP_PRECONDITION_FAILED: "Сначала заполните обязательные поля шага",
+	INVALID_INSTAGRAM_URL: "Нужна ссылка на instagram.com",
+	INVALID_MAP_PROVIDER: "Выберите Google Maps или Yandex Maps",
+	PHOTO_LIMIT: "Можно загрузить не больше 12 фото",
+	PHOTO_TOO_LARGE: "Файл больше 5 МБ",
+	INVALID_PHOTO_TYPE: "Допустимы JPEG, PNG или WebP",
+	NOT_CINEMA_STAFF: "Нет доступа к этому кинотеатру",
+	CINEMA_NOT_FOUND: "Кинотеатр не найден",
+	INVALID_CURRENT_PASSWORD: "Текущий пароль неверен",
+	INVALID_EMAIL_TOKEN: "Код подтверждения недействителен",
+	EMAIL_TAKEN: "Этот email уже занят",
+	UPLOAD_EXPIRED: "Ссылка загрузки истекла — выберите файл снова",
 };
 
 function looksLikeCode(value: string) {

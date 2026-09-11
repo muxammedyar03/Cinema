@@ -3,11 +3,12 @@
 import type { SessionUser } from "@cinema/types";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
-import { primaryCinemaName, roleOf } from "../lib/rbac";
+import { primaryCinemaId, primaryCinemaName, roleOf } from "../lib/rbac";
 import { cx, ui } from "../lib/ui";
 import { AdminNav } from "./admin-nav";
 import { BillingLockGate } from "./billing-lock-gate";
 import { HeaderBar } from "./header-bar";
+import { ProfileGate } from "./profile-gate";
 
 const KEY = "cinema-admin-sidebar-collapsed";
 
@@ -128,6 +129,7 @@ export function Shell({ user, children }: { user: SessionUser; children: ReactNo
 			</aside>
 			<main className="min-w-0 px-[34px] pb-[70px] pt-[30px]">
 				<HeaderBar />
+				{role !== "super" && primaryCinemaId(user) ? <ProfileGate user={user} /> : null}
 				{children}
 			</main>
 		</div>

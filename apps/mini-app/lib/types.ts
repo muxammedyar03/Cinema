@@ -2,6 +2,39 @@ export type PublicCinema = {
 	id: string;
 	name: string;
 	address: string | null;
+	logoUrl?: string | null;
+	hasMap?: boolean;
+	profileComplete?: boolean;
+};
+
+export type CinemaPhoto = {
+	id: string;
+	url: string;
+	sortOrder: number;
+};
+
+export type CinemaMap = {
+	provider: "google" | "yandex";
+	lat: number;
+	lng: number;
+	address: string;
+	embedHint?: "google-maps" | "yandex-maps";
+};
+
+export type PublicCinemaProfile = {
+	id: string;
+	name: string;
+	address: string | null;
+	description: string | null;
+	logoUrl: string | null;
+	phones: string[];
+	instagramUrl: string | null;
+	telegramContact: string | null;
+	photos: CinemaPhoto[];
+	map: CinemaMap | null;
+	timezone: string;
+	followerCount: number;
+	followedByMe: boolean;
 };
 
 export type CatalogSession = {

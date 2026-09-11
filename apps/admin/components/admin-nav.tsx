@@ -157,6 +157,13 @@ const groups: NavGroup[] = [
 				roles: ["cinema"],
 				match: (p) => p.startsWith("/halls") || /\/cinemas\/[^/]+\/halls/.test(p),
 			},
+			{
+				href: "/profile",
+				label: "Профиль",
+				icon: KeyRound,
+				accent: "#e3a63c",
+				roles: ["cinema"],
+			},
 		],
 	},
 	{

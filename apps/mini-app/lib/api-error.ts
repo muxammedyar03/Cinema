@@ -28,6 +28,9 @@ const RU: Record<string, string> = {
 	TICKET_NOT_FOUND: "Билет не найден",
 	TICKET_NOT_ACTIVE: "Билет недействителен",
 	FORBIDDEN: "Нет доступа",
+	CINEMA_NOT_FOLLOWABLE: "Этот кинотеатр нельзя отслеживать",
+	MAP_NOT_CONFIGURED: "Карта кинотеатра ещё не указана",
+	CINEMA_NOT_FOUND: "Кинотеатр не найден",
 };
 
 function looksLikeCode(value: string) {

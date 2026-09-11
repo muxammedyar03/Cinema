@@ -1,6 +1,8 @@
+import type { SessionUser } from "@cinema/types";
 import type { CatalogQuery } from "@cinema/validation";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { countSessionOccupied, gaQtyBySessionIds } from "../booking/capacity";
+import { mapPayload } from "../cinema/profile.util";
 import { PrismaService } from "../prisma/prisma.service";
 import { RedisService } from "../redis/redis.service";
 
@@ -27,11 +29,86 @@ export class PublicService {
 	) {}
 
 	cinemas() {
-		return this.prisma.cinema.findMany({
-			where: { status: "ACTIVE" },
-			orderBy: { name: "asc" },
-			select: { id: true, name: true, address: true },
+		return this.prisma.cinema
+			.findMany({
+				where: { status: "ACTIVE" },
+				orderBy: { name: "asc" },
+				select: {
+					id: true,
+					name: true,
+					address: true,
+					logoUrl: true,
+					lat: true,
+					lng: true,
+					profileComplete: true,
+				},
+			})
+			.then((rows) =>
+				rows.map((c) => ({
+					id: c.id,
+					name: c.name,
+					address: c.address,
+					logoUrl: c.logoUrl,
+					hasMap: c.lat != null && c.lng != null,
+					profileComplete: c.profileComplete,
+				})),
+			);
+	}
+
+	async cinema(id: string, user?: SessionUser) {
+		const cinema = await this.prisma.cinema.findUnique({
+			where: { id },
+			include: { photos: { orderBy: { sortOrder: "asc" } } },
 		});
+		if (!cinema || cinema.status !== "ACTIVE") {
+			throw new NotFoundException({ code: "CINEMA_NOT_FOUND", message: "Cinema not found" });
+		}
+		const [followerCount, followed] = await Promise.all([
+			this.prisma.cinemaFollow.count({ where: { cinemaId: id } }),
+			user
+				? this.prisma.cinemaFollow.findUnique({
+						where: { userId_cinemaId: { userId: user.id, cinemaId: id } },
+					})
+				: Promise.resolve(null),
+		]);
+		const phones = cinema.phones.length ? cinema.phones : cinema.phone ? [cinema.phone] : [];
+		return {
+			id: cinema.id,
+			name: cinema.name,
+			address: cinema.address,
+			description: cinema.description,
+			logoUrl: cinema.logoUrl,
+			phones,
+			instagramUrl: cinema.instagramUrl,
+			telegramContact: cinema.telegramContact,
+			photos: cinema.photos.map((p) => ({ id: p.id, url: p.url, sortOrder: p.sortOrder })),
+			map: mapPayload({
+				mapProvider: cinema.mapProvider,
+				lat: cinema.lat,
+				lng: cinema.lng,
+				address: cinema.address,
+			}),
+			timezone: cinema.timezone,
+			followerCount,
+			followedByMe: Boolean(followed),
+		};
+	}
+
+	async cinemaMap(id: string) {
+		const cinema = await this.prisma.cinema.findUnique({ where: { id } });
+		if (!cinema || cinema.status !== "ACTIVE") {
+			throw new NotFoundException({ code: "CINEMA_NOT_FOUND", message: "Cinema not found" });
+		}
+		const map = mapPayload({
+			mapProvider: cinema.mapProvider,
+			lat: cinema.lat,
+			lng: cinema.lng,
+			address: cinema.address,
+		});
+		if (!map) {
+			throw new NotFoundException({ code: "MAP_NOT_CONFIGURED", message: "Map not configured" });
+		}
+		return map;
 	}
 
 	async catalog(query: CatalogQuery) {

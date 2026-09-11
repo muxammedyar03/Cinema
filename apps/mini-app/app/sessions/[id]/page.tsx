@@ -22,7 +22,10 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
 					←
 				</Link>
 				<h1 className="font-brand text-xl font-bold">
-					{session.cinema.name} · {formatTime(session.startsAt)}
+					<Link href={`/cinemas/${session.cinema.id}`} className="hover:text-orange">
+						{session.cinema.name}
+					</Link>{" "}
+					· {formatTime(session.startsAt)}
 				</h1>
 				<p className="mt-1 text-[13px] text-muted">
 					{session.movie.title} · {session.hall.name} · {session.remaining} /{" "}

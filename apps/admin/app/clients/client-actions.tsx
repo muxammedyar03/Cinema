@@ -70,6 +70,9 @@ export function ClientActions({
 	return (
 		<div className="flex flex-col items-end gap-2">
 			<div className="flex flex-wrap justify-end gap-2">
+				<Link className={cx(ui.btn, ui.btnGhost)} href={`/clients/${clientId}/profile`}>
+					Профиль
+				</Link>
 				<Link className={cx(ui.btn, ui.btnGhost)} href={`/clients/${clientId}/edit`}>
 					Редактировать
 				</Link>
