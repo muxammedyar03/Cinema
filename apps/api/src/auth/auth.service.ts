@@ -1,10 +1,11 @@
 import { randomBytes } from "node:crypto";
 import type { SessionUser } from "@cinema/types";
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { Injectable, ServiceUnavailableException, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { compare } from "bcryptjs";
 import { PrismaService } from "../prisma/prisma.service";
 import { RedisService } from "../redis/redis.service";
+import { TelegramInitDataError, verifyTelegramInitData } from "./telegram-init-data";
 
 const SESSION_TTL_SEC = 60 * 60 * 24 * 7;
 
@@ -34,13 +35,7 @@ export class AuthService {
 			throw new UnauthorizedException("Not an admin user");
 		}
 		const sessionUser = toSessionUser(user);
-		const sid = randomBytes(32).toString("hex");
-		await this.redis.client.set(
-			`session:${sid}`,
-			JSON.stringify({ userId: user.id }),
-			"EX",
-			SESSION_TTL_SEC,
-		);
+		const sid = await this.createSession(user.id);
 		return { sid, user: sessionUser };
 	}
 
@@ -68,32 +63,104 @@ export class AuthService {
 		return toSessionUser(user);
 	}
 
-	async telegramStub(body: { initData?: string; telegramId?: string; username?: string }) {
-		if (this.config.get("TELEGRAM_BOT_TOKEN")) {
-			if (!body.initData) {
-				throw new UnauthorizedException("initData required");
+	/**
+	 * Authenticate Mini App user via Telegram initData HMAC (KAN-5 / telegram-auth.md).
+	 * Resolution of initData is done by the controller (header > body).
+	 */
+	async telegramAuth(initData: string | undefined): Promise<{
+		sid: string;
+		user: SessionUser;
+		stub: boolean;
+	}> {
+		const botToken = this.config.get<string>("TELEGRAM_BOT_TOKEN")?.trim() ?? "";
+		const stubAllowed =
+			process.env.NODE_ENV !== "production" &&
+			(this.config.get<string>("AUTH_TELEGRAM_STUB") === "1" || !botToken);
+
+		if (!botToken) {
+			if (!stubAllowed) {
+				throw new ServiceUnavailableException({
+					code: "BOT_TOKEN_UNCONFIGURED",
+					message: "TELEGRAM_BOT_TOKEN is not configured",
+				});
 			}
+			return this.telegramDevStub();
 		}
-		const telegramId = body.telegramId ?? "dev-telegram-user";
+
+		if (!initData?.trim()) {
+			throw new UnauthorizedException({
+				code: "INIT_DATA_REQUIRED",
+				message: "initData required",
+			});
+		}
+
+		const maxAgeSec = Number(this.config.get("TELEGRAM_AUTH_MAX_AGE_SEC") ?? 86_400);
+		let tgUser: ReturnType<typeof verifyTelegramInitData>;
+		try {
+			tgUser = verifyTelegramInitData(initData, botToken, maxAgeSec);
+		} catch (err) {
+			if (err instanceof TelegramInitDataError) {
+				throw new UnauthorizedException({ code: err.code, message: err.code });
+			}
+			throw err;
+		}
+
+		const telegramId = String(tgUser.id);
 		const user = await this.prisma.user.upsert({
 			where: { telegramId },
-			update: { telegramUsername: body.username },
+			update: {
+				telegramUsername: tgUser.username ?? null,
+				firstName: tgUser.first_name ?? null,
+				lastName: tgUser.last_name ?? null,
+			},
 			create: {
 				telegramId,
-				telegramUsername: body.username,
+				telegramUsername: tgUser.username ?? null,
+				firstName: tgUser.first_name ?? null,
+				lastName: tgUser.last_name ?? null,
 				role: "CUSTOMER",
 			},
-			include: { staffOf: { include: { cinema: { select: { name: true, status: true } } } } },
+			include: {
+				staffOf: { include: { cinema: { select: { name: true, status: true } } } },
+			},
 		});
 		const sessionUser = toSessionUser(user);
+		const sid = await this.createSession(user.id);
+		return { sid, user: sessionUser, stub: false };
+	}
+
+	/** Local-only escape hatch when token unset and AUTH_TELEGRAM_STUB=1 / non-production. */
+	private async telegramDevStub(): Promise<{
+		sid: string;
+		user: SessionUser;
+		stub: boolean;
+	}> {
+		const telegramId = "dev-telegram-user";
+		const user = await this.prisma.user.upsert({
+			where: { telegramId },
+			update: {},
+			create: {
+				telegramId,
+				telegramUsername: "dev",
+				role: "CUSTOMER",
+			},
+			include: {
+				staffOf: { include: { cinema: { select: { name: true, status: true } } } },
+			},
+		});
+		const sid = await this.createSession(user.id);
+		return { sid, user: toSessionUser(user), stub: true };
+	}
+
+	private async createSession(userId: string): Promise<string> {
 		const sid = randomBytes(32).toString("hex");
 		await this.redis.client.set(
 			`session:${sid}`,
-			JSON.stringify({ userId: user.id }),
+			JSON.stringify({ userId }),
 			"EX",
 			SESSION_TTL_SEC,
 		);
-		return { sid, user: sessionUser, stub: true as const };
+		return sid;
 	}
 }
 

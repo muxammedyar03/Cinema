@@ -7,6 +7,7 @@ import {
 	NotFoundException,
 } from "@nestjs/common";
 import { canAccessCinema, canManageCinema } from "../auth/roles.guard";
+import { SessionPublishedNotifyService } from "../notify/session-published.notify";
 import { PrismaService } from "../prisma/prisma.service";
 import { RedisService } from "../redis/redis.service";
 
@@ -17,6 +18,7 @@ export class SessionService {
 	constructor(
 		private readonly prisma: PrismaService,
 		private readonly redis: RedisService,
+		private readonly sessionPublishedNotify: SessionPublishedNotifyService,
 	) {}
 
 	async list(user: SessionUser, cinemaId?: string) {
@@ -156,12 +158,17 @@ export class SessionService {
 		if (!canManageCinema(user, session.cinemaId)) {
 			throw new ForbiddenException("Only cinema admin can publish sessions");
 		}
-		if (session.status !== "DRAFT") {
-			throw new BadRequestException("Only DRAFT sessions can be published");
+		if (session.status === "PUBLISHED") {
+			return session;
+		}
+		if (session.status !== "DRAFT" && session.status !== "CANCELLED") {
+			throw new BadRequestException("Only DRAFT or CANCELLED sessions can be published");
 		}
 		// GA sessions have zero seats; seated sessions need a map
 		await this.prisma.session.update({ where: { id }, data: { status: "PUBLISHED" } });
 		await this.invalidateCatalog();
+		// Fire-and-forget notify fan-out (API must not call Telegram directly)
+		void this.sessionPublishedNotify.onSessionPublished(id).catch(() => undefined);
 		return this.get(user, id);
 	}
 
