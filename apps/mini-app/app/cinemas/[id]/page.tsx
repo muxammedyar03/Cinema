@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CinemaMapWidget } from "../../../components/cinema-map";
@@ -13,7 +14,10 @@ export default async function CinemaPage({ params }: { params: Promise<{ id: str
 	const { id } = await params;
 	let cinema: PublicCinemaProfile;
 	try {
-		cinema = await publicApi<PublicCinemaProfile>(`/public/cinemas/${id}`);
+		const jar = await cookies();
+		cinema = await publicApi<PublicCinemaProfile>(`/public/cinemas/${id}`, {
+			headers: { cookie: jar.toString() },
+		});
 	} catch {
 		notFound();
 	}

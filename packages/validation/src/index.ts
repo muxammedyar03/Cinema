@@ -256,7 +256,7 @@ export const linkEmailSchema = z.object({
 });
 
 export const confirmEmailSchema = z.object({
-	token: z.string().trim().min(4).max(128),
+	token: z.string().trim().max(128),
 });
 
 export type PhotoUploadUrlInput = z.infer<typeof photoUploadUrlSchema>;

@@ -52,7 +52,7 @@ export class CinemaProfileService {
 
 	async getProfile(user: SessionUser, cinemaId: string): Promise<CinemaAdminProfile> {
 		this.assertRead(user, cinemaId);
-		const cinema = await this.loadCinema(cinemaId);
+		const cinema = await this.syncSecurityEmailStep(user, await this.loadCinema(cinemaId));
 		return this.toProfile(cinema);
 	}
 
@@ -394,7 +394,16 @@ export class CinemaProfileService {
 
 	async confirmEmail(user: SessionUser, cinemaId: string, token: string) {
 		this.assertWrite(user, cinemaId);
-		const tokenHash = createHash("sha256").update(token.trim()).digest("hex");
+		const trimmed = token.trim();
+		if (!trimmed) {
+			const dbUser = await this.prisma.user.findUnique({ where: { id: user.id } });
+			if (!dbUser?.email || !dbUser.emailVerifiedAt) {
+				apiError(400, "INVALID_EMAIL_TOKEN", "Код подтверждения недействителен");
+			}
+			await this.markSecurityEmailDone(cinemaId);
+			return this.securityStatus(user, cinemaId);
+		}
+		const tokenHash = createHash("sha256").update(trimmed).digest("hex");
 		const raw = await this.redis.client.get(`email-verify:${tokenHash}`);
 		if (!raw) {
 			apiError(400, "INVALID_EMAIL_TOKEN", "Код подтверждения недействителен");
@@ -408,6 +417,11 @@ export class CinemaProfileService {
 			data: { email: payload.email, emailVerifiedAt: new Date() },
 		});
 		await this.redis.client.del(`email-verify:${tokenHash}`);
+		await this.markSecurityEmailDone(cinemaId);
+		return this.securityStatus(user, cinemaId);
+	}
+
+	private async markSecurityEmailDone(cinemaId: string) {
 		const cinema = await this.loadCinema(cinemaId);
 		const flags = {
 			stepPhotosDone: cinema.stepPhotosDone,
@@ -421,7 +435,33 @@ export class CinemaProfileService {
 			where: { id: cinemaId },
 			data: { stepSecurityEmailDone: true, profileComplete: isProfileComplete(flags) },
 		});
-		return this.securityStatus(user, cinemaId);
+	}
+
+	private async syncSecurityEmailStep(user: SessionUser, cinema: NonNullable<CinemaRow>) {
+		if (cinema.stepSecurityEmailDone) return cinema;
+		const [satisfied, dbUser] = await Promise.all([
+			this.securityEmailSatisfied(cinema.id),
+			this.prisma.user.findUnique({
+				where: { id: user.id },
+				select: { email: true, emailVerifiedAt: true },
+			}),
+		]);
+		const selfOk =
+			canManageCinema(user, cinema.id) && Boolean(dbUser?.email && dbUser.emailVerifiedAt);
+		if (!satisfied && !selfOk) return cinema;
+		const flags = {
+			stepPhotosDone: cinema.stepPhotosDone,
+			stepLocationDone: cinema.stepLocationDone,
+			stepInstagramDone: cinema.stepInstagramDone,
+			stepPhonesDone: cinema.stepPhonesDone,
+			stepTelegramContactDone: cinema.stepTelegramContactDone,
+			stepSecurityEmailDone: true,
+		};
+		return this.prisma.cinema.update({
+			where: { id: cinema.id },
+			data: { stepSecurityEmailDone: true, profileComplete: isProfileComplete(flags) },
+			include: { photos: { orderBy: { sortOrder: "asc" } } },
+		});
 	}
 
 	private async applyLocation(cinemaId: string, _input: CinemaLocationInput) {

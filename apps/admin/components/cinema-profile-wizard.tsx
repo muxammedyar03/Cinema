@@ -74,11 +74,17 @@ export function CinemaProfileWizard({
 
 	function goNext() {
 		const next = STEPS[stepIndex + 1];
-		if (next) setStep(next.id);
-		else if (complete) {
+		if (next) {
+			setStep(next.id);
+			return;
+		}
+		if (complete) {
 			router.push(doneHref);
 			router.refresh();
+			return;
 		}
+		const left = profile.profileCompletion.missing.join(", ");
+		setError(left ? `Сначала закройте шаги: ${left}` : "Профиль ещё не заполнен");
 	}
 
 	function goPrev() {
@@ -739,12 +745,19 @@ function EmailStep({
 		});
 	}
 
+	const cinemaStepDone = Boolean(status?.stepSecurityEmailDone);
+	const accountVerified = Boolean(status?.emailVerified);
+
 	return (
 		<section className={ui.card}>
 			<div className={ui.cardH}>6. Email для безопасности</div>
 			<div className="grid gap-3.5 p-[18px]">
-				{status?.emailVerified ? (
-					<p className={ui.okMsg}>Email {status.email} подтверждён.</p>
+				{cinemaStepDone ? (
+					<p className={ui.okMsg}>Email {status?.email} подтверждён.</p>
+				) : accountVerified ? (
+					<p className="text-[13px] text-muted">
+						Email {status?.email} уже подтверждён на аккаунте — привяжите его к этому кинотеатру.
+					</p>
 				) : (
 					<p className="text-[13px] text-muted">
 						Привяжите и подтвердите email текущего аккаунта. Для MVP код показывается здесь (без
@@ -786,10 +799,10 @@ function EmailStep({
 				<button
 					type="button"
 					className={cx(ui.btn, ui.btnPri)}
-					disabled={busy}
+					disabled={busy || cinemaStepDone}
 					onClick={() => void confirm()}
 				>
-					Подтвердить email
+					{accountVerified && !cinemaStepDone ? "Привязать к кинотеатру" : "Подтвердить email"}
 				</button>
 			</div>
 		</section>
