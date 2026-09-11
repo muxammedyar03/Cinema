@@ -1,13 +1,15 @@
 # System Designer Contracts
 
-Docs-first contracts for Cinema MVP payment, auth, and refund flows.
+Docs-first contracts for Cinema MVP auth, payment, refund, cinema profile, and follow/notify flows.
 
 | Doc | Jira | Summary |
 | --- | --- | --- |
 | [telegram-auth.md](./telegram-auth.md) | **KAN-5** | Telegram Mini App auth with real `initData` HMAC; session cookie; upsert by `telegramId` |
 | [rahmat-payment.md](./rahmat-payment.md) | **KAN-6** | Rahmat (rhmt.uz) as sole MVP payment provider; cinema-as-merchant (Model A) |
 | [qr-refund.md](./qr-refund.md) | **KAN-7** | Ticket QR / staff verify; full & partial refunds; self-refund; session-cancel jobs |
-| [schema-deltas.md](./schema-deltas.md) | KAN-5/6/7 | Prisma deltas: `PaymentProvider.RAHMAT`, refund initiator, ticket linkage |
+| [cinema-profile.md](./cinema-profile.md) | **KAN-19** | Cinema profile fields, map provider, photos, admin onboarding wizard, Mini App public profile + map |
+| [follow-notify.md](./follow-notify.md) | **KAN-19** | `CinemaFollow`; session→PUBLISHED event; Notification + Telegram bot job payloads (KAN-24/26) |
+| [schema-deltas.md](./schema-deltas.md) | KAN-5/6/7/19 | Prisma deltas: Rahmat, refunds, cinema profile/geo/photos, CinemaFollow |
 
 ## Product locks (do not regress)
 
@@ -15,17 +17,24 @@ Docs-first contracts for Cinema MVP payment, auth, and refund flows.
 - Merchant model **A**: cinema holds a Rahmat merchant / store account.
 - Partial refund: **yes**. User self-refund: **yes**. Staff QR verify: **admin mobile web only**.
 - Telegram Mini App auth: real HMAC verification of `initData`; prefer header `X-Telegram-Init-Data`.
+- Locale MVP = **ru**. Channel = **Telegram Mini App + Bot**.
+- Cinema photos = structured **`CinemaPhoto`** (not `String[]`). Map payload = `{ provider, lat, lng, address, embedHint }` with `provider ∈ {google, yandex}`.
+- Follow notify trigger = **`Session` → `PUBLISHED`** (not movie ACTIVE alone).
 
 ## Related code (current)
 
 - `POST /auth/telegram` → `AuthService.telegramStub` (requires `initData` if `TELEGRAM_BOT_TOKEN` set, but **does not** verify HMAC).
 - Admin auth: email/password + Redis session cookie.
+- Admin cinemas: `apps/api/src/cinema` → `@Controller("admin/cinemas")`.
+- Public catalog: `apps/api/src/public` → `@Controller("public")` (`/catalog`, `/cinemas`, `/movies/:id`, `/sessions/:id`).
 - Booking: `PENDING_PAYMENT` orders with **600s** hold (`HOLD_TTL_SEC`).
 - `apps/worker`: stub — BullMQ Phase 09+.
-- Prisma: `PaymentProvider = CLICK | PAYME`; `Payment @@unique([provider, providerPaymentId])`.
+- Prisma: `Cinema` lacks lat/lng/photos/instagram/phones[]; `Notification` exists; no `CinemaFollow` yet.
+- `PaymentProvider = CLICK | PAYME` today; contracts add `RAHMAT` (KAN-6) — still not applied until implementation PRs.
 
 ## Implementation order
 
 1. KAN-5 — Telegram HMAC auth (unblocks Mini App identity)
 2. KAN-6 — Rahmat provider + Order→PAID→Ticket ACTIVE
 3. KAN-7 — QR verify + refund state machines + worker jobs
+4. KAN-19 contracts (this epic) → KAN-20 admin wizard FE, KAN-21 Mini App profile/map, KAN-24 follow APIs, KAN-26 bot notify worker
