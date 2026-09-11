@@ -14,6 +14,7 @@ export function BottomDock() {
 	const pathname = usePathname();
 	const hide =
 		pathname.startsWith("/sessions/") ||
+		pathname.startsWith("/pay/") ||
 		(pathname.startsWith("/orders/") && pathname !== "/orders");
 
 	if (hide) return null;

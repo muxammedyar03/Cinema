@@ -1,4 +1,9 @@
+import { ApiError, parseApiError } from "./api-error";
+import { getTelegramInitData, waitForTelegram } from "./telegram";
+
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+
+export { ApiError };
 
 export async function publicApi<T>(path: string, init?: RequestInit): Promise<T> {
 	const res = await fetch(`${API}${path}`, {
@@ -11,7 +16,7 @@ export async function publicApi<T>(path: string, init?: RequestInit): Promise<T>
 	});
 	if (!res.ok) {
 		const text = await res.text();
-		throw new Error(text || `API ${res.status}`);
+		throw parseApiError(text, res.status);
 	}
 	return res.json() as Promise<T>;
 }
@@ -27,20 +32,45 @@ export async function clientApi<T>(path: string, init?: RequestInit): Promise<T>
 	});
 	const text = await res.text();
 	if (!res.ok) {
-		throw new Error(text || `API ${res.status}`);
+		throw parseApiError(text, res.status);
 	}
 	if (!text) return undefined as T;
 	return JSON.parse(text) as T;
 }
 
-export async function ensureTelegramSession() {
+let authInflight: Promise<void> | null = null;
+
+/**
+ * Mini App session: Telegram initData HMAC (header preferred).
+ * Never sends client-forged telegramId. Dev stub is server-side only.
+ */
+export async function ensureTelegramSession(): Promise<void> {
+	if (!authInflight) {
+		authInflight = authenticate().finally(() => {
+			authInflight = null;
+		});
+	}
+	return authInflight;
+}
+
+async function authenticate() {
 	try {
 		await clientApi("/auth/me");
 		return;
 	} catch {
-		await clientApi("/auth/telegram", {
-			method: "POST",
-			body: JSON.stringify({ telegramId: "dev-telegram-user", username: "dev" }),
-		});
+		/* need telegram auth */
 	}
+
+	await waitForTelegram();
+	const initData = getTelegramInitData();
+	const headers: Record<string, string> = {};
+	if (initData) {
+		headers["X-Telegram-Init-Data"] = initData;
+	}
+
+	await clientApi("/auth/telegram", {
+		method: "POST",
+		headers,
+		body: JSON.stringify(initData ? {} : { initData: initData || undefined }),
+	});
 }

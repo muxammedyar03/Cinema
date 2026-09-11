@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { clientApi, ensureTelegramSession } from "../../lib/api";
+import { errorText } from "../../lib/api-error";
 import { formatPrice, formatTime } from "../../lib/format";
 import { ui } from "../../lib/ui";
 
@@ -22,13 +23,17 @@ type OrderRow = {
 function statusRu(status: string) {
 	switch (status) {
 		case "PENDING_PAYMENT":
-			return "Hold";
+			return "Ожидает оплаты";
 		case "PAID":
 			return "Оплачен";
 		case "EXPIRED":
 			return "Истёк";
 		case "CANCELLED":
 			return "Отменён";
+		case "REFUND_PENDING":
+			return "Возврат…";
+		case "REFUNDED":
+			return "Возвращён";
 		default:
 			return status;
 	}
@@ -43,8 +48,8 @@ export default function MyOrdersPage() {
 			try {
 				await ensureTelegramSession();
 				setOrders(await clientApi<OrderRow[]>("/bookings/orders"));
-			} catch {
-				setError("Не удалось загрузить заказы");
+			} catch (err) {
+				setError(errorText(err, "Не удалось загрузить заказы"));
 			}
 		})();
 	}, []);
