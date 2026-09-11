@@ -88,6 +88,13 @@ export default async function HomePage({
 			)}
 
 			<CinemaChips cinemas={cinemas} activeId={cinemaId} />
+			{cinemaId ? (
+				<p className="-mt-1 mb-3 px-[18px]">
+					<Link href={`/cinemas/${cinemaId}`} className="text-[12px] font-semibold text-orange">
+						Карта, Instagram и фото →
+					</Link>
+				</p>
+			) : null}
 
 			<section className={ui.section}>
 				<div className={ui.sectionHead}>

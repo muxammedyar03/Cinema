@@ -14,7 +14,12 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
 	const first = sessions[0];
 	const bg = movie.posterUrl ? `url(${movie.posterUrl})` : posterGradient(movie.id + movie.title);
 	const cinemas = [
-		...new Map(sessions.map((s) => [s.cinemaId, { id: s.cinemaId, name: s.cinemaName }])).values(),
+		...new Map(
+			[
+				...(movie.cinema ? [movie.cinema] : []),
+				...sessions.map((s) => ({ id: s.cinemaId, name: s.cinemaName })),
+			].map((cinema) => [cinema.id, cinema]),
+		).values(),
 	];
 
 	return (

@@ -80,6 +80,7 @@ export type MovieDetail = {
 	genres: string[];
 	audioLanguages: string[];
 	releasedAt: string | null;
+	cinema: { id: string; name: string } | null;
 	sessions: CatalogSession[];
 };
 

@@ -201,7 +201,10 @@ export class PublicService {
 	}
 
 	async movie(id: string) {
-		const movie = await this.prisma.movie.findUnique({ where: { id } });
+		const movie = await this.prisma.movie.findUnique({
+			where: { id },
+			include: { cinema: { select: { id: true, name: true, status: true } } },
+		});
 		if (!movie || movie.status === "ARCHIVED") throw new NotFoundException("Movie not found");
 		const sessions = await this.prisma.session.findMany({
 			where: { movieId: id, status: "PUBLISHED", cinema: { status: "ACTIVE" } },
@@ -216,9 +219,11 @@ export class PublicService {
 			this.prisma,
 			sessions.map((s) => s.id),
 		);
+		const { cinema, rating, ...rest } = movie;
 		return {
-			...movie,
-			rating: movie.rating === null ? null : Number(movie.rating),
+			...rest,
+			cinema: cinema.status === "ACTIVE" ? { id: cinema.id, name: cinema.name } : null,
+			rating: rating === null ? null : Number(rating),
 			sessions: sessions.map((session) => {
 				const seatOccupied = session.sessionSeats.filter((s) =>
 					["HELD", "SOLD", "BLOCKED"].includes(s.status),
