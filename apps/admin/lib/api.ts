@@ -1,17 +1,10 @@
 "use client";
 
+import { ApiError, parseApiError } from "./api-error";
+
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
-function errorMessage(text: string, status: number) {
-	try {
-		const body = JSON.parse(text) as { message?: string | string[] };
-		if (Array.isArray(body.message)) return body.message.join(", ");
-		if (typeof body.message === "string") return body.message;
-	} catch {
-		/* plain text */
-	}
-	return text || `API ${status}`;
-}
+export { ApiError };
 
 export async function clientApi<T>(path: string, init?: RequestInit): Promise<T> {
 	const isForm = typeof FormData !== "undefined" && init?.body instanceof FormData;
@@ -25,7 +18,7 @@ export async function clientApi<T>(path: string, init?: RequestInit): Promise<T>
 	});
 	const text = await res.text();
 	if (!res.ok) {
-		throw new Error(errorMessage(text, res.status));
+		throw parseApiError(text, res.status);
 	}
 	if (res.status === 204 || !text) {
 		return undefined as T;

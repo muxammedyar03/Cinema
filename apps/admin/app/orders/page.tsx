@@ -1,4 +1,5 @@
 import { ListOrdered } from "lucide-react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Shell } from "../../components/shell";
 import { assertBillingAccess } from "../../lib/billing-access";
@@ -24,8 +25,11 @@ function money(n: number) {
 
 function statusClass(status: string) {
 	if (status === "PAID") return cx(ui.badge, ui.badgeOk);
-	if (status === "PENDING_PAYMENT") return cx(ui.badge, ui.badgeWarn);
-	if (status === "EXPIRED" || status === "CANCELLED") return cx(ui.badge, ui.badgeMuted);
+	if (status === "PENDING_PAYMENT" || status === "REFUND_PENDING")
+		return cx(ui.badge, ui.badgeWarn);
+	if (status === "EXPIRED" || status === "CANCELLED" || status === "REFUNDED") {
+		return cx(ui.badge, ui.badgeMuted);
+	}
 	return cx(ui.badge, ui.badgeMuted);
 }
 
@@ -70,8 +74,10 @@ export default async function OrdersPage() {
 						</thead>
 						<tbody>
 							{orders.map((o) => (
-								<tr key={o.id}>
-									<td>{o.publicNumber}</td>
+								<tr key={o.id} className="clickable">
+									<td>
+										<Link href={`/orders/${o.id}`}>{o.publicNumber}</Link>
+									</td>
 									<td>
 										<b>{o.movieTitle}</b>
 										<br />

@@ -1,13 +1,14 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { ThemeToggle } from "../../components/theme-toggle";
 import { clientApi } from "../../lib/api";
 import { cx, ui } from "../../lib/ui";
 
-export default function LoginPage() {
+function LoginForm() {
 	const router = useRouter();
+	const params = useSearchParams();
 	const [email, setEmail] = useState("super@cinema.local");
 	const [password, setPassword] = useState("ChangeMe123!");
 	const [error, setError] = useState("");
@@ -20,7 +21,8 @@ export default function LoginPage() {
 				method: "POST",
 				body: JSON.stringify({ email, password }),
 			});
-			router.push("/");
+			const next = params.get("next");
+			router.push(next?.startsWith("/") ? next : "/");
 			router.refresh();
 		} catch {
 			setError("Ошибка входа. Проверьте email и пароль.");
@@ -70,5 +72,17 @@ export default function LoginPage() {
 				</button>
 			</form>
 		</div>
+	);
+}
+
+export default function LoginPage() {
+	return (
+		<Suspense
+			fallback={
+				<div className="grid min-h-screen place-items-center text-sm text-muted">Загрузка…</div>
+			}
+		>
+			<LoginForm />
+		</Suspense>
 	);
 }
