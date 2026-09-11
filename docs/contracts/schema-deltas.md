@@ -1,4 +1,4 @@
-# Schema deltas (KAN-5 / KAN-6 / KAN-7)
+# Schema deltas (KAN-5 / KAN-6 / KAN-7 / KAN-19)
 
 Proposed Prisma changes only — **not applied** in this PR. Source of truth today: `apps/api/prisma/schema.prisma`.
 
@@ -112,3 +112,136 @@ No schema change required; use existing `Notification`:
 
 - Changing `OrderStatus` / `TicketStatus` enum values (already sufficient).
 - Worker / BullMQ tables (use Redis queues; no Prisma models).
+
+
+---
+
+## KAN-19 — Cinema profile & follow
+
+Proposed Prisma changes only — **not applied** in this PR. Append-only relative to KAN-5/6/7 deltas above; **do not** rewrite Rahmat / refund sections.
+
+### 1. MapProvider enum
+
+```prisma
+enum MapProvider {
+  google
+  yandex
+}
+```
+
+### 2. Cinema — profile / geo / completion flags
+
+Additive fields on existing `Cinema` (keep `phone` for backward compat):
+
+```prisma
+model Cinema {
+  // ... existing fields unchanged ...
+  lat                     Decimal?     @db.Decimal(10, 7)
+  lng                     Decimal?     @db.Decimal(10, 7)
+  mapProvider             MapProvider?
+  instagramUrl            String?
+  telegramContact         String?
+  phones                  String[]     @default([])
+  stepPhotosDone          Boolean      @default(false)
+  stepLocationDone        Boolean      @default(false)
+  stepInstagramDone       Boolean      @default(false)
+  stepPhonesDone          Boolean      @default(false)
+  stepTelegramContactDone Boolean      @default(false)
+  stepSecurityEmailDone   Boolean      @default(false)
+  profileComplete         Boolean      @default(false)
+
+  photos  CinemaPhoto[]
+  follows CinemaFollow[]
+}
+```
+
+`profileComplete` is derived:
+
+```
+photos && location && instagram && phones && telegramContact && securityEmail
+```
+
+Persist on write; see [cinema-profile.md](./cinema-profile.md).
+
+### 3. CinemaPhoto
+
+```prisma
+model CinemaPhoto {
+  id        String   @id @default(cuid())
+  cinemaId  String
+  url       String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  cinema Cinema @relation(fields: [cinemaId], references: [id], onDelete: Cascade)
+
+  @@index([cinemaId, sortOrder])
+}
+```
+
+### 4. CinemaFollow
+
+```prisma
+model CinemaFollow {
+  id        String   @id @default(cuid())
+  userId    String
+  cinemaId  String
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cinema Cinema @relation(fields: [cinemaId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, cinemaId])
+  @@index([cinemaId])
+  @@index([userId])
+}
+```
+
+Reverse relations:
+
+```prisma
+model User {
+  // ... existing ...
+  follows CinemaFollow[]
+  // notifications Notification[]  — already present
+}
+
+model Cinema {
+  // ... see above ...
+  follows CinemaFollow[]
+}
+```
+
+### 5. User — email verification (security step)
+
+MVP needs a verified-email signal for `stepSecurityEmailDone`. Prefer additive nullable fields (avoid new table unless token store required):
+
+```prisma
+model User {
+  // ... existing email String? @unique ...
+  emailVerifiedAt DateTime?
+  // optional one-time token store — pick ONE in implementation:
+  // emailVerifyTokenHash String?
+  // emailVerifyExpiresAt DateTime?
+}
+```
+
+If tokens should be multi-use / rotatable, a small `EmailVerificationToken` model is acceptable in the implementation PR; not required for contract lock.
+
+### 6. Notification types (KAN-19 / KAN-24 / KAN-26)
+
+No schema change required; use existing `Notification`:
+
+| `type` | When |
+| --- | --- |
+| `CINEMA_SESSION_PUBLISHED` | Session transitioned to `PUBLISHED`; user follows cinema |
+| `CINEMA_AFISHA_DIGEST` | Optional debounced digest of multiple publishes |
+
+Payload / job shapes: [follow-notify.md](./follow-notify.md).
+
+### 7. Out of scope for KAN-19 deltas
+
+- Changing `SessionStatus` / `MovieStatus` enums (already sufficient; trigger = enter `PUBLISHED`).
+- Bitmask integer for profile steps (explicit booleans locked).
+- Storing raw `String[]` photos on Cinema (use `CinemaPhoto`).
+- Worker / BullMQ tables (Redis queues; no Prisma models).
