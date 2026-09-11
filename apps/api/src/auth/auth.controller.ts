@@ -1,6 +1,6 @@
 import type { SessionUser } from "@cinema/types";
 import { loginSchema } from "@cinema/validation";
-import { Body, Controller, Get, Post, Req, Res, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Headers, Post, Req, Res, UseGuards } from "@nestjs/common";
 import type { Request, Response } from "express";
 import { AuthService } from "./auth.service";
 import { CurrentUser } from "./current-user.decorator";
@@ -17,13 +17,7 @@ export class AuthController {
 	): Promise<{ user: SessionUser }> {
 		const parsed = loginSchema.parse(body);
 		const { sid, user } = await this.auth.login(parsed.email, parsed.password);
-		res.cookie(SESSION_COOKIE, sid, {
-			httpOnly: true,
-			sameSite: "lax",
-			secure: false,
-			path: "/",
-			maxAge: 7 * 24 * 60 * 60 * 1000,
-		});
+		this.setSessionCookie(res, sid);
 		return { user };
 	}
 
@@ -43,10 +37,18 @@ export class AuthController {
 
 	@Post("telegram")
 	async telegram(
-		@Body() body: { initData?: string; telegramId?: string; username?: string },
+		@Headers("x-telegram-init-data") headerInitData: string | undefined,
+		@Body() body: { initData?: string },
 		@Res({ passthrough: true }) res: Response,
 	) {
-		const { sid, user, stub } = await this.auth.telegramStub(body);
+		const fromHeader = headerInitData?.trim();
+		const initData = fromHeader || body?.initData;
+		const { sid, user, stub } = await this.auth.telegramAuth(initData);
+		this.setSessionCookie(res, sid);
+		return { user, stub };
+	}
+
+	private setSessionCookie(res: Response, sid: string) {
 		res.cookie(SESSION_COOKIE, sid, {
 			httpOnly: true,
 			sameSite: "lax",
@@ -54,6 +56,5 @@ export class AuthController {
 			path: "/",
 			maxAge: 7 * 24 * 60 * 60 * 1000,
 		});
-		return { user, stub };
 	}
 }

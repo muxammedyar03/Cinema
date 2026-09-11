@@ -112,6 +112,7 @@ model User {
   staffOf       CinemaStaff[]
   orders        Order[]
   notifications Notification[]
+  follows       CinemaFollow[]
 }
 
 model Cinema {
@@ -133,6 +134,7 @@ model Cinema {
   movies    Movie[]
   billing   CinemaBilling?
   invoices  SubscriptionInvoice[]
+  follows   CinemaFollow[]
 }
 
 model CinemaStaff {
@@ -399,6 +401,21 @@ model Ticket {
   session Session @relation(fields: [sessionId], references: [id])
 
   @@index([sessionId, status])
+}
+
+
+model CinemaFollow {
+  id        String   @id @default(cuid())
+  userId    String
+  cinemaId  String
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cinema Cinema @relation(fields: [cinemaId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, cinemaId])
+  @@index([cinemaId])
+  @@index([userId])
 }
 
 model Notification {
