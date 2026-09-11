@@ -2,38 +2,46 @@ import type { SessionUser } from "@cinema/types";
 import { Injectable } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
+import { buildKpis, buildTrend, maskMoneyKpis, sessionOccupancy } from "./dashboard-kpis";
+import { addDays, type ChartRange, dayKey, rangeWindow, startOfToday } from "./dashboard-time";
 
-const TZ = "Asia/Tashkent";
-
-function dayKey(date: Date): string {
-	return date.toLocaleDateString("en-CA", { timeZone: TZ });
-}
-
-function startOfToday(): Date {
-	return new Date(`${dayKey(new Date())}T00:00:00+05:00`);
-}
+const CHUNK = 500;
 
 function daysAgo(n: number): Date {
-	const base = startOfToday();
-	return new Date(base.getTime() - n * 24 * 60 * 60 * 1000);
+	return addDays(startOfToday(), -n);
+}
+
+async function mapInChunks<T, R>(ids: T[], fn: (chunk: T[]) => Promise<R[]>): Promise<R[]> {
+	if (ids.length === 0) return [];
+	const out: R[] = [];
+	for (let i = 0; i < ids.length; i += CHUNK) {
+		out.push(...(await fn(ids.slice(i, i + CHUNK))));
+	}
+	return out;
 }
 
 @Injectable()
 export class DashboardService {
 	constructor(private readonly prisma: PrismaService) {}
 
-	async overview(user: SessionUser) {
-		const cinemaIds = user.role === "SUPER_ADMIN" ? null : user.staff.map((s) => s.cinemaId);
+	async overview(user: SessionUser, range: ChartRange = "daily") {
+		const hideMoney = user.role === "SUPER_ADMIN";
+		const cinemaIds = hideMoney ? null : user.staff.map((s) => s.cinemaId);
 		const cinemaFilter: Prisma.SessionWhereInput =
 			cinemaIds === null ? {} : { cinemaId: { in: cinemaIds } };
 		const orderCinema: Prisma.OrderWhereInput =
 			cinemaIds === null ? {} : { cinemaId: { in: cinemaIds } };
 		const cinemaWhere: Prisma.CinemaWhereInput =
 			cinemaIds === null ? {} : { id: { in: cinemaIds } };
+		const paymentWhere: Prisma.PaymentWhereInput =
+			cinemaIds === null ? {} : { order: { cinemaId: { in: cinemaIds } } };
+		const refundWhere: Prisma.RefundWhereInput =
+			cinemaIds === null ? {} : { order: { cinemaId: { in: cinemaIds } } };
 
 		const today = startOfToday();
 		const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
 		const weekStart = daysAgo(6);
+		const window = rangeWindow(range);
 
 		const [
 			sessionsToday,
@@ -54,6 +62,9 @@ export class DashboardService {
 			recentPayments,
 			paidPaymentsWeek,
 			refundsWeek,
+			kpiSessions,
+			kpiOrders,
+			kpiRefunds,
 		] = await Promise.all([
 			this.prisma.session.count({
 				where: {
@@ -79,32 +90,19 @@ export class DashboardService {
 				where: { ...orderCinema, status: "PAID" },
 			}),
 			this.prisma.payment.aggregate({
-				where: {
-					status: "PAID",
-					...(cinemaIds ? { order: { cinemaId: { in: cinemaIds } } } : {}),
-				},
+				where: { status: "PAID", ...paymentWhere },
 				_sum: { amountUzs: true },
 				_count: true,
 			}),
 			this.prisma.payment.aggregate({
-				where: {
-					status: "PAID",
-					createdAt: { gte: today },
-					...(cinemaIds ? { order: { cinemaId: { in: cinemaIds } } } : {}),
-				},
+				where: { status: "PAID", createdAt: { gte: today }, ...paymentWhere },
 				_sum: { amountUzs: true },
 			}),
 			this.prisma.refund.count({
-				where: {
-					status: "PENDING",
-					...(cinemaIds ? { order: { cinemaId: { in: cinemaIds } } } : {}),
-				},
+				where: { status: "PENDING", ...refundWhere },
 			}),
 			this.prisma.refund.aggregate({
-				where: {
-					status: "SUCCEEDED",
-					...(cinemaIds ? { order: { cinemaId: { in: cinemaIds } } } : {}),
-				},
+				where: { status: "SUCCEEDED", ...refundWhere },
 				_sum: { amountUzs: true },
 			}),
 			this.prisma.cinema.count({ where: cinemaWhere }),
@@ -140,7 +138,7 @@ export class DashboardService {
 				},
 			}),
 			this.prisma.payment.findMany({
-				where: cinemaIds ? { order: { cinemaId: { in: cinemaIds } } } : {},
+				where: paymentWhere,
 				orderBy: { createdAt: "desc" },
 				take: 8,
 				include: {
@@ -156,7 +154,7 @@ export class DashboardService {
 				where: {
 					status: "PAID",
 					createdAt: { gte: weekStart },
-					...(cinemaIds ? { order: { cinemaId: { in: cinemaIds } } } : {}),
+					...paymentWhere,
 				},
 				select: { amountUzs: true, createdAt: true },
 			}),
@@ -164,11 +162,66 @@ export class DashboardService {
 				where: {
 					status: "SUCCEEDED",
 					createdAt: { gte: weekStart },
-					...(cinemaIds ? { order: { cinemaId: { in: cinemaIds } } } : {}),
+					...refundWhere,
 				},
 				select: { amountUzs: true, createdAt: true },
 			}),
+			this.prisma.session.findMany({
+				where: {
+					...cinemaFilter,
+					startsAt: { gte: window.start, lt: window.end },
+					status: { in: ["PUBLISHED", "COMPLETED"] },
+				},
+				select: {
+					id: true,
+					startsAt: true,
+					hall: { select: { capacity: true } },
+					_count: { select: { sessionSeats: true } },
+				},
+			}),
+			this.prisma.order.findMany({
+				where: {
+					...orderCinema,
+					createdAt: { gte: window.start, lt: window.end },
+				},
+				select: { id: true, status: true, totalUzs: true, createdAt: true },
+			}),
+			this.prisma.refund.findMany({
+				where: {
+					status: "SUCCEEDED",
+					createdAt: { gte: window.start, lt: window.end },
+					...refundWhere,
+				},
+				select: { amountUzs: true, createdAt: true, orderId: true },
+			}),
 		]);
+
+		const occupancy = await this.occupancyBySession(kpiSessions);
+
+		const kpis = maskMoneyKpis(
+			buildKpis({
+				soldSeats: occupancy.reduce((n, s) => n + s.sold, 0),
+				sellableSeats: occupancy.reduce((n, s) => n + s.sellable, 0),
+				sessions: occupancy.length,
+				orders: kpiOrders,
+				refundedAmountUzs: kpiRefunds.reduce((n, r) => n + r.amountUzs, 0),
+				refundedOrderIds: kpiRefunds.map((r) => r.orderId),
+			}),
+			hideMoney,
+		);
+
+		const kpiTrend = buildTrend({
+			range,
+			buckets: window.buckets,
+			hideMoney,
+			sessions: occupancy,
+			orders: kpiOrders.map((o) => ({
+				at: o.createdAt,
+				status: o.status,
+				totalUzs: o.totalUzs,
+			})),
+			refunds: kpiRefunds.map((r) => ({ at: r.createdAt, amountUzs: r.amountUzs })),
+		});
 
 		const todaySessions = todaySessionsRaw.map((s) => {
 			const sold = s.sessionSeats.filter((x) =>
@@ -192,24 +245,29 @@ export class DashboardService {
 			trendMap.set(dayKey(daysAgo(i)), { incomeUzs: 0, expenseUzs: 0 });
 		}
 		for (const p of paidPaymentsWeek) {
-			const key = dayKey(p.createdAt);
-			const row = trendMap.get(key);
+			const row = trendMap.get(dayKey(p.createdAt));
 			if (row) row.incomeUzs += p.amountUzs;
 		}
 		for (const r of refundsWeek) {
-			const key = dayKey(r.createdAt);
-			const row = trendMap.get(key);
+			const row = trendMap.get(dayKey(r.createdAt));
 			if (row) row.expenseUzs += r.amountUzs;
 		}
 
 		const incomeUzs = paymentsPaidAgg._sum.amountUzs ?? 0;
 		const expenseUzs = refundsSucceededAgg._sum.amountUzs ?? 0;
-		const isSuper = user.role === "SUPER_ADMIN";
+		const period = {
+			range,
+			timezone: "Asia/Tashkent",
+			start: window.start,
+			end: window.end,
+		};
 
-		// Super Admin: platform aggregates only — no client P&L, orders, tickets detail, payments
-		if (isSuper) {
+		if (hideMoney) {
 			return {
 				mode: "platform" as const,
+				period,
+				kpis,
+				kpiTrend,
 				stats: {
 					sessionsToday,
 					sessionsPublished,
@@ -240,6 +298,9 @@ export class DashboardService {
 
 		return {
 			mode: "cinema" as const,
+			period,
+			kpis,
+			kpiTrend,
 			stats: {
 				sessionsToday,
 				sessionsPublished,
@@ -287,5 +348,62 @@ export class DashboardService {
 				netUzs: v.incomeUzs - v.expenseUzs,
 			})),
 		};
+	}
+
+	private async occupancyBySession(
+		sessions: Array<{
+			id: string;
+			startsAt: Date;
+			hall: { capacity: number };
+			_count: { sessionSeats: number };
+		}>,
+	) {
+		const ids = sessions.map((s) => s.id);
+		const seatGroups = await mapInChunks(ids, (chunk) =>
+			this.prisma.sessionSeat.groupBy({
+				by: ["sessionId", "status"],
+				where: { sessionId: { in: chunk } },
+				_count: { _all: true },
+			}),
+		);
+		const gaItems = await mapInChunks(ids, (chunk) =>
+			this.prisma.orderItem.findMany({
+				where: {
+					type: "GENERAL_ADMISSION",
+					order: {
+						sessionId: { in: chunk },
+						status: { in: ["PAID", "REFUND_PENDING"] },
+					},
+				},
+				select: { quantity: true, order: { select: { sessionId: true } } },
+			}),
+		);
+
+		const soldBySession = new Map<string, { sold: number; blocked: number; total: number }>();
+		for (const row of seatGroups) {
+			const cur = soldBySession.get(row.sessionId) ?? { sold: 0, blocked: 0, total: 0 };
+			cur.total += row._count._all;
+			if (row.status === "SOLD") cur.sold += row._count._all;
+			if (row.status === "BLOCKED") cur.blocked += row._count._all;
+			soldBySession.set(row.sessionId, cur);
+		}
+
+		const gaBySession = new Map<string, number>();
+		for (const item of gaItems) {
+			const id = item.order.sessionId;
+			gaBySession.set(id, (gaBySession.get(id) ?? 0) + item.quantity);
+		}
+
+		return sessions.map((session) => {
+			const seats = soldBySession.get(session.id);
+			const occ = sessionOccupancy({
+				capacity: session.hall.capacity,
+				seatTotal: seats?.total ?? session._count.sessionSeats,
+				seatBlocked: seats?.blocked ?? 0,
+				seatSold: seats?.sold ?? 0,
+				gaPaidQty: gaBySession.get(session.id) ?? 0,
+			});
+			return { at: session.startsAt, ...occ };
+		});
 	}
 }
