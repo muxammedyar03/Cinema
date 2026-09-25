@@ -416,3 +416,22 @@ Existing Mini App deep-link scheme (unchanged, same builder as KAN-26 `session_�
 
 Mini App route URLs are **not** changed (Design v2 condition). The Mini App page for a cinema remains `/cinemas/{id}`.
 
+### How the Mini App reads the parameter (KAN-38)
+
+On first open only, the Mini App reads the launch parameter and `replace`-navigates into an existing route (the back button does not return to a blank redirect step). It does not invent new paths.
+
+Read order:
+
+1. `Telegram.WebApp.initDataUnsafe.start_param` (set when Telegram itself launches the Mini App).
+2. If that is empty, the `startapp` query parameter on the page URL. This is what the bot and the notify jobs write when `TELEGRAM_MINI_APP_URL` is a plain `https://…` link (`?startapp=cinema_…`). Telegram may not copy that value into `start_param`.
+3. If that is also empty, `tgWebAppStartParam` from the query string or the URL hash (Telegram's own launch parameter).
+
+| Parameter | Existing route |
+| --- | --- |
+| `cinema_{id}` | `/cinemas/{id}` |
+| `session_{id}` | `/sessions/{id}` |
+| `afisha` | `/` (afisha) |
+| `tickets` | `/orders` (Мои билеты) |
+
+Unknown, empty, or malformed values open the home page and do not show an error screen. The id is checked only for a safe token shape; a missing cinema or session is left to that page's existing not-found / empty state. A non-empty earlier source wins even when it does not parse — the Mini App does not skip a bad `start_param` in order to use `startapp`.
+
