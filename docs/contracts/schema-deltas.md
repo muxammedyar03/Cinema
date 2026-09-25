@@ -245,3 +245,23 @@ Payload / job shapes: [follow-notify.md](./follow-notify.md).
 - Bitmask integer for profile steps (explicit booleans locked).
 - Storing raw `String[]` photos on Cinema (use `CinemaPhoto`).
 - Worker / BullMQ tables (Redis queues; no Prisma models).
+
+---
+
+## KAN-35 — Follow digest (`Session.notifiedAt`)
+
+Additive only. Migration `20260925140000_session_notified_at`.
+
+```prisma
+model Session {
+  // …existing fields unchanged…
+  /// KAN-35: set when the session was included in a follow digest (never sent twice)
+  notifiedAt DateTime?
+
+  @@index([cinemaId, status, notifiedAt])
+}
+```
+
+- Backfill: existing `PUBLISHED` rows get `notifiedAt = updatedAt` (already-live afisha is not re-announced).
+- `CINEMA_AFISHA_DIGEST` is now the active follow notification type (one row per follower per digest window).
+- Semantics: [follow-notify.md § KAN-35](./follow-notify.md#kan-35--per-cinema-digest-debounce).
