@@ -1,0 +1,45 @@
+.metric {
+	background: var(--panel);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-card);
+	padding: 21px;
+	color: var(--ink);
+}
+
+.label {
+	color: var(--metric-label);
+	font-family: var(--font-ui);
+	font-size: var(--text-sm);
+	display: flex;
+	justify-content: space-between;
+	gap: 10px;
+}
+
+.value {
+	display: block;
+	font-family: var(--font-ui);
+	font-size: 31px;
+	letter-spacing: -1.2px;
+	line-height: 1.5;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	margin: 9px 0 5px;
+}
+
+.hint {
+	display: block;
+	font-family: var(--font-ui);
+	font-size: var(--text-xs);
+	color: var(--metric-hint);
+}
+
+.primary {
+	background: var(--primary);
+	border-color: var(--primary);
+	color: #fff;
+}
+
+.primary .label,
+.primary .hint {
+	color: var(--metric-primary-label);
+}

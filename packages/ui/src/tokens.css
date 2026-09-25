@@ -1,30 +1,198 @@
+/*
+ * Design v2 tokens.
+ * Light values come from design/v2/admin.css (admin).
+ * Dark values come from design/v2/mini.css (mini app).
+ * Legacy names (--surface, --orange, --elev, --faint, --teal, …) alias these
+ * so existing Tailwind utilities keep working when data-theme changes.
+ */
+
 :root,
-[data-theme="light"] {
-	--bg: #f4f2ef;
-	--surface: #ffffff;
-	--elev: #f0ece7;
-	--glass: rgba(255, 255, 255, 0.85);
-	--ink: #141414;
-	--muted: #6b6b6b;
-	--line: rgba(20, 20, 20, 0.1);
-	--orange: #e85d0c;
-	--ok: #1f9d63;
-	--warn: #c48a0a;
-	--bad: #d64545;
-	--font-brand: "Syne", sans-serif;
-	--font-ui: "Outfit", sans-serif;
+[data-theme="dark"] {
+	--bg: #111827;
+	--panel: #1c2536;
+	--ink: #f2f4fb;
+	--muted: #9ba5ba;
+	--line: #2b3549;
+	--primary: #5778ff;
+	--nav: #142039;
+	--nav-ink: #eef2fc;
+	--nav-muted: #8e9cb5;
+	--nav-line: #2b3953;
+
+	--ok: color-mix(in srgb, #208164 65%, var(--ink));
+	--warn: color-mix(in srgb, #a57a20 65%, var(--ink));
+	--bad: color-mix(in srgb, #be4b5e 65%, var(--ink));
+	--badge-blue: color-mix(in srgb, #4b6adc 65%, var(--ink));
+	--ok-bg: color-mix(in srgb, #208164 22%, var(--panel));
+	--warn-bg: color-mix(in srgb, #a57a20 22%, var(--panel));
+	--bad-bg: color-mix(in srgb, #be4b5e 22%, var(--panel));
+	--badge-blue-bg: color-mix(in srgb, #4b6adc 22%, var(--panel));
+
+	--elev: #202b41;
+	--faint: #8494b3;
+	--line-strong: #394561;
+	--glass: rgba(28, 37, 54, 0.88);
+	--wash: rgba(87, 120, 255, 0.14);
+	--wash-2: rgba(23, 32, 49, 0.4);
+
+	--button-secondary-bg: #202b41;
+	--button-secondary-ink: #d7e1f8;
+	--button-secondary-border: #394561;
+	--button-primary-hover: #6a87ff;
+	--button-hover-filter: none;
+
+	--radius-button: 9px;
+	--radius-chip: 20px;
+	--radius-card: 12px;
+	--radius-dialog: 14px;
+	--focus: #91a5ff;
+
+	--segment-bg: #172031;
+	--segment-ink: #8e9ab0;
+	--segment-active-bg: #253563;
+	--segment-active-ink: #e5eaff;
+
+	--chip-bg: transparent;
+	--chip-border: #2d3850;
+	--chip-ink: #97a5bf;
+	--chip-active-bg: #e8edff;
+	--chip-active-border: #e8edff;
+	--chip-active-ink: #233255;
+
+	--table-head: #172031;
+	--table-head-ink: #9ba5ba;
+	--table-line: #2b3549;
+	--table-cell: #c0cde5;
+	--card-line: #2b3549;
+	--metric-label: #9ba5ba;
+	--metric-hint: #9ba5ba;
+	--metric-primary-label: #dbe2ff;
+
+	--empty-ink: #8193b3;
+	--empty-title: #f2f4fb;
+	--dialog-bg: #1c2536;
+	--dialog-border: #2b3549;
+	--dialog-backdrop: #030713dd;
+	--toast-bg: #e7edff;
+	--toast-ink: #243959;
+	--shadow-toast: 0 10px 30px #0003;
+	--text-body: 15px;
 }
 
+[data-theme="light"] {
+	--bg: #f4f6fa;
+	--panel: #ffffff;
+	--ink: #19253d;
+	--muted: #78859c;
+	--line: #e6eaf2;
+	--primary: #365cf5;
+	--nav: #142039;
+	--nav-ink: #eef2fc;
+	--nav-muted: #8e9cb5;
+	--nav-line: #2b3953;
+
+	--ok: #208164;
+	--warn: #a57a20;
+	--bad: #be4b5e;
+	--badge-blue: #4b6adc;
+	--ok-bg: #eaf6f0;
+	--warn-bg: #fff6e3;
+	--bad-bg: #fceef1;
+	--badge-blue-bg: #edf1ff;
+
+	--elev: #f1f4f9;
+	--faint: #8a97ad;
+	--line-strong: #dce3ef;
+	--glass: rgba(255, 255, 255, 0.92);
+	--wash: rgba(54, 92, 245, 0.1);
+	--wash-2: rgba(20, 32, 57, 0.05);
+
+	--button-secondary-bg: #ffffff;
+	--button-secondary-ink: #53627c;
+	--button-secondary-border: #dce3ef;
+	--button-primary-hover: #365cf5;
+	--button-hover-filter: brightness(0.94);
+
+	--radius-button: 7px;
+	--radius-chip: 7px;
+	--radius-card: 11px;
+	--radius-dialog: 15px;
+	--focus: #7495ff;
+
+	--segment-bg: #f1f4f9;
+	--segment-ink: #7a879c;
+	--segment-active-bg: #ffffff;
+	--segment-active-ink: #384661;
+
+	--chip-bg: #ffffff;
+	--chip-border: #dce3ef;
+	--chip-ink: #7c8aa0;
+	--chip-active-bg: #edf2ff;
+	--chip-active-border: #aebffb;
+	--chip-active-ink: #375ae1;
+
+	--table-head: #fbfcfe;
+	--table-head-ink: #8a97ad;
+	--table-line: #f0f2f6;
+	--table-cell: #5a6882;
+	--card-line: #f0f2f7;
+	--metric-label: #7a879e;
+	--metric-hint: #7c8ba3;
+	--metric-primary-label: #cdd8ff;
+
+	--empty-ink: #8a97aa;
+	--empty-title: #273853;
+	--dialog-bg: #ffffff;
+	--dialog-border: transparent;
+	--dialog-backdrop: #0a173970;
+	--toast-bg: #15233e;
+	--toast-ink: #ffffff;
+	--shadow-toast: 0 8px 35px #0002;
+	--text-body: 14px;
+}
+
+:root,
+[data-theme="light"],
 [data-theme="dark"] {
-	--bg: #050505;
-	--surface: #121212;
-	--elev: #1a1a1a;
-	--glass: rgba(28, 28, 28, 0.8);
-	--ink: #ffffff;
-	--muted: #8a8a8a;
-	--line: rgba(255, 255, 255, 0.08);
-	--orange: #ff6a1a;
-	--ok: #3dcf8e;
-	--warn: #f0b429;
-	--bad: #ff5a5a;
+	/* Prototype variable name for the brand blue. */
+	--blue: var(--primary);
+
+	/* Legacy names used by current pages. */
+	--surface: var(--panel);
+	--orange: var(--primary);
+	--teal: var(--primary);
+
+	--font-sans: Arial, Helvetica, sans-serif;
+	--cinema-font-brand: var(--font-sans);
+	--cinema-font-ui: var(--font-sans);
+	--cinema-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	--font-brand: var(--cinema-font-brand);
+	--font-ui: var(--cinema-font-ui);
+	--font-mono: var(--cinema-font-mono);
+
+	--text-2xs: 10px;
+	--text-xs: 11px;
+	--text-sm: 12px;
+	--text-md: 13px;
+	--text-lg: 15px;
+	--leading-body: 1.6;
+
+	--space-1: 4px;
+	--space-2: 5px;
+	--space-3: 7px;
+	--space-4: 10px;
+	--space-5: 14px;
+	--space-6: 16px;
+	--space-7: 21px;
+	--space-8: 26px;
+	--space-9: 32px;
+	--space-page: 36px;
+
+	--radius-badge: 5px;
+	--radius-control: 6px;
+	--radius-control-item: 4px;
+	--radius-toast: 9px;
+
+	--shadow-pop: 0 1px 3px #0001;
+	--shadow-dialog: 0 30px 100px #0004;
 }

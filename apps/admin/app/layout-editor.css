@@ -41,9 +41,9 @@
 .tb-icon.on,
 .toolbar > button.tb-type:hover,
 .toolbar > button.tb-type.on {
-	border-color: rgba(255, 106, 26, 0.45);
+	border-color: color-mix(in srgb, var(--color-orange) 45%, transparent);
 	color: var(--color-orange);
-	background: rgba(255, 106, 26, 0.1);
+	background: color-mix(in srgb, var(--color-orange) 10%, transparent);
 }
 
 .tb-icon:disabled {
@@ -52,13 +52,13 @@
 }
 
 .tb-type.vip.on {
-	background: rgba(255, 106, 26, 0.2);
+	background: color-mix(in srgb, var(--color-orange) 20%, transparent);
 	color: var(--color-orange);
 }
 
 .tb-type.blocked.on {
 	background: rgba(255, 255, 255, 0.08);
-	color: #bbb;
+	color: var(--color-muted);
 }
 
 .tb-sep {
@@ -105,7 +105,7 @@
 	right: 10%;
 	top: 18px;
 	height: 36px;
-	border: 2px solid rgba(255, 106, 26, 0.35);
+	border: 2px solid color-mix(in srgb, var(--color-orange) 35%, transparent);
 	border-bottom: 0;
 	border-radius: 120px 120px 0 0;
 	display: grid;
@@ -140,7 +140,7 @@
 
 .layout-seat.blocked {
 	background: #444;
-	color: #bbb;
+	color: var(--color-muted);
 }
 
 .layout-seat.selected {
@@ -152,7 +152,7 @@
 .layout-marquee {
 	position: absolute;
 	border: 1px solid var(--color-orange);
-	background: rgba(255, 106, 26, 0.12);
+	background: color-mix(in srgb, var(--color-orange) 12%, transparent);
 	pointer-events: none;
 	z-index: 3;
 }
@@ -191,7 +191,7 @@
 	bottom: 0;
 	width: 0;
 	border-left: 1px solid var(--color-orange);
-	box-shadow: 0 0 8px rgba(255, 106, 26, 0.55);
+	box-shadow: 0 0 8px color-mix(in srgb, var(--color-orange) 55%, transparent);
 }
 
 .layout-guide.h {
@@ -199,7 +199,7 @@
 	right: 0;
 	height: 0;
 	border-top: 1px solid var(--color-orange);
-	box-shadow: 0 0 8px rgba(255, 106, 26, 0.55);
+	box-shadow: 0 0 8px color-mix(in srgb, var(--color-orange) 55%, transparent);
 }
 
 .layout-side {
@@ -219,7 +219,7 @@
 	font-weight: 600;
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
-	color: #d0d0d0;
+	color: var(--color-muted);
 	margin-bottom: 10px;
 }
 
@@ -240,9 +240,9 @@
 }
 
 .seg button.on {
-	border-color: rgba(255, 106, 26, 0.45);
+	border-color: color-mix(in srgb, var(--color-orange) 45%, transparent);
 	color: var(--color-orange);
-	background: rgba(255, 106, 26, 0.1);
+	background: color-mix(in srgb, var(--color-orange) 10%, transparent);
 }
 
 .side-actions {

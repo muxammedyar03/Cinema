@@ -1,0 +1,28 @@
+.card {
+	background: var(--panel);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-card);
+	overflow: hidden;
+	min-width: 0;
+	color: var(--ink);
+}
+
+.head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 15px;
+	padding: 21px 22px;
+	border-bottom: 1px solid var(--card-line);
+}
+
+.title {
+	font-family: var(--font-ui);
+	font-size: var(--text-lg);
+	font-weight: 600;
+	margin: 0;
+}
+
+.body {
+	padding: 21px 22px;
+}

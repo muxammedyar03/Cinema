@@ -37,8 +37,8 @@ function SidebarBrand({
 			)}
 		>
 			<div className={cx("min-w-0 flex-1", collapsed && "md:hidden")}>
-				<div className={ui.brand}>Cinema</div>
-				<div className="mt-1 text-[11px] text-faint">
+				<div className={cx(ui.brand, "!text-nav-ink")}>Cinema</div>
+				<div className="mt-1 text-[11px] text-nav-muted">
 					{role === "super" ? "Platform console" : (cinemaName ?? "Box-office console")}
 				</div>
 			</div>
@@ -74,19 +74,23 @@ function SidebarUser({
 	return (
 		<div
 			className={cx(
-				"mt-auto flex items-center gap-2.5 border-t border-line px-2.5 pb-1 pt-3.5 text-xs leading-normal text-muted",
+				"mt-auto flex items-center gap-2.5 border-t border-nav-line px-2.5 pb-1 pt-3.5 text-xs leading-normal text-nav-muted",
 				collapsed && "md:justify-center md:px-0",
 			)}
 		>
-			<div className="grid size-[30px] shrink-0 place-items-center rounded-lg bg-orange font-brand text-[13px] font-extrabold text-[#171310]">
+			<div className="grid size-[30px] shrink-0 place-items-center rounded-lg bg-primary font-brand text-[13px] font-extrabold text-white">
 				{(user.email ?? "?").slice(0, 1).toUpperCase()}
 			</div>
 			<div className={cx("min-w-0", collapsed && "md:hidden")}>
-				{showCinema ? <div className="truncate font-medium text-ink">{cinemaName}</div> : null}
-				<div className={showCinema ? "truncate text-[11px] text-faint" : "font-medium text-ink"}>
+				{showCinema ? <div className="truncate font-medium text-nav-ink">{cinemaName}</div> : null}
+				<div
+					className={
+						showCinema ? "truncate text-[11px] text-nav-muted" : "font-medium text-nav-ink"
+					}
+				>
 					{user.email}
 				</div>
-				<div className="text-[11px] text-faint">{roleLabelOf(role)}</div>
+				<div className="text-[11px] text-nav-muted">{roleLabelOf(role)}</div>
 			</div>
 		</div>
 	);
@@ -119,7 +123,7 @@ export function Shell({ user, children }: { user: SessionUser; children: ReactNo
 			<BillingLockGate isSuper={role === "super"} />
 			<aside
 				className={cx(
-					"sticky top-0 flex h-auto flex-col gap-0.5 overflow-y-auto overflow-x-hidden border-b border-line bg-nav px-3 pb-4 pt-5 md:h-screen md:border-b-0 md:border-r",
+					"sticky top-0 flex h-auto flex-col gap-0.5 overflow-y-auto overflow-x-hidden border-b border-nav-line bg-nav px-3 pb-4 pt-5 md:h-screen md:border-b-0 md:border-r",
 					collapsed && "md:px-2",
 				)}
 			>

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import "../lib/ui-kit";
 import "./globals.css";
 import type { Metadata } from "next";
 import { ThemeProvider } from "../components/theme-provider";
