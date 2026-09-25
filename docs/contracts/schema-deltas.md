@@ -245,3 +245,19 @@ Payload / job shapes: [follow-notify.md](./follow-notify.md).
 - Bitmask integer for profile steps (explicit booleans locked).
 - Storing raw `String[]` photos on Cinema (use `CinemaPhoto`).
 - Worker / BullMQ tables (Redis queues; no Prisma models).
+
+## Design v2 (KAN-32) — proposed, not applied
+
+All optional / nullable, additive only. Details and consumers: [design-v2-gaps.md](./design-v2-gaps.md) §5.
+
+| Model | Field | Why (v2 screen) |
+| --- | --- | --- |
+| `Cinema` | `city String?` | Super Admin «Кинотеатры» city column, admin sidebar, Mini App header |
+| `Cinema` | `tagline String?` | Mini App cinema card short line (optional) |
+| `Hall` | `format String?` | Admin «Залы» badge (e.g. `3D · Dolby`) |
+| `CinemaPhoto` | `caption String? @db.VarChar(160)` | Mini App photo dialog caption |
+| `Movie` | `isFeatured Boolean @default(false)` | Mini App «В центре внимания» (phase 2) |
+| `Session` | `audioLanguage String?` | Mini App «Зал 01 · Русский» (optional) |
+
+`Lead` model is defined in KAN-31 (`landing-leads.md`), not here.
+
