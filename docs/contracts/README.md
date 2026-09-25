@@ -9,7 +9,8 @@ Docs-first contracts for Cinema MVP auth, payment, refund, cinema profile, and f
 | [qr-refund.md](./qr-refund.md) | **KAN-7** | Ticket QR / staff verify; full & partial refunds; self-refund; session-cancel jobs |
 | [cinema-profile.md](./cinema-profile.md) | **KAN-19** | Cinema profile fields, map provider, photos, admin onboarding wizard, Mini App public profile + map |
 | [follow-notify.md](./follow-notify.md) | **KAN-19**, KAN-35 | `CinemaFollow`; session→PUBLISHED event; Notification + Telegram bot job payloads (KAN-24/26); per-cinema digest debounce + `Session.notifiedAt` (KAN-35) |
-| [schema-deltas.md](./schema-deltas.md) | KAN-5/6/7/19 | Prisma deltas: Rahmat, refunds, cinema profile/geo/photos, CinemaFollow |
+| [design-v2-gaps.md](./design-v2-gaps.md) | **KAN-32** | Design v2 (KAN-27) screens vs current API: per-screen yes/partial/no, additive proposals, hide/show rules for KAN-29/30/33/34 |
+| [schema-deltas.md](./schema-deltas.md) | KAN-5/6/7/19/32/35 | Prisma deltas: Rahmat, refunds, cinema profile/geo/photos, CinemaFollow; Design v2 proposals (KAN-32); `Session.notifiedAt` (KAN-35) |
 
 ## Product locks (do not regress)
 
@@ -31,6 +32,13 @@ Docs-first contracts for Cinema MVP auth, payment, refund, cinema profile, and f
 - `apps/worker`: stub — BullMQ Phase 09+.
 - Prisma: `Cinema` lacks lat/lng/photos/instagram/phones[]; `Notification` exists; no `CinemaFollow` yet.
 - `PaymentProvider = CLICK | PAYME` today; contracts add `RAHMAT` (KAN-6) — still not applied until implementation PRs.
+
+## Design v2 (KAN-27) notes
+
+- Gap review: [design-v2-gaps.md](./design-v2-gaps.md) — frontend tasks KAN-29/30/33/34 hide any element marked ❌ until its API exists (no fake data).
+- Implemented-vs-contracted: Rahmat payment, ticket verify and refund endpoints (KAN-6/7) are called by `apps/mini-app` / `apps/admin` but are **not yet implemented** in `apps/api` (see gap doc §0).
+- Landing lead form + Super Admin «Обращения»: **KAN-31** → `landing-leads.md` (planned).
+- Mini App route URLs must not change (bot menu + follow notifications deep-link to them).
 
 ## Implementation order
 
