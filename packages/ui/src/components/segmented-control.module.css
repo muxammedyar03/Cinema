@@ -1,0 +1,32 @@
+.root {
+	display: flex;
+	background: var(--segment-bg);
+	margin: 0;
+	border: 0;
+	min-inline-size: 0;
+	padding: 3px;
+	border-radius: var(--radius-control);
+	gap: 2px;
+}
+
+.item {
+	border: 0;
+	border-radius: var(--radius-control-item);
+	background: none;
+	font-family: var(--font-ui);
+	font-size: var(--text-xs);
+	padding: 5px 10px;
+	color: var(--segment-ink);
+	cursor: pointer;
+}
+
+.item:focus-visible {
+	outline: 3px solid var(--focus);
+	outline-offset: 2px;
+}
+
+.active {
+	background: var(--segment-active-bg);
+	color: var(--segment-active-ink);
+	box-shadow: var(--shadow-pop);
+}

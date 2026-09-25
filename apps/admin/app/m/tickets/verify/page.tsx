@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { roleOf } from "../../../lib/rbac";
-import { getMe } from "../../../lib/server-api";
+import { roleOf } from "../../../../lib/rbac";
+import { getMe } from "../../../../lib/server-api";
 import { TicketVerifyClient } from "./scan-client";
 
 export default async function TicketVerifyPage({

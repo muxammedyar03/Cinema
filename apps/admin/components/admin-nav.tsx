@@ -70,7 +70,9 @@ function NavLink({
 	const active = isActive(item, href, pathname);
 	const cls = cx(
 		"relative flex w-full items-center gap-2.5 rounded-lg py-2 pl-[15px] pr-2.5 text-left text-[13.5px] font-medium transition-colors",
-		active ? "bg-ink/5 font-semibold text-ink" : "text-muted hover:bg-ink/[0.04] hover:text-ink",
+		active
+			? "bg-white/10 font-semibold text-nav-ink"
+			: "text-nav-muted hover:bg-white/8 hover:text-nav-ink",
 		item.soon && "cursor-default opacity-55",
 		collapsed && "md:justify-center md:px-2 md:pl-2",
 	);
@@ -87,7 +89,7 @@ function NavLink({
 			<Icon className="size-[17px] shrink-0 opacity-85" strokeWidth={1.6} />
 			<span className={cx("flex-1", collapsed && "md:hidden")}>{item.label}</span>
 			{item.soon ? (
-				<span className={cx("text-[10px] text-faint", collapsed && "md:hidden")}>скоро</span>
+				<span className={cx("text-[10px] text-nav-muted", collapsed && "md:hidden")}>скоро</span>
 			) : null}
 		</>
 	);
@@ -277,7 +279,7 @@ export function AdminNav({ user, collapsed = false }: { user: SessionUser; colla
 					<div key={group.label} className={cx(collapsed && "md:w-full")}>
 						<div
 							className={cx(
-								"flex items-center gap-2 px-2.5 pb-1.5 pt-4 text-[11.5px] font-medium text-faint",
+								"flex items-center gap-2 px-2.5 pb-1.5 pt-4 text-[11.5px] font-medium text-nav-muted",
 								collapsed && "md:justify-center md:px-0 md:pt-3",
 							)}
 						>

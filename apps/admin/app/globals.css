@@ -1,5 +1,5 @@
-@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@700;800&display=swap");
 @import "tailwindcss" source("../..");
+@import "@cinema/ui/tokens.css";
 @import "@cinema/ui/theme.css";
 @import "./layout-editor.css";
 
@@ -84,7 +84,7 @@
 	}
 
 	:focus-visible {
-		outline: 2px solid var(--color-orange);
+		outline: 2px solid var(--focus);
 		outline-offset: 2px;
 	}
 }

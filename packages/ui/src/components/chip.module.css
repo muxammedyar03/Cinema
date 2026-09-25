@@ -1,0 +1,30 @@
+.chip {
+	background: var(--chip-bg);
+	border: 1px solid var(--chip-border);
+	border-radius: var(--radius-chip);
+	color: var(--chip-ink);
+	padding: 9px 14px;
+	font-family: var(--font-ui);
+	font-size: var(--text-sm);
+	cursor: pointer;
+}
+
+.chip:hover:not(:disabled) {
+	border-color: var(--chip-active-border);
+}
+
+.chip:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.chip:focus-visible {
+	outline: 3px solid var(--focus);
+	outline-offset: 3px;
+}
+
+.active {
+	color: var(--chip-active-ink);
+	border-color: var(--chip-active-border);
+	background: var(--chip-active-bg);
+}
