@@ -1,9 +1,12 @@
 import "dotenv/config";
+import { resolveDebounceMs } from "@cinema/queue-contracts";
 
 export const workerConfig = {
 	redisUrl: process.env.REDIS_URL ?? "redis://localhost:6379",
 	databaseUrl: process.env.DATABASE_URL,
 	botToken: process.env.TELEGRAM_BOT_TOKEN ?? "",
+	/** KAN-35 per-cinema digest window (ms). */
+	followNotifyDebounceMs: resolveDebounceMs(process.env.FOLLOW_NOTIFY_DEBOUNCE_MS),
 };
 
 export function redisConnectionFromUrl(url: string) {

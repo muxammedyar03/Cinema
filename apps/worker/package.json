@@ -5,9 +5,12 @@
 	"scripts": {
 		"dev": "tsx watch src/index.ts",
 		"build": "tsc -p tsconfig.json",
-		"start": "node dist/index.js"
+		"start": "node dist/index.js",
+		"typecheck": "tsc -p tsconfig.json --noEmit",
+		"test:unit": "tsx --test src/follow-digest/__tests__/format-afisha-digest.test.ts src/follow-digest/__tests__/run-cinema-digest.test.ts"
 	},
 	"dependencies": {
+		"@cinema/queue-contracts": "workspace:*",
 		"@prisma/client": "^6.10.1",
 		"bullmq": "^5.56.0",
 		"dotenv": "^16.5.0",

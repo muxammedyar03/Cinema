@@ -13,6 +13,15 @@ pnpm --filter @cinema/worker dev
 
 | Name | Job | Source |
 | --- | --- | --- |
-| `telegram-notify` | `notify.cinema.session_published` | API on Session → PUBLISHED |
+| `follow-digest` | `notify.cinema.digest_flush` | API on Session → PUBLISHED (KAN-35, delayed + deduplicated by `notify:cinema:{cinemaId}`) |
+| `telegram-notify` | `notify.cinema.afisha_digest` | `follow-digest` worker, one job per follower |
+| `telegram-notify` | `notify.cinema.session_published` | legacy (pre-KAN-35), still processed |
 
-Idempotency: BullMQ `jobId` = `notify:session.published:{sessionId}:{userId}`.
+Idempotency: digest sessions are stamped with `Session.notifiedAt`; send jobs use `jobId` = `notify.afisha.digest.{cinemaId}.{windowId}.{userId}` (BullMQ forbids `:` in custom ids).
+Window: `FOLLOW_NOTIFY_DEBOUNCE_MS` (default `300000`). Queue name, job options and the `notify:cinema:{cinemaId}` key are shared with the API via [`@cinema/queue-contracts`](../../packages/queue-contracts/src/follow-digest.ts). Contract: [`docs/contracts/follow-notify.md`](../../docs/contracts/follow-notify.md#kan-35--per-cinema-digest-debounce).
+
+## Tests
+
+```bash
+pnpm --filter @cinema/worker test:unit
+```

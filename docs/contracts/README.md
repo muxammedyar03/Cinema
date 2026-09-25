@@ -8,9 +8,9 @@ Docs-first contracts for Cinema MVP auth, payment, refund, cinema profile, and f
 | [rahmat-payment.md](./rahmat-payment.md) | **KAN-6** | Rahmat (rhmt.uz) as sole MVP payment provider; cinema-as-merchant (Model A) |
 | [qr-refund.md](./qr-refund.md) | **KAN-7** | Ticket QR / staff verify; full & partial refunds; self-refund; session-cancel jobs |
 | [cinema-profile.md](./cinema-profile.md) | **KAN-19** | Cinema profile fields, map provider, photos, admin onboarding wizard, Mini App public profile + map |
-| [follow-notify.md](./follow-notify.md) | **KAN-19** | `CinemaFollow`; session→PUBLISHED event; Notification + Telegram bot job payloads (KAN-24/26) |
+| [follow-notify.md](./follow-notify.md) | **KAN-19**, KAN-35 | `CinemaFollow`; session→PUBLISHED event; Notification + Telegram bot job payloads (KAN-24/26); per-cinema digest debounce + `Session.notifiedAt` (KAN-35) |
 | [design-v2-gaps.md](./design-v2-gaps.md) | **KAN-32** | Design v2 (KAN-27) screens vs current API: per-screen yes/partial/no, additive proposals, hide/show rules for KAN-29/30/33/34 |
-| [schema-deltas.md](./schema-deltas.md) | KAN-5/6/7/19/32 | Prisma deltas: Rahmat, refunds, cinema profile/geo/photos, CinemaFollow; Design v2 proposals (KAN-32) |
+| [schema-deltas.md](./schema-deltas.md) | KAN-5/6/7/19/32/35 | Prisma deltas: Rahmat, refunds, cinema profile/geo/photos, CinemaFollow; Design v2 proposals (KAN-32); `Session.notifiedAt` (KAN-35) |
 
 ## Product locks (do not regress)
 

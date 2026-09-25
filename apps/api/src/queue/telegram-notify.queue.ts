@@ -1,3 +1,4 @@
+import { toBullJobId } from "@cinema/queue-contracts";
 import { Injectable, Logger, type OnModuleDestroy } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { type ConnectionOptions, Queue } from "bullmq";
@@ -42,8 +43,9 @@ export class TelegramNotifyQueue implements OnModuleDestroy {
 	}
 
 	async enqueue(name: TelegramNotifyJobName, payload: TelegramNotifyJobPayload): Promise<void> {
+		// BullMQ rejects custom ids with ':' (idempotencyKey keeps the contract format).
 		await this.queue.add(name, payload, {
-			jobId: payload.idempotencyKey,
+			jobId: toBullJobId(payload.idempotencyKey),
 		});
 		this.log.debug(`Enqueued ${name} ${payload.idempotencyKey}`);
 	}

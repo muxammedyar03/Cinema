@@ -307,6 +307,8 @@ model Session {
   basePriceUzs    Int
   discountPercent Int           @default(0)
   cancelledAt     DateTime?
+  /// KAN-35: set when the session was included in a follow digest (never sent twice)
+  notifiedAt      DateTime?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -320,6 +322,7 @@ model Session {
 
   @@index([cinemaId, startsAt])
   @@index([status, startsAt])
+  @@index([cinemaId, status, notifiedAt])
 }
 
 model SessionPricing {

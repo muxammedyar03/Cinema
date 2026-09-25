@@ -12,9 +12,10 @@
 		"prisma:studio": "prisma studio",
 		"prisma:seed": "tsx prisma/seed.ts",
 		"test:race-hold": "tsx scripts/race-hold-test.ts",
-		"test:unit": "tsx --test src/auth/__tests__/telegram-init-data.test.ts src/dashboard/__tests__/dashboard-time.test.ts src/dashboard/__tests__/dashboard-kpis.test.ts src/cinema/__tests__/profile.util.test.ts"
+		"test:unit": "tsx --test src/auth/__tests__/telegram-init-data.test.ts src/dashboard/__tests__/dashboard-time.test.ts src/dashboard/__tests__/dashboard-kpis.test.ts src/cinema/__tests__/profile.util.test.ts src/session/__tests__/session-publish-notify.test.ts"
 	},
 	"dependencies": {
+		"@cinema/queue-contracts": "workspace:*",
 		"@cinema/types": "workspace:*",
 		"@cinema/validation": "workspace:*",
 		"@nestjs/common": "^11.1.3",

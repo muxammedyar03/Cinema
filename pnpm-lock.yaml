@@ -66,6 +66,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@cinema/queue-contracts':
+        specifier: workspace:*
+        version: link:../../packages/queue-contracts
       '@cinema/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -210,6 +213,9 @@ importers:
 
   apps/worker:
     dependencies:
+      '@cinema/queue-contracts':
+        specifier: workspace:*
+        version: link:../../packages/queue-contracts
       '@prisma/client':
         specifier: ^6.10.1
         version: 6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)
@@ -238,6 +244,15 @@ importers:
 
   packages/config:
     devDependencies:
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+
+  packages/queue-contracts:
+    devDependencies:
+      tsx:
+        specifier: ^4.20.3
+        version: 4.23.12
       typescript:
         specifier: ^5.8.3
         version: 5.9.3

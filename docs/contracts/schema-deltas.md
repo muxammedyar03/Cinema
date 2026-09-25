@@ -261,3 +261,22 @@ All optional / nullable, additive only. Details and consumers: [design-v2-gaps.m
 
 `Lead` model is defined in KAN-31 (`landing-leads.md`), not here.
 
+---
+
+## KAN-35 — Follow digest (`Session.notifiedAt`)
+
+Additive only. Migration `20260925140000_session_notified_at`.
+
+```prisma
+model Session {
+  // …existing fields unchanged…
+  /// KAN-35: set when the session was included in a follow digest (never sent twice)
+  notifiedAt DateTime?
+
+  @@index([cinemaId, status, notifiedAt])
+}
+```
+
+- Backfill: existing `PUBLISHED` rows get `notifiedAt = updatedAt` (already-live afisha is not re-announced).
+- `CINEMA_AFISHA_DIGEST` is now the active follow notification type (one row per follower per digest window).
+- Semantics: [follow-notify.md § KAN-35](./follow-notify.md#kan-35--per-cinema-digest-debounce).
