@@ -1,5 +1,5 @@
+import { toBullJobId } from "@cinema/queue-contracts";
 import type { TelegramNotifyJobPayload } from "../telegram-notify.worker.js";
-import { toBullJobId } from "./follow-digest.options.js";
 import {
 	DIGEST_BUTTON_TEXT,
 	type DigestSessionInput,

@@ -1,7 +1,7 @@
+import { toBullJobId } from "@cinema/queue-contracts";
 import { Injectable, Logger, type OnModuleDestroy } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { type ConnectionOptions, Queue } from "bullmq";
-import { toBullJobId } from "./follow-digest.options";
 
 export const TELEGRAM_NOTIFY_QUEUE = "telegram-notify";
 

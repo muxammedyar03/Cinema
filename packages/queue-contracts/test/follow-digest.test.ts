@@ -7,7 +7,7 @@ import {
 	DEFAULT_FOLLOW_NOTIFY_DEBOUNCE_MS,
 	resolveDebounceMs,
 	toBullJobId,
-} from "../follow-digest.options";
+} from "../src/index.js";
 
 describe("follow-digest options (KAN-35)", () => {
 	it("uses a deterministic per-cinema key", () => {

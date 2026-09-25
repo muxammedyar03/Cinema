@@ -1,0 +1,23 @@
+{
+	"name": "@cinema/queue-contracts",
+	"version": "0.0.0",
+	"private": true,
+	"main": "./dist/index.js",
+	"types": "./src/index.ts",
+	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"default": "./dist/index.js"
+		}
+	},
+	"scripts": {
+		"build": "tsc -p tsconfig.json",
+		"dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
+		"postinstall": "tsc -p tsconfig.json",
+		"test:unit": "tsx --test test/follow-digest.test.ts"
+	},
+	"devDependencies": {
+		"tsx": "^4.20.3",
+		"typescript": "^5.8.3"
+	}
+}

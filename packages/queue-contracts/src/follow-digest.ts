@@ -1,9 +1,7 @@
 /**
- * Follow digest queue contract (KAN-35).
- * Keep in sync with apps/worker/src/follow-digest/follow-digest.options.ts (same pattern as the
- * duplicated `telegram-notify` constants between API and worker).
+ * Follow digest queue contract (KAN-35) — single source of truth for apps/api (producer)
+ * and apps/worker (consumer + re-scheduler). No runtime dependencies.
  */
-import type { JobsOptions } from "bullmq";
 
 export const FOLLOW_DIGEST_QUEUE = "follow-digest";
 export const FOLLOW_DIGEST_JOB = "notify.cinema.digest_flush";
@@ -28,6 +26,16 @@ export function resolveDebounceMs(raw: string | undefined): number {
 	return Number.isFinite(n) && n >= 0 ? Math.floor(n) : DEFAULT_FOLLOW_NOTIFY_DEBOUNCE_MS;
 }
 
+/** Structural subset of BullMQ `JobsOptions` (kept dependency-free; assignable to it). */
+export type CinemaDigestJobOptions = {
+	delay: number;
+	deduplication: { id: string; keepLastIfActive: boolean };
+	attempts: number;
+	backoff: { type: "exponential"; delay: number };
+	removeOnComplete: number;
+	removeOnFail: number;
+};
+
 /**
  * Delayed job + BullMQ deduplication:
  * - `delay` = window: first publish opens the window, digest fires when it closes.
@@ -36,7 +44,7 @@ export function resolveDebounceMs(raw: string | undefined): number {
  * - `keepLastIfActive`: a publish while the digest is *running* is not lost — BullMQ
  *   creates exactly one follow-up delayed job when the active one finishes.
  */
-export function cinemaDigestJobOptions(cinemaId: string, windowMs: number): JobsOptions {
+export function cinemaDigestJobOptions(cinemaId: string, windowMs: number): CinemaDigestJobOptions {
 	return {
 		delay: windowMs,
 		deduplication: { id: cinemaDigestKey(cinemaId), keepLastIfActive: true },

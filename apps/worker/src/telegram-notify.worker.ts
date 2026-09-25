@@ -31,6 +31,9 @@ export function startTelegramNotifyWorker(): Worker<TelegramNotifyJobPayload> {
 		},
 	);
 
+	worker.on("error", (err) => {
+		console.error(`telegram-notify worker error: ${err.message}`, err.stack);
+	});
 	worker.on("failed", (job, err) => {
 		console.warn(`telegram-notify failed ${job?.id}: ${err.message}`);
 	});

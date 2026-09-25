@@ -1,14 +1,14 @@
-import { type Job, Queue, Worker } from "bullmq";
-import { redisConnectionFromUrl, workerConfig } from "../config.js";
-import { prisma } from "../db.js";
-import { TELEGRAM_NOTIFY_QUEUE, type TelegramNotifyJobPayload } from "../telegram-notify.worker.js";
 import {
 	buildDigestJobData,
 	cinemaDigestJobOptions,
 	FOLLOW_DIGEST_JOB,
 	FOLLOW_DIGEST_QUEUE,
 	type FollowDigestJobData,
-} from "./follow-digest.options.js";
+} from "@cinema/queue-contracts";
+import { type Job, Queue, Worker } from "bullmq";
+import { redisConnectionFromUrl, workerConfig } from "../config.js";
+import { prisma } from "../db.js";
+import { TELEGRAM_NOTIFY_QUEUE, type TelegramNotifyJobPayload } from "../telegram-notify.worker.js";
 import { createPrismaDigestStore } from "./prisma-digest-store.js";
 import { DIGEST_JOB_NAME, runCinemaDigest } from "./run-cinema-digest.js";
 
@@ -68,6 +68,9 @@ export function startFollowDigestWorker(): { close: () => Promise<void> } {
 		{ connection, concurrency: 2 },
 	);
 
+	worker.on("error", (err) => {
+		console.error(`follow-digest worker error: ${err.message}`, err.stack);
+	});
 	worker.on("failed", (job, err) => {
 		console.warn(`follow-digest failed ${job?.id}: ${err.message}`);
 	});

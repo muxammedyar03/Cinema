@@ -4,6 +4,7 @@ import {
 	BadRequestException,
 	ForbiddenException,
 	Injectable,
+	Logger,
 	NotFoundException,
 } from "@nestjs/common";
 import { canAccessCinema, canManageCinema } from "../auth/roles.guard";
@@ -15,6 +16,8 @@ const CATALOG_PREFIX = "catalog:";
 
 @Injectable()
 export class SessionService {
+	private readonly log = new Logger(SessionService.name);
+
 	constructor(
 		private readonly prisma: PrismaService,
 		private readonly redis: RedisService,
@@ -167,8 +170,17 @@ export class SessionService {
 		// GA sessions have zero seats; seated sessions need a map
 		await this.prisma.session.update({ where: { id }, data: { status: "PUBLISHED" } });
 		await this.invalidateCatalog();
-		// Fire-and-forget notify fan-out (API must not call Telegram directly)
-		void this.sessionPublishedNotify.onSessionPublished(id).catch(() => undefined);
+		// Fire-and-forget digest scheduling (API must not call Telegram directly).
+		// The session is already PUBLISHED in the DB, so a queue/Redis failure must not fail the
+		// admin request; it is logged instead. Recovery: the session keeps notifiedAt = NULL and is
+		// picked up by the next digest of this cinema (see follow-notify.md § KAN-35).
+		void this.sessionPublishedNotify.onSessionPublished(id).catch((err: unknown) => {
+			const error = err instanceof Error ? err : new Error(String(err));
+			this.log.error(
+				`Follow digest scheduling failed for session ${id} (cinema ${session.cinemaId}): ${error.message}`,
+				error.stack,
+			);
+		});
 		return this.get(user, id);
 	}
 

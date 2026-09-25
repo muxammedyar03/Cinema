@@ -1,6 +1,3 @@
-import { Injectable, Logger, type OnModuleDestroy } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import { Queue } from "bullmq";
 import {
 	buildDigestJobData,
 	cinemaDigestJobOptions,
@@ -9,7 +6,10 @@ import {
 	FOLLOW_DIGEST_QUEUE,
 	type FollowDigestJobData,
 	resolveDebounceMs,
-} from "./follow-digest.options";
+} from "@cinema/queue-contracts";
+import { Injectable, Logger, type OnModuleDestroy } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { Queue } from "bullmq";
 import { redisConnectionFromUrl } from "./telegram-notify.queue";
 
 /** KAN-35: schedules the debounced per-cinema follow digest (consumed by apps/worker). */

@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { resolveDebounceMs } from "./follow-digest/follow-digest.options.js";
+import { resolveDebounceMs } from "@cinema/queue-contracts";
 
 export const workerConfig = {
 	redisUrl: process.env.REDIS_URL ?? "redis://localhost:6379",
