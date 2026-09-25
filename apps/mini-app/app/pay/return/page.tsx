@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect } from "react";
-import { ui } from "../../lib/ui";
+import { ui } from "../../../lib/ui";
 
 function PayReturnInner() {
 	const params = useSearchParams();

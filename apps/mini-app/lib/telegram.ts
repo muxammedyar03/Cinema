@@ -1,6 +1,9 @@
 export type TelegramWebApp = {
 	initData: string;
-	initDataUnsafe?: { user?: { id: number; username?: string; language_code?: string } };
+	initDataUnsafe?: {
+		user?: { id: number; username?: string; language_code?: string };
+		start_param?: string;
+	};
 	ready: () => void;
 	expand: () => void;
 	openLink: (url: string, options?: { try_instant_view?: boolean }) => void;
