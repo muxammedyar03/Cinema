@@ -1,36 +1,28 @@
 "use client";
 
+import { Chip } from "@cinema/ui";
 import { useRouter } from "next/navigation";
 import type { PublicCinema } from "../lib/types";
-import { cx, ui } from "../lib/ui";
 
 export function CinemaChips({ cinemas, activeId }: { cinemas: PublicCinema[]; activeId?: string }) {
 	const router = useRouter();
+	if (cinemas.length === 0) return null;
 
 	function select(id?: string) {
-		const q = id ? `?cinemaId=${id}` : "/";
-		router.push(q);
+		router.push(id ? `/?cinemaId=${encodeURIComponent(id)}` : "/");
 	}
 
 	return (
-		<div className={ui.filters}>
-			<button
-				type="button"
-				className={cx(ui.chip, !activeId && ui.chipOn)}
-				onClick={() => select()}
-			>
+		<fieldset className="genres">
+			<legend className="sr-only">Кинотеатр</legend>
+			<Chip active={!activeId} onClick={() => select()}>
 				Все
-			</button>
-			{cinemas.map((c) => (
-				<button
-					key={c.id}
-					type="button"
-					className={cx(ui.chip, activeId === c.id && ui.chipOn)}
-					onClick={() => select(c.id)}
-				>
-					{c.name}
-				</button>
+			</Chip>
+			{cinemas.map((cinema) => (
+				<Chip key={cinema.id} active={activeId === cinema.id} onClick={() => select(cinema.id)}>
+					{cinema.name}
+				</Chip>
 			))}
-		</div>
+		</fieldset>
 	);
 }
