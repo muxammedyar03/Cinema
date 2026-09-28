@@ -308,6 +308,16 @@ export const updateStaffSchema = z
 		message: "Укажите роль или статус",
 	});
 
+export const platformListQuerySchema = z.object({
+	cursor: z.string().trim().min(1).max(64).optional(),
+	limit: z.coerce
+		.number({ invalid_type_error: "Укажите предел от 1 до 100" })
+		.int()
+		.min(1, "Укажите предел от 1 до 100")
+		.max(100, "Укажите предел от 1 до 100")
+		.optional(),
+});
+
 export const linkEmailSchema = z.object({
 	email: z.string().email().max(160),
 });
@@ -324,5 +334,6 @@ export type PatchCinemaProfileInput = z.infer<typeof patchCinemaProfileSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export type CreateStaffInput = z.infer<typeof createStaffSchema>;
 export type UpdateStaffInput = z.infer<typeof updateStaffSchema>;
+export type PlatformListQuery = z.infer<typeof platformListQuerySchema>;
 export type LinkEmailInput = z.infer<typeof linkEmailSchema>;
 export type ConfirmEmailInput = z.infer<typeof confirmEmailSchema>;

@@ -1,6 +1,6 @@
 # Design v2 — ekranlar va API farqi (KAN-32)
 
-Epic: **KAN-27** · Task: **KAN-32** · Iste'molchilar: **KAN-29** (Admin), **KAN-30** (Mini App), **KAN-33** (Super Admin), **KAN-34** (Landing), **KAN-31** (lead API, keyingi task)
+Epic: **KAN-27** · Task: **KAN-32** · Iste'molchilar: **KAN-29** (Admin), **KAN-30** (Mini App), **KAN-33** (Super Admin), **KAN-34** (Landing). **KAN-31** (lead API) bekor qilingan.
 
 Manba: `design/v2/*.html` (main), skrinshotlar `design/v2/screenshots/*.png` (main, PR #7). Solishtirilgan kod: `apps/api` (main `c47c994`), `apps/api/prisma/schema.prisma`, `docs/contracts/*`.
 
@@ -17,7 +17,8 @@ Manba: `design/v2/*.html` (main), skrinshotlar `design/v2/screenshots/*.png` (ma
 | Dashboard: `comparison` (o'tgan haftaning shu kuni), `stats.ticketsSoldToday`, `todaySessions[].posterUrl` | ✅ |
 | `GET /auth/me` va login: `firstName`, `lastName`, `mustChangePassword` | ✅ |
 | `Cinema.city`, `Cinema.tagline`, `Hall.format`, `CinemaPhoto.caption` | ✅ |
-| To'lov / refund / QR (KAN-36), landing leads (KAN-31), CSV, jonli zal xaritasi, platform summary | ❌ shu taskda yo'q |
+| `GET /admin/platform/summary`, `GET /admin/platform/admins`, `GET /admin/platform/cinemas` | ✅ quyida §2 |
+| To'lov / refund / QR (KAN-36), landing leads (KAN-31 bekor), CSV, jonli zal xaritasi | ❌ shu taskda yo'q |
 
 ---
 
@@ -25,7 +26,7 @@ Manba: `design/v2/*.html` (main), skrinshotlar `design/v2/screenshots/*.png` (ma
 
 1. **Ko'p narsa tayyor.** Afisha, film sahifasi, joy tanlash, "nechta joy qoldi", kinoteatr profili (rasm, xarita), seanslar, filmlar, zallar, buyurtmalar ro'yxati, billing va dashboard KPI'lari hozirgi API'dan olinadi.
 2. **Muhim topilma (v2 dan oldin ham bor muammo):** Mini App va admin paneli allaqachon **to'lov (Rahmat), QR bilet tekshirish, qaytarish (refund) va buyurtma tafsiloti** API'larini chaqiradi, lekin bu endpointlar `apps/api` da **hali yozilmagan** (kontrakt bor: KAN-6, KAN-7). Ya'ni hozir bu tugmalar serverdan xato oladi. v2 ning "Билеты", "Возвраты", "Проверка билетов" bo'limlari shunga bog'liq. Buni birinchi navbatda alohida backend taski qilish kerak.
-3. **v2 da yangi, API'da yo'q ma'lumotlar:** kinoteatr **shahri**, zal **formati** ("3D · Dolby"), rasm **izohi** (caption), "o'tgan hafta bilan farq %", "oldingi davr" grafigi, afishadagi **reyting va janr** (bazada bor, lekin afisha ro'yxatida qaytmaydi), **"В центре внимания"** (featured film), xodimlar (**Команда**) ro'yxati va taklif qilish, **Билеты / Возвраты / Отчёты** ro'yxatlari, admin uchun seans bo'yicha **jonli zal xaritasi**, Super Admin **"Обращения"** (KAN-31 da qilinadi).
+3. **v2 da yangi, API'da yo'q ma'lumotlar:** kinoteatr **shahri**, zal **formati** ("3D · Dolby"), rasm **izohi** (caption), "o'tgan hafta bilan farq %", "oldingi davr" grafigi, afishadagi **reyting va janr** (bazada bor, lekin afisha ro'yxatida qaytmaydi), **"В центре внимания"** (featured film), xodimlar (**Команда**) ro'yxati va taklif qilish, **Билеты / Возвраты / Отчёты** ro'yxatlari, admin uchun seans bo'yicha **jonli zal xaritasi**, Super Admin **"Обращения"** (KAN-31 bekor, endpoint yo'q).
 4. **Frontend uchun qoida:** jadvalda ❌ bo'lgan element API qo'shilmaguncha **ko'rsatilmaydi** (yashiriladi yoki bo'sh holat "Скоро" emas, umuman chiqmaydi). 🟡 bo'lsa, faqat bor qismi ko'rsatiladi. Soxta/demo raqam qo'yilmaydi.
 5. PM va dizaynerga savollar oxirida (**Ochiq savollar**).
 
@@ -154,15 +155,51 @@ Frontend (PR #4, KAN-8/KAN-9) quyidagilarni allaqachon chaqiradi; `apps/api/src`
 | --- | --- | --- | --- |
 | KPI: Кинотеатров / "N активных" | ✅ | `GET /admin/cinemas` (uzunlik, `status`) | — |
 | KPI: Залов | ✅ | `GET /admin/cinemas` → `_count.halls` yig'indisi | — |
-| KPI: Администраторов | 🟡 | `_count.staff` (STAFF ham kiradi), `billing/overview` → `admins` (max 3 email) | `GET /admin/platform/summary` → `{ cinemas, cinemasActive, halls, cinemaAdmins, invoicesUnpaid }` (bitta so'rov) |
-| KPI: Подписки к оплате | ✅ | `GET /admin/billing/invoices` (`DUE`/`OVERDUE`) | summary'da ham |
+| KPI: Администраторов | ✅ KAN-37 | `GET /admin/platform/summary` → `cinemaAdmins` | faqat `active` `CINEMA_ADMIN`. `STAFF` kirmaydi |
+| KPI: Подписки к оплате | ✅ KAN-37 | `GET /admin/platform/summary` → `invoicesUnpaid`, `cinemasLocked` | `DUE`+`OVERDUE` hisob-fakturalar; `LOCKED` kinoteatrlar. Billing yozuvi yo'q bo'lsa 0, yangi invoice yaratilmaydi |
 | Кинотеатры: nom, zallar soni, status | ✅ | `GET /admin/cinemas` | — |
 | Кинотеатры: shahar | ✅ KAN-37 | `Cinema.city` | bo'sh bo'lsa `null` |
-| Status "Ожидает подключения" | ✅ qaror | `profileComplete=false` | **Qaror 2026-09-25:** yangi enum yo'q. UI `profileComplete=false` ni shu status deb ko'rsatadi |
-| Администраторы: ism, email, rol, status | 🟡 | `GET /admin/cinemas/:id/dossier`, `billing/overview.admins` | `GET /admin/platform/admins?cursor=` → `[{ userId, name, email, cinemaId, cinemaName, role }]` |
+| Status "Ожидает подключения" | ✅ KAN-37 | `profileComplete=false` | `summary.awaitingConnection` va ro'yxatlardagi `profileComplete`. Yangi enum yo'q |
+| Администраторы: ism, email, rol, status | ✅ KAN-37 | `GET /admin/platform/admins` | `profileComplete`, `billingStatus`, `cinemaStatus`. Email yo'q bo'lsa `null` |
 | Биллинг: счёт №, kinoteatr, davr, summa, status | ✅ | `GET /admin/billing/invoices` | — |
 | Pul/GMV yashirin | ✅ | dashboard `mode: platform`, `GET /admin/orders` 403 | saqlanadi |
-| Обращения (landing arizalari) | ❌ | — | **KAN-31** → `docs/contracts/landing-leads.md` (`GET /admin/leads`, `PATCH /admin/leads/:id`). KAN-31 tugaguncha sahifa bo'sh holatda qoladi |
+| Обращения (landing arizalari) | ❌ bekor | — | **KAN-31 bekor qilingan.** `GET/PATCH /admin/leads` yo'q. Sahifa bo'sh holatda qoladi |
+
+Faqat `SUPER_ADMIN`. `SessionGuard` + `RolesGuard` + `BillingLockGuard`. Mavjud `GET /admin/cinemas` va `GET /admin/billing/*` o'zgarmaydi. Bu so'rovlar invoice yaratmaydi.
+
+`GET /admin/platform/summary`
+
+```json
+{
+  "cinemas": 0,
+  "cinemasActive": 0,
+  "halls": 0,
+  "cinemaAdmins": 0,
+  "invoicesUnpaid": 0,
+  "awaitingConnection": 0,
+  "cinemasLocked": 0
+}
+```
+
+| Maydon | Ma'nosi |
+| --- | --- |
+| `cinemas` | Barcha kinoteatrlar |
+| `cinemasActive` | `status = ACTIVE` |
+| `halls` | Barcha zallar |
+| `cinemaAdmins` | `CinemaStaff.role = CINEMA_ADMIN` va `active = true` |
+| `invoicesUnpaid` | `SubscriptionInvoice.status` `DUE` yoki `OVERDUE`. Yo'q bo'lsa `0` |
+| `awaitingConnection` | `profileComplete = false` |
+| `cinemasLocked` | `status = LOCKED` |
+
+`GET /admin/platform/admins?cursor=&limit=` va `GET /admin/platform/cinemas?cursor=&limit=`
+
+`limit` 1–100, default 50. `cursor` — oldingi sahifaning oxirgi `id` (adminlarda `staffId`). Keyingi sahifa yo'q bo'lsa `nextCursor: null`.
+
+Admin elementi: `staffId`, `userId`, `firstName`, `lastName`, `name`, `email`, `login`, `role`, `active`, `cinemaId`, `cinemaName`, `city`, `profileComplete`, `cinemaStatus`, `billingStatus`.
+
+Kinoteatr elementi: `id`, `name`, `city`, `status`, `profileComplete`, `halls`, `cinemaAdmins`, `billingStatus`.
+
+`billingStatus` — shu kinoteatrning eng so'nggi hisob-fakturasi (`periodYear`, `periodMonth`) statusi: `DUE` | `PAID` | `OVERDUE` | `VOID`. Hisob-faktura yo'q bo'lsa `null`. `email`, `login`, `firstName`, `lastName`, `name`, `city` bo'sh bo'lsa `null`. `name` — ism va familiya; ikkalasi ham bo'sh bo'lsa `null`.
 
 ---
 
@@ -229,10 +266,8 @@ Bo'sh / yuklanish / xato holatlari (seans yo'q, to'lov xatosi, hold tugadi) API 
 
 | Maydon | Holat | Manba | Taklif |
 | --- | --- | --- | --- |
-| Forma: `name`, `cinema`, `contact`, `message` | ❌ | — | **KAN-31** (`POST /public/leads`, `docs/contracts/landing-leads.md`) |
-| Rozilik checkbox | ⚠️ | prototipda `name` atributi yo'q → serverga yuborilmaydi | KAN-34 da `name="consent"` qo'shiladi; KAN-31 `consent: true` ni talab qiladi |
-| Javob | — | prototip `response.ok && result.id` ni tekshiradi | KAN-31 javobi `{ id, status }` bo'lishi kerak |
-| Honeypot | — | prototipda yo'q | KAN-31 kontraktida maydon nomi belgilanadi, KAN-34 yashirin input qo'shadi |
+| Forma: `name`, `cinema`, `contact`, `message` | ❌ bekor | — | **KAN-31 bekor.** `POST /public/leads` yo'q |
+| Rozilik checkbox, javob, honeypot | ❌ bekor | prototip serverga yubormaydi | KAN-31 bekor. Lead API yo'q |
 | Qolgan bo'limlar (hero, demo zal, FAQ) | ✅ | statik, API kerak emas | — |
 
 ---
@@ -267,7 +302,7 @@ model Session {
 }
 ```
 
-`Lead` modeli — KAN-31 da (`landing-leads.md`). `PaymentProvider.RAHMAT`, `Refund.initiator` — mavjud [schema-deltas.md](./schema-deltas.md) (KAN-6/7), o'zgarmaydi.
+`Lead` modeli qo'shilmaydi: KAN-31 bekor. `PaymentProvider.RAHMAT`, `Refund.initiator` — mavjud [schema-deltas.md](./schema-deltas.md) (KAN-6/7), o'zgarmaydi.
 
 ## 6. Taklif qilingan API qo'shimchalari (xulosa)
 
@@ -281,10 +316,10 @@ model Session {
 | F | `GET /admin/sessions/:id/seats` (+ block/unblock) | yangi endpoint | KAN-29 (Карта зала) | P1 |
 | G | `GET /admin/tickets`, `GET /admin/refunds` | yangi endpoint | KAN-29 | P1 (A dan keyin) |
 | H | `GET/POST/PATCH /admin/staff` (login + vaqtinchalik parol, email yo'q) | yangi endpoint | KAN-29 (Команда) | ✅ KAN-37 |
-| I | `GET /admin/platform/summary`, `GET /admin/platform/admins` | yangi endpoint | KAN-33 | P2 |
+| I | `GET /admin/platform/summary`, `GET /admin/platform/admins`, `GET /admin/platform/cinemas` | yangi endpoint | KAN-33 | ✅ KAN-37 |
 | J | `Cinema.city`, `Cinema.tagline`, `Hall.format`, `CinemaPhoto.caption` (+ javoblarda) | schema + maydon | KAN-29, KAN-30, KAN-33 | ✅ KAN-37 |
 | K | `GET /admin/reports/revenue.csv` | yangi endpoint | KAN-29 (Отчёты) | P3 |
-| L | Landing lead + `GET/PATCH /admin/leads` | yangi endpoint | KAN-33, KAN-34 | **KAN-31** |
+| L | Landing lead + `GET/PATCH /admin/leads` | yangi endpoint | KAN-33, KAN-34 | **bekor (KAN-31)** |
 
 Umumiy qoidalar (hamma yangi endpointlar uchun): mavjud `SessionGuard` + `RolesGuard` + `BillingLockGuard`; cinema-scoped (`canAccessCinema` / `canManageCinema`); Super Admin mijoz PII va pulini ko'rmaydi (mavjud privacy qoidasi); xato formati `{ statusCode, code, message }`; validatsiya `@cinema/validation` (zod).
 
@@ -296,8 +331,8 @@ Umumiy qoidalar (hamma yangi endpointlar uchun): mavjud `SessionGuard` + `RolesG
 | Admin: "% к прошлому ...", oldingi davr seriyasi, poster "Сегодня на экране"da | element yashiriladi |
 | Admin: seanslar "Заполняемость" ustuni | C qo'shilguncha yashiriladi |
 | Admin/Super: shahar, zal formati badge | yashiriladi |
-| Super: Администраторов KPI | I qo'shilguncha karta yashiriladi (`_count.staff` ishlatilmaydi — unda STAFF ham bor) |
-| Super: Обращения | bo'sh holat, KAN-31 dan keyin ulanadi |
+| Super: Администраторов KPI | `GET /admin/platform/summary` → `cinemaAdmins` |
+| Super: Обращения | bo'sh holat. KAN-31 bekor, endpoint yo'q |
 | Mini: reyting, janr chiplari afishada | B qo'shilguncha yashiriladi (film sahifasida ko'rsatiladi — u yerda bor) |
 | Mini: featured banner | frontend qoidasi (eng yaqin seans) yoki yashiriladi |
 | Mini: rasm caption | yashiriladi |
@@ -309,7 +344,7 @@ Umumiy qoidalar (hamma yangi endpointlar uchun): mavjud `SessionGuard` + `RolesG
 3. **Карта зала → "Забронировать":** kassada joy sotish/bron MVP ga kiradimi? Kirmasa tugma chiqmaydi.
 4. **Featured film:** qo'lda belgilanadimi (`isFeatured`) yoki avtomatik qoida yetarlimi?
 5. **Super Admin "Ожидает подключения":** `profileComplete=false` bilan tenglashtirish maqulmi?
-6. **Обращения:** jadval ustunlari va statuslar dizaynda yo'q (faqat bo'sh holat). KAN-31 da `new / in_progress / done` — dizayner tasdiqlasinmi?
+6. **Обращения:** KAN-31 bekor. Endpoint yo'q, sahifa bo'sh holatda qoladi.
 7. **Landing rozilik checkbox:** serverga yuborilishi kerak (`name="consent"`) — KAN-34 ga qo'shish.
 8. **Til (Русский)** seans bo'yichami yoki film bo'yicha yetarlimi?
 

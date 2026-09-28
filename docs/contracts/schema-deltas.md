@@ -326,4 +326,5 @@ model Session {
 - `audioLanguage` has no default. Unset stays `null` (not `ru`).
 - `isFeatured` defaults to `false`. At most one `true` per cinema is enforced in the movie write transaction, not by a partial unique index.
 - Empty `city` / `tagline` / `format` / `caption` are stored and returned as `null`.
-- Not in this migration: `Lead`, `PaymentProvider.RAHMAT`, refund initiator (KAN-31 / KAN-36).
+- Not in this migration: `Lead` (KAN-31 cancelled), `PaymentProvider.RAHMAT`, refund initiator (KAN-36).
+- Super Admin `GET /admin/platform/summary`, `/admins`, and `/cinemas` read existing `Cinema.profileComplete`, `Cinema.status`, and `SubscriptionInvoice`. No new columns.

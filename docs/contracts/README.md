@@ -37,9 +37,9 @@ Docs-first contracts for Cinema MVP auth, payment, refund, cinema profile, and f
 ## Design v2 (KAN-27) notes
 
 - Gap review: [design-v2-gaps.md](./design-v2-gaps.md) — frontend tasks KAN-29/30/33/34 hide any element marked ❌ until its API exists (no fake data).
-- KAN-37 (branch `fe_KAN-37`) added staff accounts, featured film (`featuredSource`), per-session `audioLanguage`, catalog `rating` / `genres` / `minPriceUzs`, admin session `sold` / `remaining`, dashboard week-over-week `comparison`, and nullable `city` / `tagline` / `format` / `caption`. Payment, refund, ticket verify, landing leads, CSV and the live seat map are still not implemented.
+- KAN-37 (branch `fe_KAN-37`) added staff accounts, featured film (`featuredSource`), per-session `audioLanguage`, catalog `rating` / `genres` / `minPriceUzs`, admin session `sold` / `remaining`, dashboard week-over-week `comparison`, nullable `city` / `tagline` / `format` / `caption`, and Super Admin reads `GET /admin/platform/summary`, `/admins`, `/cinemas` (`profileComplete`, billing status). Payment, refund, ticket verify (KAN-36), landing leads (KAN-31, cancelled), CSV and the live seat map are not implemented.
 - Implemented-vs-contracted: Rahmat payment, ticket verify and refund endpoints (KAN-6/7) are called by `apps/mini-app` / `apps/admin` but are **not yet implemented** in `apps/api` (see gap doc §0).
-- Landing lead form + Super Admin «Обращения»: **KAN-31** → `landing-leads.md` (planned).
+- Landing lead form + Super Admin «Обращения»: **KAN-31 is cancelled**. No lead endpoints.
 - Mini App route URLs must not change (bot menu + follow notifications deep-link to them).
 
 ## Implementation order

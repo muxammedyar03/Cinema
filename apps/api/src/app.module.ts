@@ -13,6 +13,7 @@ import { HealthController } from "./health/health.controller";
 import { MovieModule } from "./movie/movie.module";
 import { NotifyModule } from "./notify/notify.module";
 import { OrderModule } from "./order/order.module";
+import { PlatformModule } from "./platform/platform.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { PublicModule } from "./public/public.module";
 import { QueueModule } from "./queue/queue.module";
@@ -42,6 +43,7 @@ import { StaffModule } from "./staff/staff.module";
 		BookingModule,
 		OrderModule,
 		BillingModule,
+		PlatformModule,
 	],
 	controllers: [HealthController],
 	providers: [{ provide: APP_GUARD, useClass: PasswordChangeGuard }],
