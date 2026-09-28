@@ -105,6 +105,9 @@ importers:
       ioredis:
         specifier: ^5.6.1
         version: 5.11.1
+      multer:
+        specifier: ^2.0.2
+        version: 2.2.0
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
