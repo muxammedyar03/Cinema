@@ -1,0 +1,84 @@
+.form {
+	display: grid;
+	gap: 16px;
+	max-width: 760px;
+}
+
+.sectionGrid {
+	display: grid;
+	gap: 14px;
+	padding: 18px 22px 22px;
+}
+
+.span2 {
+	grid-column: 1 / -1;
+}
+
+.field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin: 0;
+}
+
+.label {
+	color: var(--muted);
+	font-size: var(--text-sm);
+}
+
+.input,
+.textarea {
+	width: 100%;
+	padding: 10px 12px;
+	border: 1px solid var(--line-strong);
+	border-radius: var(--radius-button);
+	background: var(--panel);
+	color: var(--ink);
+	font: inherit;
+	font-size: var(--text-body);
+}
+
+.textarea {
+	min-height: 88px;
+	resize: vertical;
+}
+
+.input:focus,
+.textarea:focus {
+	border-color: var(--primary);
+	outline: 3px solid var(--focus);
+	outline-offset: 1px;
+}
+
+.error {
+	margin: 0;
+	color: var(--bad);
+	font-size: var(--text-md);
+}
+
+.ok {
+	margin: 0;
+	color: var(--ok);
+	font-size: var(--text-md);
+}
+
+.actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+}
+
+.check {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: var(--ink);
+	font-size: var(--text-md);
+}
+
+@media (min-width: 720px) {
+	.sectionGrid {
+		grid-template-columns: 1fr 1fr;
+	}
+}

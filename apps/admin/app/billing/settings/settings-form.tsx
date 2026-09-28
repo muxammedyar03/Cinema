@@ -1,9 +1,11 @@
 "use client";
 
+import { Button } from "@cinema/ui";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import fields from "../../../components/platform/fields.module.css";
 import { clientApi } from "../../../lib/api";
-import { cx, ui } from "../../../lib/ui";
+import { errorText } from "../../../lib/api-error";
 
 type Settings = {
 	defaultCommissionUzs: number;
@@ -34,82 +36,91 @@ export function SettingsForm({ initial }: { initial: Settings }) {
 			setMsg("Сохранено");
 			router.refresh();
 		} catch (error) {
-			setErr(error instanceof Error ? error.message : "Ошибка");
+			setErr(errorText(error, "Не удалось сохранить"));
 		} finally {
 			setBusy(false);
 		}
 	}
 
 	return (
-		<form onSubmit={(e) => void save(e)} className="grid max-w-2xl gap-4 sm:grid-cols-2">
-			<label className={ui.field}>
-				<span className={ui.label}>Default комиссия / билет (сум)</span>
+		<form onSubmit={(e) => void save(e)} className={fields.sectionGrid}>
+			<label className={fields.field}>
+				<span className={fields.label}>Комиссия по умолчанию / билет (сум)</span>
 				<input
-					className={ui.input}
+					className={fields.input}
 					type="number"
 					min={0}
 					value={form.defaultCommissionUzs}
-					onChange={(e) => setForm((f) => ({ ...f, defaultCommissionUzs: Number(e.target.value) }))}
+					onChange={(e) =>
+						setForm((current) => ({ ...current, defaultCommissionUzs: Number(e.target.value) }))
+					}
 				/>
 			</label>
-			<label className={ui.field}>
-				<span className={ui.label}>Дней до авто-lock</span>
+			<label className={fields.field}>
+				<span className={fields.label}>Дней до автоблокировки</span>
 				<input
-					className={ui.input}
+					className={fields.input}
 					type="number"
 					min={1}
 					max={90}
 					value={form.lockAfterDays}
-					onChange={(e) => setForm((f) => ({ ...f, lockAfterDays: Number(e.target.value) }))}
+					onChange={(e) =>
+						setForm((current) => ({ ...current, lockAfterDays: Number(e.target.value) }))
+					}
 				/>
 			</label>
-			<label className={ui.field}>
-				<span className={ui.label}>Час рассылки (Asia/Tashkent)</span>
+			<label className={fields.field}>
+				<span className={fields.label}>Час рассылки (Asia/Tashkent)</span>
 				<input
-					className={ui.input}
+					className={fields.input}
 					type="number"
 					min={0}
 					max={23}
 					value={form.notifyHourTashkent}
-					onChange={(e) => setForm((f) => ({ ...f, notifyHourTashkent: Number(e.target.value) }))}
+					onChange={(e) =>
+						setForm((current) => ({ ...current, notifyHourTashkent: Number(e.target.value) }))
+					}
 				/>
 			</label>
-			<div className={ui.field}>
-				<span className={ui.label}>Каналы</span>
-				<label className="mt-2 flex items-center gap-2 text-sm text-ink">
+			<div className={fields.field}>
+				<span className={fields.label}>Каналы</span>
+				<label className={fields.check}>
 					<input
 						type="checkbox"
 						checked={form.notifyTelegram}
-						onChange={(e) => setForm((f) => ({ ...f, notifyTelegram: e.target.checked }))}
+						onChange={(e) =>
+							setForm((current) => ({ ...current, notifyTelegram: e.target.checked }))
+						}
 					/>
 					Telegram
 				</label>
-				<label className="mt-1.5 flex items-center gap-2 text-sm text-ink">
+				<label className={fields.check}>
 					<input
 						type="checkbox"
 						checked={form.notifyApp}
-						onChange={(e) => setForm((f) => ({ ...f, notifyApp: e.target.checked }))}
+						onChange={(e) => setForm((current) => ({ ...current, notifyApp: e.target.checked }))}
 					/>
-					In-app
+					В приложении
 				</label>
 			</div>
-			<label className={cx(ui.field, "sm:col-span-2")}>
-				<span className={ui.label}>
-					Шаблон (&#123;&#123;days&#125;&#125;, &#123;&#123;invoice&#125;&#125;,
-					&#123;&#123;left&#125;&#125;)
+			<label className={`${fields.field} ${fields.span2}`}>
+				<span className={fields.label}>
+					Шаблон ({"{{days}}"}, {"{{invoice}}"}, {"{{left}}"})
 				</span>
 				<textarea
-					className={cx(ui.input, "min-h-[100px]")}
+					className={fields.textarea}
 					value={form.lateMessageTemplate}
-					onChange={(e) => setForm((f) => ({ ...f, lateMessageTemplate: e.target.value }))}
+					onChange={(e) =>
+						setForm((current) => ({ ...current, lateMessageTemplate: e.target.value }))
+					}
 				/>
 			</label>
-			<div className="sm:col-span-2 flex flex-wrap items-center gap-3">
-				<button type="submit" disabled={busy} className={cx(ui.btn, ui.btnPri)}>
-					{busy ? "…" : "Сохранить"}
-				</button>
-				{msg ? <span className={ui.okMsg}>{msg}</span> : null}
-				{err ? <span className={ui.err}>{err}</span> : null}
+			<div className={`${fields.actions} ${fields.span2}`}>
+				<Button type="submit" disabled={busy}>
+					{busy ? "Сохранение…" : "Сохранить"}
+				</Button>
+				{msg ? <span className={fields.ok}>{msg}</span> : null}
+				{err ? <span className={fields.error}>{err}</span> : null}
 			</div>
 		</form>
 	);

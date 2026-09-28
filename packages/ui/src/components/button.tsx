@@ -18,7 +18,7 @@ export function buttonClassName({
 	variant?: ButtonVariant;
 	size?: ButtonSize;
 	className?: string;
-}) {
+} = {}) {
 	return cx(
 		styles.button,
 		variant === "secondary" && styles.secondary,

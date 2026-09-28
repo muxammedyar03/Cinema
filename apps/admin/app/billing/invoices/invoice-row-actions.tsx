@@ -1,51 +1,79 @@
 "use client";
 
-import Link from "next/link";
+import { Button } from "@cinema/ui";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { ButtonLink } from "../../../components/platform/button-link";
+import styles from "../../../components/platform/platform.module.css";
 import { clientApi } from "../../../lib/api";
-import { cx, ui } from "../../../lib/ui";
+import { errorText } from "../../../lib/api-error";
 
 export function InvoiceRowActions({
 	invoiceId,
 	status,
 	cinemaId,
+	unlock = false,
 }: {
 	invoiceId: string;
 	status: string;
 	cinemaId: string;
+	unlock?: boolean;
 }) {
 	const router = useRouter();
 	const [busy, setBusy] = useState(false);
+	const [err, setErr] = useState<string | null>(null);
 
 	async function markPaid() {
 		setBusy(true);
+		setErr(null);
 		try {
 			await clientApi("/admin/billing/invoices/mark-paid", {
 				method: "POST",
 				body: JSON.stringify({ invoiceId }),
 			});
 			router.refresh();
+		} catch (error) {
+			setErr(errorText(error, "Не удалось отметить оплату"));
+		} finally {
+			setBusy(false);
+		}
+	}
+
+	async function unlockCinema() {
+		setBusy(true);
+		setErr(null);
+		try {
+			await clientApi(`/admin/billing/cinemas/${cinemaId}/unlock`, { method: "POST" });
+			router.refresh();
+		} catch (error) {
+			setErr(errorText(error, "Не удалось разблокировать"));
 		} finally {
 			setBusy(false);
 		}
 	}
 
 	return (
-		<div className="flex flex-wrap justify-end gap-1.5">
-			<Link className={cx(ui.btn, ui.btnSm, ui.btnGhost)} href={`/clients/${cinemaId}`}>
-				Клиент
-			</Link>
+		<div className={styles.actions}>
+			<ButtonLink href={`/cinemas/${cinemaId}`} variant="secondary" size="small">
+				Кинотеатр
+			</ButtonLink>
 			{status !== "PAID" && status !== "VOID" ? (
-				<button
-					type="button"
-					disabled={busy}
-					className={cx(ui.btn, ui.btnSm, ui.btnPri)}
-					onClick={() => void markPaid()}
-				>
+				<Button size="small" disabled={busy} onClick={() => void markPaid()}>
 					Оплачено
-				</button>
+				</Button>
 			) : null}
+			{unlock ? (
+				<Button
+					variant="secondary"
+					size="small"
+					className={styles.danger}
+					disabled={busy}
+					onClick={() => void unlockCinema()}
+				>
+					Разблокировать
+				</Button>
+			) : null}
+			{err ? <span className={styles.sub}>{err}</span> : null}
 		</div>
 	);
 }
