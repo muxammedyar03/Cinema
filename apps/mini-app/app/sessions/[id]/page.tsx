@@ -1,57 +1,63 @@
+import Image from "next/image";
 import Link from "next/link";
+import { Availability } from "../../../components/availability";
 import { GaBooking } from "../../../components/ga-booking";
 import { SeatBooking } from "../../../components/seat-booking";
 import { publicApi } from "../../../lib/api";
-import { formatTime } from "../../../lib/format";
+import { formatSessionDate, formatTime } from "../../../lib/format";
 import type { SessionDetail } from "../../../lib/types";
-import { cx, ui } from "../../../lib/ui";
 
 export default async function SessionPage({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
 	const session = await publicApi<SessionDetail>(`/public/sessions/${id}`);
 	const isGa = session.bookingMode === "GENERAL_ADMISSION" || session.seats.length === 0;
+	const when = `${formatSessionDate(session.startsAt)} · ${formatTime(session.startsAt)} · ${session.hall.name}`;
 
 	return (
 		<>
-			<div className="px-4 pt-[18px] pb-2">
-				<Link
-					href={`/movies/${session.movie.id}`}
-					className={cx(ui.backFab, "relative mb-3")}
-					aria-label="Назад"
-				>
+			<div className="view-title">
+				<Link href={`/movies/${session.movie.id}`} className="back" aria-label="Назад к фильму">
 					←
 				</Link>
-				<h1 className="font-brand text-xl font-bold">
-					<Link href={`/cinemas/${session.cinema.id}`} className="hover:text-orange">
-						{session.cinema.name}
-					</Link>{" "}
-					· {formatTime(session.startsAt)}
-				</h1>
-				<p className="mt-1 text-[13px] text-muted">
-					{session.movie.title} · {session.hall.name} · {session.remaining} /{" "}
-					{session.hall.capacity} мест
-					{isGa ? " · без мест" : ""}
-				</p>
+				<h1>{isGa ? "Билеты без мест" : "Выберите места"}</h1>
 			</div>
-			{isGa ? (
-				<GaBooking
-					sessionId={session.id}
-					basePriceUzs={session.basePriceUzs}
-					remaining={session.remaining}
-				/>
-			) : (
-				<>
-					<div className="mx-6 mt-2 grid h-[34px] place-items-center rounded-t-[120px] border-2 border-b-0 border-orange/35 text-[10px] tracking-[0.2em] text-muted">
-						ЭКРАН
+			<div className="pad">
+				<div className="film-summary">
+					{session.movie.posterUrl ? (
+						<Image src={session.movie.posterUrl} alt="" width={45} height={63} unoptimized />
+					) : (
+						<div className="poster-fallback" />
+					)}
+					<div>
+						<b>{session.movie.title}</b>
+						<small>
+							{session.cinema.name} · {when}
+						</small>
 					</div>
-					<SeatBooking
+				</div>
+				<Availability
+					timeLabel={formatTime(session.startsAt)}
+					remaining={session.remaining}
+					capacity={session.hall.capacity}
+				/>
+				{isGa ? (
+					<GaBooking
 						sessionId={session.id}
-						seats={session.seats}
 						basePriceUzs={session.basePriceUzs}
 						remaining={session.remaining}
 					/>
-				</>
-			)}
+				) : (
+					<>
+						<div className="screen-arc">ЭКРАН</div>
+						<SeatBooking
+							sessionId={session.id}
+							seats={session.seats}
+							basePriceUzs={session.basePriceUzs}
+							remaining={session.remaining}
+						/>
+					</>
+				)}
+			</div>
 		</>
 	);
 }

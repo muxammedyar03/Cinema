@@ -2,7 +2,6 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect } from "react";
-import { ui } from "../../../lib/ui";
 
 function PayReturnInner() {
 	const params = useSearchParams();
@@ -18,12 +17,12 @@ function PayReturnInner() {
 		router.replace("/orders");
 	}, [params, router]);
 
-	return <p className={ui.empty}>Возвращаем из Rahmat…</p>;
+	return <p className="note">Возвращаем из Rahmat…</p>;
 }
 
 export default function PayReturnPage() {
 	return (
-		<Suspense fallback={<p className={ui.empty}>Возвращаем из Rahmat…</p>}>
+		<Suspense fallback={<p className="note">Возвращаем из Rahmat…</p>}>
 			<PayReturnInner />
 		</Suspense>
 	);

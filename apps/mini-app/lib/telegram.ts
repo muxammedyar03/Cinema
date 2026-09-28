@@ -1,7 +1,13 @@
 export type TelegramWebApp = {
 	initData: string;
 	initDataUnsafe?: {
-		user?: { id: number; username?: string; language_code?: string };
+		user?: {
+			id: number;
+			username?: string;
+			language_code?: string;
+			first_name?: string;
+			last_name?: string;
+		};
 		start_param?: string;
 	};
 	ready: () => void;
@@ -9,6 +15,18 @@ export type TelegramWebApp = {
 	openLink: (url: string, options?: { try_instant_view?: boolean }) => void;
 	openTelegramLink?: (url: string) => void;
 	colorScheme?: "light" | "dark";
+	themeParams?: {
+		bg_color?: string;
+		text_color?: string;
+		hint_color?: string;
+		button_color?: string;
+		button_text_color?: string;
+		secondary_bg_color?: string;
+	};
+	onEvent?: (event: string, cb: () => void) => void;
+	offEvent?: (event: string, cb: () => void) => void;
+	setHeaderColor?: (color: string) => void;
+	setBackgroundColor?: (color: string) => void;
 	MainButton?: TelegramMainButton;
 };
 
@@ -34,6 +52,13 @@ declare global {
 export function getTelegramWebApp(): TelegramWebApp | undefined {
 	if (typeof window === "undefined") return undefined;
 	return window.Telegram?.WebApp;
+}
+
+export function telegramDisplayName(): string | null {
+	const user = getTelegramWebApp()?.initDataUnsafe?.user;
+	if (!user) return null;
+	const name = [user.first_name, user.last_name].filter(Boolean).join(" ").trim();
+	return name || null;
 }
 
 export function getTelegramInitData(): string {

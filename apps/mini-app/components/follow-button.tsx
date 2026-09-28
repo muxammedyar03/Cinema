@@ -1,9 +1,9 @@
 "use client";
 
+import { Button, Toast } from "@cinema/ui";
 import { useState } from "react";
 import { clientApi, ensureTelegramSession } from "../lib/api";
 import { errorText } from "../lib/api-error";
-import { cx, ui } from "../lib/ui";
 
 export function FollowButton({
 	cinemaId,
@@ -27,11 +27,11 @@ export function FollowButton({
 			if (following) {
 				await clientApi(`/public/cinemas/${cinemaId}/follow`, { method: "DELETE" });
 				setFollowing(false);
-				setCount((n) => Math.max(0, n - 1));
+				setCount((value) => Math.max(0, value - 1));
 			} else {
 				await clientApi(`/public/cinemas/${cinemaId}/follow`, { method: "POST" });
 				setFollowing(true);
-				setCount((n) => n + 1);
+				setCount((value) => value + 1);
 			}
 		} catch (err) {
 			setError(errorText(err, "Не удалось обновить подписку"));
@@ -42,16 +42,17 @@ export function FollowButton({
 
 	return (
 		<div>
-			<button
+			<Button
 				type="button"
-				className={cx(ui.cta, following && ui.ctaGhost, "w-full")}
+				className="v2-full"
+				variant={following ? "secondary" : "primary"}
 				disabled={busy}
 				onClick={() => void toggle()}
 			>
 				{busy ? "…" : following ? "Отписаться" : "Подписаться"}
-				<span className="ml-2 text-[12px] font-semibold opacity-80">{count}</span>
-			</button>
-			{error ? <p className="mt-2 text-center text-[12px] text-red-400">{error}</p> : null}
+				<span>{count}</span>
+			</Button>
+			<Toast message={error} open={Boolean(error)} />
 		</div>
 	);
 }

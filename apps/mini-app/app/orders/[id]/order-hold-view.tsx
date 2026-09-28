@@ -1,16 +1,17 @@
 "use client";
 
+import { Badge, EmptyState } from "@cinema/ui";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { LinkButton } from "../../../components/link-button";
 import { RahmatCheckout } from "../../../components/rahmat-checkout";
 import { SelfRefundPanel } from "../../../components/self-refund";
 import { TicketQr } from "../../../components/ticket-qr";
 import { clientApi, ensureTelegramSession } from "../../../lib/api";
 import { errorText } from "../../../lib/api-error";
-import { formatPrice, formatTime } from "../../../lib/format";
+import { formatPrice, formatSessionDate, formatTime } from "../../../lib/format";
 import type { OrderDetail, OrderTicket } from "../../../lib/types";
-import { cx, ui } from "../../../lib/ui";
 
 function statusLabel(status: string) {
 	switch (status) {
@@ -23,7 +24,7 @@ function statusLabel(status: string) {
 		case "CANCELLED":
 			return "Отменён";
 		case "REFUND_PENDING":
-			return "Возврат…";
+			return "Возврат";
 		case "REFUNDED":
 			return "Возвращён";
 		default:
@@ -31,13 +32,20 @@ function statusLabel(status: string) {
 	}
 }
 
+function statusTone(status: string): "ok" | "warn" | "bad" | "neutral" {
+	if (status === "PAID") return "ok";
+	if (status === "PENDING_PAYMENT" || status === "REFUND_PENDING") return "warn";
+	if (status === "REFUNDED" || status === "CANCELLED" || status === "EXPIRED") return "bad";
+	return "neutral";
+}
+
 function ticketSeatLabel(order: OrderDetail, ticket: OrderTicket, index: number): string {
 	if (ticket.seatLabel) return ticket.seatLabel;
-	const seats = order.items.map((i) => i.seatLabel).filter(Boolean) as string[];
+	const seats = order.items.map((item) => item.seatLabel).filter(Boolean) as string[];
 	if (ticket.type === "SEAT" && seats[index]) return seats[index];
 	if (
 		ticket.type === "GENERAL_ADMISSION" ||
-		order.items.some((i) => i.type === "GENERAL_ADMISSION")
+		order.items.some((item) => item.type === "GENERAL_ADMISSION")
 	) {
 		return `Входной билет ${index + 1}`;
 	}
@@ -74,110 +82,95 @@ export function OrderHoldView({ orderId }: { orderId: string }) {
 
 	useEffect(() => {
 		if (!order?.holdExpiresAt || order.status !== "PENDING_PAYMENT") return;
-		const t = setInterval(() => setNow(Date.now()), 1000);
-		return () => clearInterval(t);
+		const timer = setInterval(() => setNow(Date.now()), 1000);
+		return () => clearInterval(timer);
 	}, [order?.holdExpiresAt, order?.status]);
 
 	const tickets = useMemo(() => order?.tickets ?? [], [order]);
-	const paid = order?.status === "PAID" || order?.status === "REFUND_PENDING";
-	const refunded = order?.status === "REFUNDED";
 
 	if (error) {
 		return (
-			<div className="px-5 py-16 text-center">
-				<p className="text-sm text-bad">{error}</p>
-				<Link href="/" className={cx(ui.cta, "mt-6 inline-flex")}>
-					На главную
-				</Link>
-			</div>
+			<EmptyState
+				title="Заказ не найден"
+				description={error}
+				action={<LinkButton href="/">На афишу</LinkButton>}
+			/>
 		);
 	}
 
 	if (!order) {
-		return <p className={ui.empty}>Загрузка…</p>;
+		return <p className="note">Загрузка…</p>;
 	}
 
+	const paid = order.status === "PAID" || order.status === "REFUND_PENDING";
+	const refunded = order.status === "REFUNDED";
 	const holdLeft = order.holdExpiresAt ? new Date(order.holdExpiresAt).getTime() - now : 0;
 	const seats = order.items
-		.map((i) => i.seatLabel)
+		.map((item) => item.seatLabel)
 		.filter(Boolean)
 		.join(" · ");
 	const gaQty = order.items
-		.filter((i) => i.type === "GENERAL_ADMISSION")
-		.reduce((n, i) => n + i.quantity, 0);
-	const placesLabel = seats || (gaQty > 0 ? `${gaQty} бил. (GA)` : "—");
+		.filter((item) => item.type === "GENERAL_ADMISSION")
+		.reduce((count, item) => count + item.quantity, 0);
+	const placesLabel = seats || (gaQty > 0 ? `${gaQty} бил.` : "—");
 	const pending = order.status === "PENDING_PAYMENT";
 	const expired = order.status === "EXPIRED" || (pending && holdLeft <= 0);
 	const showQr = (paid || refunded) && tickets.length > 0;
+	const shownStatus = expired && pending ? "Истёк" : statusLabel(order.status);
 
 	return (
-		<div className="px-5 pb-10 pt-14">
-			<div className="overflow-hidden rounded-[22px] border border-line bg-linear-to-br from-[#1c1c1c] to-[#121212] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
-				<p className="text-[11px] tracking-wide text-muted uppercase">
-					{paid || refunded ? "Билет" : "Бронь"} · #{order.publicNumber}
-				</p>
-				<h1 className="mt-2 font-brand text-[26px] font-extrabold tracking-tight">
-					{order.session.movie.title}
-				</h1>
-
-				{showQr ? (
-					<div className="mt-6 flex flex-col gap-3">
-						{tickets.map((t, i) => (
+		<>
+			<article className="ticket">
+				<div className="ticket-top">
+					<Badge tone={statusTone(expired && pending ? "EXPIRED" : order.status)}>
+						{shownStatus}
+					</Badge>
+					<h2>{order.session.movie.title}</h2>
+					<p>
+						{order.cinema.name} · #{order.publicNumber}
+					</p>
+					<div className="ticket-info">
+						<div>
+							<span>Дата</span>
+							<b>{formatSessionDate(order.session.startsAt)}</b>
+						</div>
+						<div>
+							<span>Время</span>
+							<b>{formatTime(order.session.startsAt)}</b>
+						</div>
+						<div>
+							<span>Зал</span>
+							<b>{order.session.hall.name}</b>
+						</div>
+						<div>
+							<span>{gaQty > 0 ? "Билеты" : "Места"}</span>
+							<b>{placesLabel}</b>
+						</div>
+						<div>
+							<span>Сумма</span>
+							<b>{formatPrice(order.totalUzs)}</b>
+						</div>
+						<div>
+							<span>Кинотеатр</span>
+							<b>{order.cinema.name}</b>
+						</div>
+					</div>
+				</div>
+				<div className="ticket-bottom">
+					{showQr ? (
+						tickets.map((ticket, index) => (
 							<TicketQr
-								key={t.id}
-								code={t.code}
-								status={t.status}
-								label={`${ticketSeatLabel(order, t, i)} · ${order.session.hall.name}`}
+								key={ticket.id}
+								code={ticket.code}
+								status={ticket.status}
+								label={`${ticketSeatLabel(order, ticket, index)} · ${order.session.hall.name}`}
 							/>
-						))}
-					</div>
-				) : paid && tickets.length === 0 ? (
-					<div className="mx-auto my-7 grid size-[148px] place-items-center rounded-2xl border border-dashed border-ok/40 bg-elev/50 text-center text-[11px] leading-relaxed text-muted">
-						Оплата получена
-						<br />
-						<span className="text-faint">Готовим QR…</span>
-					</div>
-				) : (
-					<div className="mx-auto my-7 grid size-[148px] place-items-center rounded-2xl border border-dashed border-line bg-elev/50 text-center text-[11px] leading-relaxed text-muted">
-						QR после оплаты Rahmat
-					</div>
-				)}
-
-				<dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3.5 text-[13px]">
-					<div>
-						<dt className="text-[11px] text-faint">Дата</dt>
-						<dd className="mt-0.5 font-semibold">
-							{new Date(order.session.startsAt).toLocaleDateString("ru-RU", {
-								day: "numeric",
-								month: "short",
-							})}
-							, {formatTime(order.session.startsAt)}
-						</dd>
-					</div>
-					<div>
-						<dt className="text-[11px] text-faint">{gaQty > 0 ? "Билеты" : "Места"}</dt>
-						<dd className="mt-0.5 font-semibold">{placesLabel}</dd>
-					</div>
-					<div>
-						<dt className="text-[11px] text-faint">Кинотеатр</dt>
-						<dd className="mt-0.5 font-semibold">{order.cinema.name}</dd>
-					</div>
-					<div>
-						<dt className="text-[11px] text-faint">Зал</dt>
-						<dd className="mt-0.5 font-semibold">{order.session.hall.name}</dd>
-					</div>
-					<div>
-						<dt className="text-[11px] text-faint">Сумма</dt>
-						<dd className="mt-0.5 font-semibold text-orange">{formatPrice(order.totalUzs)}</dd>
-					</div>
-					<div>
-						<dt className="text-[11px] text-faint">Статус</dt>
-						<dd className="mt-0.5 font-semibold">
-							{expired && pending ? "Истёк" : statusLabel(order.status)}
-						</dd>
-					</div>
-				</dl>
-			</div>
+						))
+					) : (
+						<p>{paid ? "Оплата получена. Готовим QR…" : "QR появится после оплаты"}</p>
+					)}
+				</div>
+			</article>
 
 			{pending && !expired ? (
 				<RahmatCheckout
@@ -194,18 +187,9 @@ export function OrderHoldView({ orderId }: { orderId: string }) {
 				/>
 			) : null}
 
-			{expired ? (
-				<p className="mt-5 text-center text-sm text-muted">
-					Время брони истекло. Выберите места снова.
-				</p>
-			) : null}
-
+			{expired ? <p className="note">Время брони истекло. Выберите места снова.</p> : null}
 			{payReturn === "fail" || payReturn === "error" ? (
-				<p className="mt-3 text-center text-sm text-bad">Возврат из Rahmat: оплата не завершена.</p>
-			) : null}
-
-			{paid && tickets.length === 0 ? (
-				<p className="mt-4 text-center text-sm text-muted">Проверяем статус оплаты…</p>
+				<p className="note bad">Возврат из Rahmat: оплата не завершена.</p>
 			) : null}
 
 			{paid ? (
@@ -217,19 +201,19 @@ export function OrderHoldView({ orderId }: { orderId: string }) {
 				/>
 			) : null}
 
-			<div className="mt-6 flex flex-col gap-2">
+			<div className="stack">
 				{order.status === "EXPIRED" || expired ? (
-					<Link href={`/sessions/${order.session.id}`} className={cx(ui.cta, ui.ctaBlock)}>
+					<LinkButton href={`/sessions/${order.session.id}`} className="v2-full">
 						Выбрать места снова
-					</Link>
+					</LinkButton>
 				) : null}
-				<Link href="/orders" className={cx(ui.cta, ui.ctaBlock, ui.ctaGhost, "border border-line")}>
+				<LinkButton href="/orders" variant="secondary" className="v2-full">
 					Мои билеты
-				</Link>
-				<Link href="/" className={cx(ui.cta, ui.ctaBlock, ui.ctaGhost, "border border-line")}>
+				</LinkButton>
+				<Link href="/" className="v2-btn v2-btn-secondary v2-full">
 					На афишу
 				</Link>
 			</div>
-		</div>
+		</>
 	);
 }

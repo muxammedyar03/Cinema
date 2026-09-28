@@ -13,6 +13,47 @@ export function formatTime(iso: string): string {
 	});
 }
 
+export function filmsCountLabel(count: number): string {
+	const mod10 = count % 10;
+	const mod100 = count % 100;
+	if (mod10 === 1 && mod100 !== 11) return `${count} фильм`;
+	if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return `${count} фильма`;
+	return `${count} фильмов`;
+}
+
+export function weekdayShort(dateKey: string): string {
+	return new Date(`${dateKey}T12:00:00+05:00`)
+		.toLocaleDateString(LOCALE, { timeZone: TZ, weekday: "short" })
+		.replace(".", "");
+}
+
+export function dayNumber(dateKey: string): string {
+	return new Date(`${dateKey}T12:00:00+05:00`).toLocaleDateString(LOCALE, {
+		timeZone: TZ,
+		day: "numeric",
+	});
+}
+
+export function formatMonthDay(dateKey: string): string {
+	return new Date(`${dateKey}T12:00:00+05:00`).toLocaleDateString(LOCALE, {
+		timeZone: TZ,
+		day: "numeric",
+		month: "long",
+	});
+}
+
+export function formatSessionDate(iso: string): string {
+	return new Date(iso).toLocaleDateString(LOCALE, {
+		timeZone: TZ,
+		day: "numeric",
+		month: "long",
+	});
+}
+
+export function formatMinutes(min: number): string {
+	return `${min} мин`;
+}
+
 export function formatDayLabel(dateKey: string): string {
 	const d = new Date(`${dateKey}T12:00:00+05:00`);
 	return d.toLocaleDateString(LOCALE, {
@@ -36,11 +77,4 @@ export function formatDuration(min: number): string {
 	const m = min % 60;
 	if (h <= 0) return `${m} мин`;
 	return m ? `${h} ч ${m} мин` : `${h} ч`;
-}
-
-export function posterGradient(seed: string): string {
-	let hash = 0;
-	for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) | 0;
-	const hue = Math.abs(hash) % 360;
-	return `linear-gradient(145deg, hsl(${hue} 55% 28%), hsl(${(hue + 40) % 360} 70% 14%) 55%, #0a0a0a)`;
 }

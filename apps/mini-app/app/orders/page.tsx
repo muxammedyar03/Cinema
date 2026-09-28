@@ -1,11 +1,12 @@
 "use client";
 
+import { Badge, EmptyState, PageHeader } from "@cinema/ui";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { LinkButton } from "../../components/link-button";
 import { clientApi, ensureTelegramSession } from "../../lib/api";
 import { errorText } from "../../lib/api-error";
 import { formatPrice, formatTime } from "../../lib/format";
-import { ui } from "../../lib/ui";
 
 type OrderRow = {
 	id: string;
@@ -31,12 +32,19 @@ function statusRu(status: string) {
 		case "CANCELLED":
 			return "Отменён";
 		case "REFUND_PENDING":
-			return "Возврат…";
+			return "Возврат";
 		case "REFUNDED":
 			return "Возвращён";
 		default:
 			return status;
 	}
+}
+
+function tone(status: string): "ok" | "warn" | "bad" | "neutral" {
+	if (status === "PAID") return "ok";
+	if (status === "PENDING_PAYMENT" || status === "REFUND_PENDING") return "warn";
+	if (status === "EXPIRED" || status === "CANCELLED" || status === "REFUNDED") return "bad";
+	return "neutral";
 }
 
 export default function MyOrdersPage() {
@@ -55,43 +63,42 @@ export default function MyOrdersPage() {
 	}, []);
 
 	return (
-		<div className="px-[18px] pt-5 pb-8">
-			<div className="mb-4 flex items-center justify-between">
-				<h1 className="font-brand text-2xl font-extrabold">Билеты</h1>
-				<Link href="/" className="text-xs text-muted">
-					Афиша
-				</Link>
+		<>
+			<div className="pad">
+				<PageHeader title="Мои билеты" description="Билеты и брони этого аккаунта" />
 			</div>
-			{error ? <p className="text-sm text-bad">{error}</p> : null}
-			{orders === null && !error ? <p className={ui.empty}>Загрузка…</p> : null}
+			{error ? <p className="note bad">{error}</p> : null}
+			{orders === null && !error ? <p className="note">Загрузка…</p> : null}
 			{orders?.length === 0 ? (
-				<p className={ui.empty}>Пока нет броней. Выберите фильм и места.</p>
+				<EmptyState
+					title="Билетов пока нет"
+					description="Выберите фильм в афише и забронируйте места."
+					action={<LinkButton href="/">К афише</LinkButton>}
+				/>
 			) : null}
-			<ul className="flex flex-col gap-2.5">
-				{orders?.map((o) => (
-					<li key={o.id}>
-						<Link
-							href={`/orders/${o.id}`}
-							className="block rounded-[16px] border border-line bg-elev/60 px-4 py-3.5"
-						>
-							<div className="flex items-start justify-between gap-3">
-								<div className="min-w-0">
-									<div className="truncate font-semibold">{o.movieTitle}</div>
-									<div className="mt-1 text-[12px] text-muted">
-										{o.cinemaName} · {o.hallName} · {formatTime(o.startsAt)}
-									</div>
-									<div className="mt-1 text-[11px] text-faint">
-										#{o.publicNumber} · {o.itemCount} мест · {statusRu(o.status)}
-									</div>
+			<ul className="order-list">
+				{orders?.map((order) => (
+					<li key={order.id}>
+						<Link href={`/orders/${order.id}`} className="order-row">
+							<div className="order-row-top">
+								<div>
+									<b>{order.movieTitle}</b>
+									<small>
+										{order.cinemaName} · {order.hallName} · {formatTime(order.startsAt)}
+									</small>
+									<span className="meta-line">
+										#{order.publicNumber} · {order.itemCount} бил.
+									</span>
 								</div>
-								<div className="shrink-0 text-right text-sm font-bold text-orange">
-									{formatPrice(o.totalUzs)}
+								<div>
+									<Badge tone={tone(order.status)}>{statusRu(order.status)}</Badge>
+									<div className="order-price">{formatPrice(order.totalUzs)}</div>
 								</div>
 							</div>
 						</Link>
 					</li>
 				))}
 			</ul>
-		</div>
+		</>
 	);
 }
