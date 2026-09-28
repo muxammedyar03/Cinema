@@ -1,115 +1,70 @@
-import { Building2, Plus } from "lucide-react";
-import Link from "next/link";
+import { Card, EmptyState, PageHeader } from "@cinema/ui";
 import { redirect } from "next/navigation";
+import { AdminsTable } from "../../components/platform/admins-table";
+import { ButtonLink } from "../../components/platform/button-link";
+import styles from "../../components/platform/platform.module.css";
 import { Shell } from "../../components/shell";
+import { loadPlatformAdmins } from "../../lib/platform/load";
 import { roleOf } from "../../lib/rbac";
-import { getMe, serverApi } from "../../lib/server-api";
-import { cx, ui } from "../../lib/ui";
+import { getMe } from "../../lib/server-api";
 
-type CinemaRow = {
-	id: string;
-	name: string;
-	status: "ACTIVE" | "DISABLED" | "LOCKED";
-	timezone: string;
-	phone: string | null;
-	address: string | null;
-	billing: { monthlyPlanUzs: number } | null;
-	profileComplete?: boolean;
-	_count: { halls: number; staff: number };
-	invoices: Array<{ status: string; daysLate?: number }>;
-};
-
-function money(n: number) {
-	return `${n.toLocaleString("ru-RU")} сум`;
-}
-
-function statusCls(status: string) {
-	if (status === "ACTIVE") return cx(ui.badge, ui.badgeOk);
-	if (status === "LOCKED") return cx(ui.badge, ui.badgeBad);
-	return cx(ui.badge, ui.badgeMuted);
-}
-
-export default async function ClientsPage() {
+export default async function ClientsPage({
+	searchParams,
+}: {
+	searchParams: Promise<{ cursor?: string }>;
+}) {
 	const user = await getMe();
 	if (!user) redirect("/login");
 	if (roleOf(user) !== "super") redirect("/halls");
 
-	const cinemas = await serverApi<CinemaRow[]>("/admin/cinemas");
+	const { cursor } = await searchParams;
+	const admins = await loadPlatformAdmins(cursor);
 
 	return (
 		<Shell user={user}>
-			<div className={ui.row}>
-				<div>
-					<h1 className={ui.pageTitle}>Клиенты</h1>
-					<p className={ui.sub}>Подписчики платформы · план, доступ, админы · без кассы клиента</p>
-				</div>
-				<div className="flex flex-wrap gap-2">
-					<Link className={cx(ui.btn, ui.btnGhost)} href="/billing/invoices">
-						Инвойсы
-					</Link>
-					<Link className={cx(ui.btn, ui.btnGhost)} href="/billing">
-						Биллинг
-					</Link>
-					<Link className={cx(ui.btn, ui.btnPri)} href="/clients/new">
-						<Plus className="size-4" strokeWidth={2} />
-						Клиент
-					</Link>
-				</div>
-			</div>
-
-			<div className={ui.card}>
-				{cinemas.length === 0 ? (
-					<div className="px-5 py-10 text-center text-sm text-muted">
-						<Building2 className="mx-auto mb-3 size-8 text-faint" strokeWidth={1.4} />
-						Клиентов пока нет
-					</div>
-				) : (
-					<table>
-						<thead>
-							<tr>
-								<th>Клиент</th>
-								<th>План / мес</th>
-								<th>Залы</th>
-								<th>Админы</th>
-								<th>Часовой пояс</th>
-								<th>Профиль</th>
-								<th>Статус</th>
-							</tr>
-						</thead>
-						<tbody>
-							{cinemas.map((c) => (
-								<tr key={c.id}>
-									<td>
-										<Link href={`/clients/${c.id}`}>
-											<b>{c.name}</b>
-										</Link>
-										{c.address ? (
-											<>
-												<br />
-												<small className="text-xs text-muted">{c.address}</small>
-											</>
-										) : null}
-									</td>
-									<td>{money(c.billing?.monthlyPlanUzs ?? 2_500_000)}</td>
-									<td>{c._count.halls}</td>
-									<td>{c._count.staff}</td>
-									<td>{c.timezone}</td>
-									<td>
-										<Link href={`/clients/${c.id}/profile`}>
-											<span className={cx(ui.badge, c.profileComplete ? ui.badgeOk : ui.badgeWarn)}>
-												{c.profileComplete ? "полный" : "неполный"}
-											</span>
-										</Link>
-									</td>
-									<td>
-										<span className={statusCls(c.status)}>{c.status}</span>
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				)}
-			</div>
+			<PageHeader
+				title="Администраторы"
+				description="Пользователи кинотеатров и их роли"
+				actions={
+					<>
+						<ButtonLink href="/cinemas" variant="secondary">
+							Кинотеатры
+						</ButtonLink>
+						<ButtonLink href="/clients/new">Кинотеатр</ButtonLink>
+					</>
+				}
+			/>
+			{admins.status === "ready" ? (
+				<>
+					<AdminsTable rows={admins.data.items} />
+					{admins.data.nextCursor ? (
+						<div className={styles.more}>
+							<ButtonLink
+								href={`/clients?cursor=${encodeURIComponent(admins.data.nextCursor)}`}
+								variant="secondary"
+							>
+								Дальше
+							</ButtonLink>
+						</div>
+					) : null}
+				</>
+			) : (
+				<Card>
+					<EmptyState
+						title={
+							admins.status === "unavailable"
+								? "Список администраторов недоступен"
+								: "Не удалось загрузить администраторов"
+						}
+						description={
+							admins.status === "unavailable"
+								? "Команда появится после подключения списка администраторов. Пока здесь пусто — без примерных имён и чисел. Карточки кинотеатров по-прежнему открываются в разделе «Кинотеатры»."
+								: admins.message
+						}
+						action={<ButtonLink href="/cinemas">К кинотеатрам</ButtonLink>}
+					/>
+				</Card>
+			)}
 		</Shell>
 	);
 }

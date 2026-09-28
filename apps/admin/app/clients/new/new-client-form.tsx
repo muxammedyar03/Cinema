@@ -1,14 +1,22 @@
 "use client";
 
 import type { SessionUser } from "@cinema/types";
-import Link from "next/link";
+import { Button, Card, CardHeader, PageHeader } from "@cinema/ui";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { ButtonLink } from "../../../components/platform/button-link";
+import fields from "../../../components/platform/fields.module.css";
 import { Shell } from "../../../components/shell";
 import { clientApi } from "../../../lib/api";
-import { cx, ui } from "../../../lib/ui";
+import { errorText } from "../../../lib/api-error";
 
-export function NewClientForm({ user }: { user: SessionUser }) {
+export function NewClientForm({
+	user,
+	cancelHref = "/clients",
+}: {
+	user: SessionUser;
+	cancelHref?: string;
+}) {
 	const router = useRouter();
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState("");
@@ -27,7 +35,7 @@ export function NewClientForm({ user }: { user: SessionUser }) {
 	});
 
 	function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
-		setForm((f) => ({ ...f, [key]: value }));
+		setForm((current) => ({ ...current, [key]: value }));
 	}
 
 	async function onSubmit(e: React.FormEvent) {
@@ -57,7 +65,7 @@ export function NewClientForm({ user }: { user: SessionUser }) {
 			router.push(`/clients/${cinema.id}/profile`);
 			router.refresh();
 		} catch (err) {
-			setError(err instanceof Error ? err.message : "Не удалось создать клиента");
+			setError(errorText(err, "Не удалось создать кинотеатр"));
 		} finally {
 			setBusy(false);
 		}
@@ -65,173 +73,150 @@ export function NewClientForm({ user }: { user: SessionUser }) {
 
 	return (
 		<Shell user={user}>
-			<div className={ui.row}>
-				<div>
-					<h1 className={ui.pageTitle}>Новый клиент</h1>
-					<p className={ui.sub}>Профиль кинотеатра · месячный план · первый Cinema Admin</p>
-				</div>
-				<Link className={cx(ui.btn, ui.btnGhost)} href="/clients">
-					К списку
-				</Link>
-			</div>
+			<PageHeader
+				title="Новый кинотеатр"
+				description="Профиль, месячный план и первый администратор"
+				actions={
+					<ButtonLink href={cancelHref} variant="secondary">
+						К списку
+					</ButtonLink>
+				}
+			/>
 
-			<form onSubmit={(e) => void onSubmit(e)} className="grid max-w-3xl gap-4">
-				{error ? <p className={ui.err}>{error}</p> : null}
+			<form onSubmit={(e) => void onSubmit(e)} className={fields.form}>
+				{error ? <p className={fields.error}>{error}</p> : null}
 
-				<section className={ui.card}>
-					<div className={ui.cardH}>Профиль</div>
-					<div className="grid gap-3.5 p-[18px] sm:grid-cols-2">
-						<div className={cx(ui.field, "sm:col-span-2")}>
-							<label className={ui.label} htmlFor="name">
-								Название *
-							</label>
+				<Card>
+					<CardHeader title="Профиль" />
+					<div className={fields.sectionGrid}>
+						<label className={`${fields.field} ${fields.span2}`} htmlFor="name">
+							<span className={fields.label}>Название *</span>
 							<input
 								id="name"
-								className={ui.input}
+								className={fields.input}
 								required
 								value={form.name}
 								onChange={(e) => set("name", e.target.value)}
 							/>
-						</div>
-						<div className={ui.field}>
-							<label className={ui.label} htmlFor="address">
-								Адрес
-							</label>
+						</label>
+						<label className={fields.field} htmlFor="address">
+							<span className={fields.label}>Адрес</span>
 							<input
 								id="address"
-								className={ui.input}
+								className={fields.input}
 								value={form.address}
 								onChange={(e) => set("address", e.target.value)}
 							/>
-						</div>
-						<div className={ui.field}>
-							<label className={ui.label} htmlFor="phone">
-								Телефон
-							</label>
+						</label>
+						<label className={fields.field} htmlFor="phone">
+							<span className={fields.label}>Телефон</span>
 							<input
 								id="phone"
-								className={ui.input}
+								className={fields.input}
 								value={form.phone}
 								onChange={(e) => set("phone", e.target.value)}
 							/>
-						</div>
-						<div className={ui.field}>
-							<label className={ui.label} htmlFor="timezone">
-								Часовой пояс
-							</label>
+						</label>
+						<label className={fields.field} htmlFor="timezone">
+							<span className={fields.label}>Часовой пояс</span>
 							<input
 								id="timezone"
-								className={ui.input}
+								className={fields.input}
 								value={form.timezone}
 								onChange={(e) => set("timezone", e.target.value)}
 							/>
-						</div>
-						<div className={cx(ui.field, "sm:col-span-2")}>
-							<label className={ui.label} htmlFor="description">
-								Описание
-							</label>
+						</label>
+						<label className={`${fields.field} ${fields.span2}`} htmlFor="description">
+							<span className={fields.label}>Описание</span>
 							<textarea
 								id="description"
-								className={cx(ui.input, "min-h-[80px]")}
+								className={fields.textarea}
 								value={form.description}
 								onChange={(e) => set("description", e.target.value)}
 							/>
-						</div>
+						</label>
 					</div>
-				</section>
+				</Card>
 
-				<section className={ui.card}>
-					<div className={ui.cardH}>Биллинг</div>
-					<div className="grid gap-3.5 p-[18px] sm:grid-cols-2">
-						<div className={ui.field}>
-							<label className={ui.label} htmlFor="plan">
-								План / месяц (сум) *
-							</label>
+				<Card>
+					<CardHeader title="Подписка" />
+					<div className={fields.sectionGrid}>
+						<label className={fields.field} htmlFor="plan">
+							<span className={fields.label}>План / месяц (сум) *</span>
 							<input
 								id="plan"
 								type="number"
 								min={1}
-								className={ui.input}
+								className={fields.input}
 								required
 								value={form.monthlyPlanUzs}
 								onChange={(e) => set("monthlyPlanUzs", Number(e.target.value))}
 							/>
-						</div>
-						<div className={ui.field}>
-							<label className={ui.label} htmlFor="commission">
-								Комиссия / билет (пусто = default)
-							</label>
+						</label>
+						<label className={fields.field} htmlFor="commission">
+							<span className={fields.label}>Комиссия / билет (пусто — по умолчанию)</span>
 							<input
 								id="commission"
 								type="number"
 								min={0}
-								className={ui.input}
-								placeholder="500"
+								className={fields.input}
 								value={form.commissionPerTicketUzs}
 								onChange={(e) => set("commissionPerTicketUzs", e.target.value)}
 							/>
-						</div>
+						</label>
 					</div>
-				</section>
+				</Card>
 
-				<section className={ui.card}>
-					<div className={ui.cardH}>Первый Cinema Admin</div>
-					<div className="grid gap-3.5 p-[18px] sm:grid-cols-2">
-						<div className={ui.field}>
-							<label className={ui.label} htmlFor="adminEmail">
-								Email *
-							</label>
+				<Card>
+					<CardHeader title="Первый администратор" />
+					<div className={fields.sectionGrid}>
+						<label className={fields.field} htmlFor="adminEmail">
+							<span className={fields.label}>Электронная почта *</span>
 							<input
 								id="adminEmail"
 								type="email"
-								className={ui.input}
+								className={fields.input}
 								required
 								value={form.adminEmail}
 								onChange={(e) => set("adminEmail", e.target.value)}
 							/>
-						</div>
-						<div className={ui.field}>
-							<label className={ui.label} htmlFor="adminPassword">
-								Пароль * (мин. 8)
-							</label>
+						</label>
+						<label className={fields.field} htmlFor="adminPassword">
+							<span className={fields.label}>Пароль * (минимум 8 символов)</span>
 							<input
 								id="adminPassword"
 								type="password"
-								className={ui.input}
+								className={fields.input}
 								required
 								minLength={8}
 								value={form.adminPassword}
 								onChange={(e) => set("adminPassword", e.target.value)}
 							/>
-						</div>
-						<div className={ui.field}>
-							<label className={ui.label} htmlFor="fn">
-								Имя
-							</label>
+						</label>
+						<label className={fields.field} htmlFor="fn">
+							<span className={fields.label}>Имя</span>
 							<input
 								id="fn"
-								className={ui.input}
+								className={fields.input}
 								value={form.adminFirstName}
 								onChange={(e) => set("adminFirstName", e.target.value)}
 							/>
-						</div>
-						<div className={ui.field}>
-							<label className={ui.label} htmlFor="ln">
-								Фамилия
-							</label>
+						</label>
+						<label className={fields.field} htmlFor="ln">
+							<span className={fields.label}>Фамилия</span>
 							<input
 								id="ln"
-								className={ui.input}
+								className={fields.input}
 								value={form.adminLastName}
 								onChange={(e) => set("adminLastName", e.target.value)}
 							/>
-						</div>
+						</label>
 					</div>
-				</section>
+				</Card>
 
-				<button className={cx(ui.btn, ui.btnPri)} type="submit" disabled={busy}>
-					{busy ? "Создание…" : "Создать клиента"}
-				</button>
+				<Button type="submit" disabled={busy}>
+					{busy ? "Создание…" : "Создать кинотеатр"}
+				</Button>
 			</form>
 		</Shell>
 	);
