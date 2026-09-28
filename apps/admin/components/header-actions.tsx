@@ -15,16 +15,16 @@ export function HeaderActions() {
 	}
 
 	const iconBtn =
-		"grid size-[34px] place-items-center rounded-lg border-0 bg-transparent text-muted cursor-pointer hover:bg-orange/10 hover:text-orange";
+		"grid size-[38px] place-items-center rounded-lg text-muted hover:bg-elev hover:text-ink";
 
 	return (
-		<div className="flex gap-1 rounded-[10px] border border-line bg-surface p-1">
+		<div className="flex items-center gap-1">
 			<ThemeToggle className="border-0 bg-transparent" />
 			<button type="button" className={iconBtn} title="Уведомления" aria-label="Уведомления">
-				<Bell className="size-5" strokeWidth={2} />
+				<Bell className="size-5" strokeWidth={1.8} />
 			</button>
 			<button type="button" className={iconBtn} title="Выход" aria-label="Выход" onClick={logout}>
-				<LogOut className="size-5" strokeWidth={2} />
+				<LogOut className="size-5" strokeWidth={1.8} />
 			</button>
 		</div>
 	);

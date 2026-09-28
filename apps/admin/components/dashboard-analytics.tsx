@@ -1,6 +1,7 @@
-import Link from "next/link";
-import { cx, ui } from "../lib/ui";
+import { money, pct, periodLabel } from "../lib/format";
+import { Card, CardHeader, MetricCard } from "../lib/ui-kit";
 import { KpiChart } from "./kpi-chart";
+import { RangeToggle } from "./range-toggle";
 
 export type DashboardKpis = {
 	occupancyRate: number | null;
@@ -30,43 +31,7 @@ export type KpiTrendPoint = {
 	holdsResolved: number;
 };
 
-const statCls = "rounded-2xl border border-line bg-white/[0.04] px-[18px] py-4";
-
-export function money(n: number) {
-	return `${n.toLocaleString("ru-RU")} сум`;
-}
-
-export function pct(rate: number | null) {
-	if (rate == null) return "—";
-	return `${(rate * 100).toLocaleString("ru-RU", { maximumFractionDigits: 1 })}%`;
-}
-
-export function periodLabel(range: "daily" | "weekly") {
-	return range === "weekly" ? "за 8 недель" : "за 7 дней";
-}
-
-export function RangeToggle({ active }: { active: "daily" | "weekly" }) {
-	return (
-		<div className="flex flex-wrap gap-2">
-			<Link href="/?range=daily" className={cx(ui.chip, active === "daily" && ui.chipOn)}>
-				По дням
-			</Link>
-			<Link href="/?range=weekly" className={cx(ui.chip, active === "weekly" && ui.chipOn)}>
-				По неделям
-			</Link>
-		</div>
-	);
-}
-
-function KpiCard({ value, label, hint }: { value: string; label: string; hint: string }) {
-	return (
-		<div className={statCls}>
-			<b className="mb-1 block text-[26px] font-bold">{value}</b>
-			<span className="block text-xs text-muted">{label}</span>
-			<span className="mt-1 block text-[11px] text-faint">{hint}</span>
-		</div>
-	);
-}
+export { money, pct, periodLabel };
 
 export function KpiWidgets({
 	kpis,
@@ -78,31 +43,34 @@ export function KpiWidgets({
 	range: "daily" | "weekly";
 }) {
 	const period = periodLabel(range);
-	const cols = hideMoney
-		? "mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3"
-		: "mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4";
 	return (
-		<div className={cols}>
-			<KpiCard
-				value={pct(kpis.occupancyRate)}
+		<div
+			className={
+				hideMoney
+					? "mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3"
+					: "mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4"
+			}
+		>
+			<MetricCard
 				label={`Заполняемость · ${period}`}
+				value={pct(kpis.occupancyRate)}
 				hint={`${kpis.soldSeats.toLocaleString("ru-RU")} / ${kpis.sellableSeats.toLocaleString("ru-RU")} мест · ${kpis.sessions} сеансов`}
 			/>
-			<KpiCard
+			<MetricCard
+				label={`Холд → оплата · ${period}`}
 				value={pct(kpis.conversionRate)}
-				label={`Hold → оплата · ${period}`}
 				hint={`${kpis.paidOrders} оплачено / ${kpis.holdsResolved} закрытых холдов${kpis.pendingHolds ? ` · ${kpis.pendingHolds} в ожидании` : ""}`}
 			/>
 			{hideMoney ? null : (
-				<KpiCard
-					value={kpis.gmvUzs == null ? "—" : money(kpis.gmvUzs)}
+				<MetricCard
 					label={`GMV · ${period}`}
+					value={kpis.gmvUzs == null ? "—" : money(kpis.gmvUzs)}
 					hint={`${kpis.paidOrders} оплаченных заказов`}
 				/>
 			)}
-			<KpiCard
-				value={pct(kpis.refundRate)}
+			<MetricCard
 				label={`Возвраты · ${period}`}
+				value={pct(kpis.refundRate)}
 				hint={
 					hideMoney || kpis.refundedAmountUzs == null
 						? `${kpis.refundedOrders} заказов с возвратом`
@@ -114,7 +82,9 @@ export function KpiWidgets({
 }
 
 function chartLabels(points: KpiTrendPoint[], range: "daily" | "weekly") {
-	return points.map((p) => (range === "weekly" ? `нед. ${p.bucket.slice(5)}` : p.bucket.slice(5)));
+	return points.map((point) =>
+		range === "weekly" ? `нед. ${point.bucket.slice(5)}` : point.bucket.slice(5),
+	);
 }
 
 export function KpiCharts({
@@ -128,11 +98,11 @@ export function KpiCharts({
 }) {
 	const labels = chartLabels(points, range);
 	return (
-		<section className={ui.card}>
-			<div className={cx(ui.cardH, "flex items-center justify-between gap-3")}>
-				<span>KPI · {periodLabel(range)}</span>
-				<RangeToggle active={range} />
-			</div>
+		<Card className="mb-6">
+			<CardHeader
+				title={`Показатели · ${periodLabel(range)}`}
+				extra={<RangeToggle active={range} />}
+			/>
 			<div className={hideMoney ? "grid grid-cols-1" : "grid grid-cols-1 lg:grid-cols-2"}>
 				{hideMoney ? null : (
 					<div className="border-b border-line px-3 pt-2 lg:border-b-0 lg:border-r">
@@ -142,16 +112,12 @@ export function KpiCharts({
 							ariaLabel="GMV и возвраты"
 							labels={labels}
 							series={[
-								{
-									label: "GMV",
-									color: "#3dcf8e",
-									values: points.map((p) => p.gmvUzs),
-								},
+								{ label: "GMV", color: "var(--ok)", values: points.map((point) => point.gmvUzs) },
 								{
 									label: "Возвраты",
-									color: "#ff5a5a",
+									color: "var(--bad)",
 									dashed: true,
-									values: points.map((p) => p.refundedUzs),
+									values: points.map((point) => point.refundedUzs),
 								},
 							]}
 						/>
@@ -166,29 +132,30 @@ export function KpiCharts({
 						series={[
 							{
 								label: "Заполняемость",
-								color: "#3dcf8e",
-								values: points.map((p) => p.occupancyRate),
+								color: "var(--ok)",
+								values: points.map((point) => point.occupancyRate),
 							},
 							{
-								label: "Hold → оплата",
-								color: "#ff6a1a",
-								values: points.map((p) => p.conversionRate),
+								label: "Холд → оплата",
+								color: "var(--primary)",
+								values: points.map((point) => point.conversionRate),
 							},
 							{
 								label: "Возвраты",
-								color: "#ff5a5a",
+								color: "var(--bad)",
 								dashed: true,
-								values: points.map((p) => p.refundRate),
+								values: points.map((point) => point.refundRate),
 							},
 						]}
 					/>
 				</div>
 			</div>
 			<p className="border-t border-line px-[18px] py-3 text-[11px] leading-relaxed text-faint">
-				Заполняемость — SOLD / (места − BLOCKED); для GA — оплаченные билеты / вместимость.
-				Конверсия — оплаченные заказы / закрытые холды (без PENDING). GMV — сумма оплаченных заказов
-				(gross, до возвратов). Super Admin не видит суммы GMV.
+				Заполняемость — проданные места / (места − заблокированные); для продажи без мест —
+				оплаченные билеты / вместимость. Конверсия — оплаченные заказы / закрытые холды (без
+				ожидающих). GMV — сумма оплаченных заказов до возвратов. Суперадминистратор не видит суммы
+				GMV.
 			</p>
-		</section>
+		</Card>
 	);
 }

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { clientApi } from "../../../lib/api";
-import { ui } from "../../../lib/ui";
+import { PageHeader } from "../../../lib/ui-kit";
 import { MovieForm } from "../movie-form";
 
 export default function NewMoviePage() {
@@ -10,8 +10,7 @@ export default function NewMoviePage() {
 
 	return (
 		<>
-			<h1>Новый фильм</h1>
-			<p className={ui.sub}>Постер, жанры, озвучка, IMDb и дата выхода</p>
+			<PageHeader title="Новый фильм" description="Постер, жанры, озвучка, рейтинг и дата выхода" />
 			<MovieForm
 				submitLabel="Создать"
 				onSubmit={async (payload) => {

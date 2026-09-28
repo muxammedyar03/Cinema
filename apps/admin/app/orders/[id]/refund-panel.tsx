@@ -5,6 +5,7 @@ import { clientApi } from "../../../lib/api";
 import { errorText } from "../../../lib/api-error";
 import { displayTicketCode, newIdempotencyKey } from "../../../lib/tickets";
 import { cx, ui } from "../../../lib/ui";
+import { Button } from "../../../lib/ui-kit";
 
 type Ticket = {
 	id: string;
@@ -49,9 +50,9 @@ export function OrderRefundPanel({ orderId, tickets }: { orderId: string; ticket
 	}
 
 	return (
-		<div className="px-4 py-3">
-			<p className="text-[12px] text-muted">
-				Пустой выбор — полный возврат активных билетов (Rahmat).
+		<div className="px-5 py-4">
+			<p className="text-[13px] text-muted">
+				Отметьте один билет, чтобы вернуть только его. Пустой выбор возвращает все активные билеты.
 			</p>
 			<ul className="mt-2 flex flex-col gap-1.5">
 				{active.map((t) => (
@@ -83,14 +84,15 @@ export function OrderRefundPanel({ orderId, tickets }: { orderId: string; ticket
 			</label>
 			{error ? <p className={ui.err}>{error}</p> : null}
 			{ok ? <p className={ui.okMsg}>{ok}</p> : null}
-			<button
-				className={cx(ui.btn, ui.btnWarn)}
-				type="button"
-				disabled={busy}
-				onClick={() => void submit()}
-			>
-				{busy ? "…" : selected.length ? "Вернуть выбранные" : "Вернуть все"}
-			</button>
+			<Button variant="danger" type="button" disabled={busy} onClick={() => void submit()}>
+				{busy
+					? "Отправка…"
+					: selected.length === 1
+						? "Вернуть билет"
+						: selected.length
+							? "Вернуть выбранные"
+							: "Вернуть все"}
+			</Button>
 		</div>
 	);
 }

@@ -27,7 +27,7 @@ export function CinemaMapEmbed({
 			<div className="flex items-center justify-between gap-2 px-3 py-2 text-[12px] text-muted">
 				<span className="truncate">{address || `${lat.toFixed(5)}, ${lng.toFixed(5)}`}</span>
 				<a
-					className="shrink-0 font-semibold text-orange"
+					className="shrink-0 font-semibold text-primary"
 					href={mapExternalUrl(provider, lat, lng)}
 					target="_blank"
 					rel="noreferrer"

@@ -1,11 +1,11 @@
 "use client";
 
 import { Archive, ArchiveRestore, Pencil, Trash2 } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { ButtonLink } from "../../components/button-link";
 import { clientApi } from "../../lib/api";
-import { cx, ui } from "../../lib/ui";
+import { Button } from "../../lib/ui-kit";
 
 export function MovieRowActions({
 	movie,
@@ -47,13 +47,14 @@ export function MovieRowActions({
 	}
 
 	return (
-		<div className="flex flex-wrap items-center justify-end gap-2">
-			<Link className={cx(ui.btn, ui.btnSm, ui.btnGhost)} href={`/movies/${movie.id}/edit`}>
+		<div className="flex flex-wrap items-center gap-2">
+			<ButtonLink href={`/movies/${movie.id}/edit`} variant="secondary" size="small">
 				<Pencil className="size-3.5" strokeWidth={2} />
 				Изменить
-			</Link>
-			<button
-				className={cx(ui.btn, ui.btnSm, ui.btnGhost)}
+			</ButtonLink>
+			<Button
+				size="small"
+				variant="secondary"
 				type="button"
 				disabled={busy}
 				onClick={archiveOrRestore}
@@ -64,17 +65,12 @@ export function MovieRowActions({
 					<Archive className="size-3.5" strokeWidth={2} />
 				)}
 				{archived ? "Восстановить" : "Архив"}
-			</button>
-			<button
-				className={cx(ui.btn, ui.btnSm, ui.btnWarn)}
-				type="button"
-				disabled={busy}
-				onClick={remove}
-			>
+			</Button>
+			<Button size="small" variant="danger" type="button" disabled={busy} onClick={remove}>
 				<Trash2 className="size-3.5" strokeWidth={2} />
 				Удалить
-			</button>
-			{error ? <span className="w-full text-right text-[11px] text-bad">{error}</span> : null}
+			</Button>
+			{error ? <span className="w-full text-[11px] text-bad">{error}</span> : null}
 		</div>
 	);
 }

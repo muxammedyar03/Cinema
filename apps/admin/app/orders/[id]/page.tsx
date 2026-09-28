@@ -1,11 +1,13 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ButtonLink } from "../../../components/button-link";
 import { Shell } from "../../../components/shell";
+import { StatusBadge } from "../../../components/status-badge";
 import { assertBillingAccess } from "../../../lib/billing-access";
+import { money } from "../../../lib/format";
 import { roleOf } from "../../../lib/rbac";
 import { getMe, serverApi } from "../../../lib/server-api";
 import { displayTicketCode } from "../../../lib/tickets";
-import { cx, ui } from "../../../lib/ui";
+import { Card, CardHeader, DataTable, EmptyState, PageHeader } from "../../../lib/ui-kit";
 import { OrderRefundPanel } from "./refund-panel";
 
 type AdminOrder = {
@@ -34,10 +36,6 @@ type AdminOrder = {
 	}>;
 };
 
-function money(n: number) {
-	return `${n.toLocaleString("ru-RU")} сум`;
-}
-
 export default async function AdminOrderDetailPage({
 	params,
 }: {
@@ -59,13 +57,18 @@ export default async function AdminOrderDetailPage({
 	if (!order) {
 		return (
 			<Shell user={user}>
-				<h1 className={ui.pageTitle}>Заказ</h1>
-				<p className={ui.sub}>
-					Не удалось загрузить заказ. Нужен GET /admin/orders/:id по контракту.
-				</p>
-				<Link className={cx(ui.btn, ui.btnGhost, "mt-4")} href="/orders">
-					К списку
-				</Link>
+				<PageHeader title="Заказ" description="Не удалось загрузить заказ." />
+				<Card>
+					<EmptyState
+						title="Заказ недоступен"
+						description="Сервер не вернул карточку заказа. Проверьте соединение и попробуйте снова."
+						action={
+							<ButtonLink href="/orders" variant="secondary">
+								К списку
+							</ButtonLink>
+						}
+					/>
+				</Card>
 			</Shell>
 		);
 	}
@@ -76,56 +79,51 @@ export default async function AdminOrderDetailPage({
 
 	return (
 		<Shell user={user}>
-			<div className={ui.row}>
-				<div>
-					<h1 className={ui.pageTitle}>Заказ #{order.publicNumber}</h1>
-					<p className={ui.sub}>
-						{movie} · {cinema} · {order.status} · Rahmat only (MVP)
-					</p>
-				</div>
-				<Link className={cx(ui.btn, ui.btnGhost)} href="/m/tickets/verify">
-					QR проверка
-				</Link>
-			</div>
-			<div className={ui.card}>
-				<div className={ui.cardH}>
-					<span>Билеты</span>
-					<span className="font-mono text-xs text-muted">{tickets.length}</span>
-				</div>
-				{tickets.length === 0 ? (
-					<p className="px-5 py-6 text-sm text-muted">Билетов пока нет (оплата не подтверждена).</p>
-				) : (
-					<table>
-						<thead>
-							<tr>
-								<th>Код</th>
-								<th>Место</th>
-								<th>Статус</th>
-							</tr>
-						</thead>
-						<tbody>
-							{tickets.map((t) => (
-								<tr key={t.id}>
-									<td>{displayTicketCode(t.code)}</td>
-									<td>{t.seatLabel ?? t.type ?? "—"}</td>
-									<td>
-										<span
-											className={cx(ui.badge, t.status === "ACTIVE" ? ui.badgeOk : ui.badgeMuted)}
-										>
-											{t.status}
-										</span>
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				)}
-			</div>
-			<div className={ui.card}>
-				<div className={ui.cardH}>Возврат (Rahmat)</div>
+			<PageHeader
+				title={`Заказ #${order.publicNumber}`}
+				description={`${movie}${cinema ? ` · ${cinema}` : ""} · ${money(order.totalUzs)}`}
+				actions={
+					<>
+						<StatusBadge status={order.status} />
+						<ButtonLink href="/m/tickets/verify" variant="secondary">
+							Проверка билетов
+						</ButtonLink>
+					</>
+				}
+			/>
+			<Card className="mb-6">
+				<CardHeader
+					title="Билеты"
+					extra={<span className="text-xs text-muted">{tickets.length}</span>}
+				/>
+				<DataTable
+					rows={tickets}
+					getRowKey={(ticket) => ticket.id}
+					emptyTitle="Билетов пока нет"
+					emptyDescription="Оплата ещё не подтверждена."
+					columns={[
+						{
+							id: "code",
+							header: "Код",
+							cell: (ticket) => displayTicketCode(ticket.code),
+						},
+						{
+							id: "seat",
+							header: "Место",
+							cell: (ticket) => ticket.seatLabel ?? ticket.type ?? "—",
+						},
+						{
+							id: "status",
+							header: "Статус",
+							cell: (ticket) => <StatusBadge status={ticket.status} />,
+						},
+					]}
+				/>
+			</Card>
+			<Card>
+				<CardHeader title="Возврат" />
 				<OrderRefundPanel orderId={order.id} tickets={tickets} />
-			</div>
-			<p className="text-xs text-faint">{money(order.totalUzs)}</p>
+			</Card>
 		</Shell>
 	);
 }

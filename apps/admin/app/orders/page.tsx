@@ -1,11 +1,14 @@
-import { ListOrdered } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { QuerySearch } from "../../components/query-search";
 import { Shell } from "../../components/shell";
+import { StatusBadge } from "../../components/status-badge";
 import { assertBillingAccess } from "../../lib/billing-access";
+import { money, tashkentDate } from "../../lib/format";
 import { roleOf } from "../../lib/rbac";
 import { getMe, serverApi } from "../../lib/server-api";
-import { cx, ui } from "../../lib/ui";
+import { Card, DataTable, PageHeader } from "../../lib/ui-kit";
+import { OrderFilters } from "./order-filters";
 
 type OrderRow = {
 	id: string;
@@ -19,91 +22,94 @@ type OrderRow = {
 	customer: string;
 };
 
-function money(n: number) {
-	return `${n.toLocaleString("ru-RU")} сум`;
-}
-
-function statusClass(status: string) {
-	if (status === "PAID") return cx(ui.badge, ui.badgeOk);
-	if (status === "PENDING_PAYMENT" || status === "REFUND_PENDING")
-		return cx(ui.badge, ui.badgeWarn);
-	if (status === "EXPIRED" || status === "CANCELLED" || status === "REFUNDED") {
-		return cx(ui.badge, ui.badgeMuted);
-	}
-	return cx(ui.badge, ui.badgeMuted);
-}
-
-export default async function OrdersPage() {
+export default async function OrdersPage({
+	searchParams,
+}: {
+	searchParams: Promise<{ status?: string; q?: string }>;
+}) {
 	const user = await getMe();
 	if (!user) redirect("/login");
 	if (roleOf(user) === "super") redirect("/");
 	await assertBillingAccess(user);
 
+	const { status, q } = await searchParams;
 	const orders = await serverApi<OrderRow[]>("/admin/orders");
+	const query = (q ?? "").trim().toLowerCase();
+	const filtered = orders.filter((order) => {
+		if (status && status !== "ALL" && order.status !== status) return false;
+		if (!query) return true;
+		return [String(order.publicNumber), order.movieTitle, order.customer, order.cinemaName]
+			.join(" ")
+			.toLowerCase()
+			.includes(query);
+	});
 
 	return (
 		<Shell user={user}>
-			<div className={ui.row}>
-				<div>
-					<h1 className={ui.pageTitle}>Заказы</h1>
-					<p className={ui.sub}>Заказы вашего кинотеатра · SEAT и GA</p>
-				</div>
+			<PageHeader title="Заказы" description="Платежи и билеты вашего кинотеатра" />
+			<div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+				<OrderFilters active={status ?? "ALL"} />
+				<QuerySearch placeholder="Поиск по номеру или имени" initial={q ?? ""} />
 			</div>
-			<div className={ui.card}>
-				<div className={ui.cardH}>
-					<span>Список</span>
-					<span className="font-mono text-xs font-medium text-muted">{orders.length}</span>
-				</div>
-				{orders.length === 0 ? (
-					<div className="px-5 py-10 text-center text-sm text-muted">
-						<ListOrdered className="mx-auto mb-3 size-8 text-faint" strokeWidth={1.4} />
-						Заказов пока нет
-					</div>
-				) : (
-					<table>
-						<thead>
-							<tr>
-								<th>#</th>
-								<th>Фильм</th>
-								<th>Клиент</th>
-								<th>Билеты</th>
-								<th>Сумма</th>
-								<th>Статус</th>
-								<th>Создан</th>
-							</tr>
-						</thead>
-						<tbody>
-							{orders.map((o) => (
-								<tr key={o.id} className="clickable">
-									<td>
-										<Link href={`/orders/${o.id}`}>{o.publicNumber}</Link>
-									</td>
-									<td>
-										<b>{o.movieTitle}</b>
-										<br />
-										<small className="text-xs text-muted">{o.cinemaName}</small>
-									</td>
-									<td>{o.customer}</td>
-									<td>{o.ticketCount}</td>
-									<td>{money(o.totalUzs)}</td>
-									<td>
-										<span className={statusClass(o.status)}>{o.status}</span>
-									</td>
-									<td>
-										{new Date(o.createdAt).toLocaleString("ru-RU", {
-											timeZone: "Asia/Tashkent",
-											day: "numeric",
-											month: "short",
-											hour: "2-digit",
-											minute: "2-digit",
-										})}
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				)}
-			</div>
+			<Card>
+				<DataTable
+					rows={filtered}
+					getRowKey={(order) => order.id}
+					emptyTitle="Заказов пока нет"
+					emptyDescription={
+						query || (status && status !== "ALL")
+							? "Ничего не найдено по этому фильтру."
+							: "Заказы появятся после брони."
+					}
+					columns={[
+						{
+							id: "number",
+							header: "Заказ",
+							cell: (order) => (
+								<Link href={`/orders/${order.id}`} className="font-semibold text-ink">
+									#{order.publicNumber}
+								</Link>
+							),
+						},
+						{
+							id: "movie",
+							header: "Фильм",
+							cell: (order) => (
+								<div>
+									<strong className="text-ink">{order.movieTitle}</strong>
+									<small className="block text-[11px] text-muted">{order.cinemaName}</small>
+								</div>
+							),
+						},
+						{ id: "customer", header: "Покупатель", cell: (order) => order.customer },
+						{ id: "tickets", header: "Билеты", cell: (order) => order.ticketCount },
+						{
+							id: "total",
+							header: "Сумма",
+							cell: (order) => <strong className="text-ink">{money(order.totalUzs)}</strong>,
+						},
+						{
+							id: "status",
+							header: "Статус",
+							cell: (order) => <StatusBadge status={order.status} />,
+						},
+						{
+							id: "created",
+							header: "Создан",
+							cell: (order) => tashkentDate(order.createdAt, true),
+						},
+						{
+							id: "open",
+							header: "",
+							cell: (order) => (
+								<Link href={`/orders/${order.id}`} className="text-xs font-semibold text-primary">
+									Подробнее
+								</Link>
+							),
+						},
+					]}
+				/>
+			</Card>
 		</Shell>
 	);
 }

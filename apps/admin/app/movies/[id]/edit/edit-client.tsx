@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { clientApi } from "../../../../lib/api";
-import { ui } from "../../../../lib/ui";
+import { PageHeader } from "../../../../lib/ui-kit";
 import { MovieForm } from "../../movie-form";
 
 type Movie = {
@@ -31,8 +31,7 @@ export function EditMovieClient({ movie }: { movie: Movie }) {
 
 	return (
 		<>
-			<h1>Изменить фильм</h1>
-			<p className={ui.sub}>{movie.title}</p>
+			<PageHeader title="Изменить фильм" description={movie.title} />
 			<MovieForm
 				submitLabel="Сохранить"
 				initial={{

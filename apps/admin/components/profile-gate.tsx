@@ -35,13 +35,13 @@ export function ProfileGate({ user }: { user: SessionUser }) {
 	if (skip || missing === 0) return null;
 
 	return (
-		<div className="mb-4 rounded-xl border border-orange/35 bg-orange/[0.08] px-4 py-3 text-[13px]">
+		<div className="mb-4 rounded-xl border border-primary/35 bg-primary/10 px-4 py-3 text-[13px]">
 			<div className="flex flex-wrap items-center justify-between gap-2">
 				<p className="text-ink">
 					Заполните профиль кинотеатра
 					<span className="text-muted"> · осталось шагов: {missing}</span>
 				</p>
-				<Link className={cx("font-semibold text-orange")} href="/profile">
+				<Link className={cx("font-semibold text-primary")} href="/profile">
 					Продолжить
 				</Link>
 			</div>

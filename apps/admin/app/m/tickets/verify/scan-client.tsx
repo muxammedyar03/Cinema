@@ -1,11 +1,13 @@
 "use client";
 
-import { Camera, Keyboard, ScanLine } from "lucide-react";
+import { Camera, Keyboard } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { StatusBadge } from "../../../../components/status-badge";
 import { clientApi } from "../../../../lib/api";
 import { errorText } from "../../../../lib/api-error";
 import { displayTicketCode, parseScannedCode } from "../../../../lib/tickets";
-import { cx, ui } from "../../../../lib/ui";
+import { ui } from "../../../../lib/ui";
+import { Button, Card, CardBody, PageHeader } from "../../../../lib/ui-kit";
 
 type TicketPreview = {
 	id: string;
@@ -140,102 +142,94 @@ export function TicketVerifyClient({ initialCode }: { initialCode: string }) {
 	}, [initialCode, lookup]);
 
 	return (
-		<div>
-			<div className="mb-4 flex items-center gap-2">
-				<ScanLine className="size-5 text-orange" strokeWidth={1.8} />
-				<h1 className={ui.pageTitle}>QR проверка</h1>
-			</div>
-
-			<div className="overflow-hidden rounded-2xl border border-line bg-elev">
-				<video
-					ref={videoRef}
-					className={cx("h-56 w-full bg-black object-cover", !cameraOn && "hidden")}
-					playsInline
-					muted
-				/>
-				{!cameraOn ? (
-					<div className="grid h-40 place-items-center text-sm text-muted">
-						Камера для сканирования QR
+		<div className="mx-auto w-full max-w-[550px]">
+			<PageHeader title="Проверка билетов" description="Отсканируйте QR или введите код билета" />
+			<Card>
+				<CardBody className="text-center">
+					<div className="mx-auto grid h-[190px] w-[190px] place-items-center overflow-hidden rounded-[20px] border-2 border-dashed border-[color-mix(in_srgb,var(--primary)_45%,var(--line))] bg-elev">
+						<video
+							ref={videoRef}
+							className={cameraOn ? "h-full w-full object-cover" : "hidden"}
+							playsInline
+							muted
+						/>
+						{cameraOn ? null : (
+							<Camera className="size-12 text-primary" strokeWidth={1.4} aria-hidden="true" />
+						)}
 					</div>
-				) : null}
-			</div>
-
-			<div className="mt-3 flex gap-2">
-				<button
-					className={cx(ui.btn, ui.btnPri, "flex-1 justify-center")}
-					type="button"
-					onClick={() => void (cameraOn ? stopCamera() : startCamera())}
-				>
-					<Camera className="size-4" strokeWidth={2} />
-					{cameraOn ? "Стоп" : "Камера"}
-				</button>
-			</div>
-
-			<label className={cx(ui.field, "mt-4")}>
-				<span className={ui.label}>
-					<Keyboard className="mr-1 inline size-3.5" /> Код билета
-				</span>
-				<input
-					className={ui.input}
-					value={code}
-					onChange={(e) => setCode(e.target.value)}
-					placeholder="XXXX-XXXX-XXXX или URL"
-					autoCapitalize="characters"
-				/>
-			</label>
-			<button
-				className={cx(ui.btn, ui.btnGhost, "w-full justify-center")}
-				type="button"
-				disabled={busy}
-				onClick={() => void lookup(code)}
-			>
-				{busy ? "…" : "Найти билет"}
-			</button>
-
-			{error ? <p className={cx(ui.err, "mt-3")}>{error}</p> : null}
-			{ok ? <p className={cx(ui.okMsg, "mt-3")}>{ok}</p> : null}
+					<h2 className="mb-1 mt-5 text-[19px] font-semibold">Контроль входа</h2>
+					<p className="m-0 text-[13px] text-muted">
+						Камера работает на телефоне. Можно ввести код вручную.
+					</p>
+					<div className="mt-4">
+						<Button
+							className="w-full"
+							type="button"
+							onClick={() => void (cameraOn ? stopCamera() : startCamera())}
+						>
+							<Camera className="size-4" strokeWidth={2} />
+							{cameraOn ? "Остановить камеру" : "Открыть камеру"}
+						</Button>
+					</div>
+					<label className="mt-4 block text-left">
+						<span className={ui.label}>
+							<Keyboard className="mr-1 inline size-3.5" /> Код билета
+						</span>
+						<input
+							className={`${ui.input} mt-1.5`}
+							value={code}
+							onChange={(event) => setCode(event.target.value)}
+							placeholder="Код или ссылка из QR"
+							autoCapitalize="characters"
+							aria-label="Код билета"
+						/>
+					</label>
+					<Button
+						className="mt-3 w-full"
+						variant="secondary"
+						type="button"
+						disabled={busy}
+						onClick={() => void lookup(code)}
+					>
+						{busy ? "Проверка…" : "Проверить билет"}
+					</Button>
+					{error ? <p className="mt-3 text-[13px] text-bad">{error}</p> : null}
+					{ok ? <p className="mt-3 text-[13px] text-ok">{ok}</p> : null}
+				</CardBody>
+			</Card>
 
 			{preview ? (
-				<div className={cx(ui.card, "mt-4")}>
-					<div className={ui.cardH}>Билет {displayTicketCode(preview.code)}</div>
-					<div className="space-y-1.5 px-4 py-3 text-sm">
-						<p>
-							<b>{preview.session?.movieTitle ?? "Сеанс"}</b>
-						</p>
-						<p className="text-muted">
-							{preview.seatLabel ?? preview.type ?? "—"}
+				<Card className="mt-4">
+					<CardBody className="text-left">
+						<p className="m-0 text-xs text-muted">Результат</p>
+						<h2 className="mb-2 mt-1 text-[19px] font-semibold">
+							Билет {displayTicketCode(preview.code)}
+						</h2>
+						<p className="m-0 font-semibold">{preview.session?.movieTitle ?? "Сеанс"}</p>
+						<p className="mt-1 text-[13px] text-muted">
+							{preview.seatLabel ?? preview.type ?? "Место не указано"}
 							{preview.orderPublicNumber ? ` · заказ #${preview.orderPublicNumber}` : ""}
 						</p>
-						<p>
-							<span
-								className={cx(
-									ui.badge,
-									preview.status === "ACTIVE" && ui.badgeOk,
-									preview.status === "USED" && ui.badgeWarn,
-									(preview.status === "REFUNDED" || preview.status === "CANCELLED") && ui.badgeBad,
-								)}
-							>
-								{preview.status}
-							</span>
-						</p>
-					</div>
-					{preview.status === "ACTIVE" ? (
-						<div className="border-t border-line p-3">
-							<button
-								className={cx(ui.btn, ui.btnPri, "w-full justify-center")}
+						<div className="mt-3">
+							<StatusBadge status={preview.status} />
+						</div>
+						{preview.status === "ACTIVE" ? (
+							<Button
+								className="mt-4 w-full"
 								type="button"
 								disabled={busy}
 								onClick={() => void markUsed()}
 							>
 								Отметить вход
-							</button>
-						</div>
-					) : null}
-				</div>
+							</Button>
+						) : null}
+					</CardBody>
+				</Card>
 			) : null}
 
-			<button
-				className={cx(ui.btn, ui.btnGhost, "mt-4 w-full justify-center")}
+			<Button
+				className="mt-4 w-full"
+				variant="secondary"
 				type="button"
 				onClick={() => {
 					setPreview(null);
@@ -245,7 +239,7 @@ export function TicketVerifyClient({ initialCode }: { initialCode: string }) {
 				}}
 			>
 				Следующий билет
-			</button>
+			</Button>
 		</div>
 	);
 }

@@ -47,6 +47,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { clientApi } from "../../../../../../lib/api";
 import { cx, ui } from "../../../../../../lib/ui";
+import { Button, PageHeader } from "../../../../../../lib/ui-kit";
 
 type Hall = { id: string; name: string; capacity: number };
 
@@ -690,32 +691,29 @@ export function LayoutEditor({ cinemaId, hall, initialLayout }: Props) {
 
 	return (
 		<div>
-			<div className={ui.row}>
-				<div>
-					<h1>Редактор схемы</h1>
-					<p className={ui.sub}>
-						{hall.name} · {seats.length}/{hall.capacity} · v{version || "—"}
-						{selectedIds.length > 0 ? ` · ${selectedIds.length} выбрано` : ""}
-					</p>
-				</div>
-				<div className="flex gap-2">
-					<ToolbarIconButton
-						label="Отменить (Ctrl+Z)"
-						icon="undo"
-						onClick={undo}
-						disabled={history.length === 0}
-					/>
-					<ToolbarIconButton
-						label="Повторить (Ctrl+Y)"
-						icon="redo"
-						onClick={redoAction}
-						disabled={redo.length === 0}
-					/>
-					<button className={cx(ui.btn, ui.btnPri)} type="button" onClick={save} disabled={saving}>
-						{saving ? "Сохранение…" : "Сохранить"}
-					</button>
-				</div>
-			</div>
+			<PageHeader
+				title="Редактор зала"
+				description={`${hall.name} · ${seats.length}/${hall.capacity} · версия ${version || "—"}${selectedIds.length > 0 ? ` · выбрано ${selectedIds.length}` : ""}`}
+				actions={
+					<div className="flex gap-2">
+						<ToolbarIconButton
+							label="Отменить (Ctrl+Z)"
+							icon="undo"
+							onClick={undo}
+							disabled={history.length === 0}
+						/>
+						<ToolbarIconButton
+							label="Повторить (Ctrl+Y)"
+							icon="redo"
+							onClick={redoAction}
+							disabled={redo.length === 0}
+						/>
+						<Button type="button" onClick={save} disabled={saving}>
+							{saving ? "Сохранение…" : "Сохранить схему"}
+						</Button>
+					</div>
+				}
+			/>
 
 			{error ? <p className={ui.err}>{error}</p> : null}
 			{message ? <p className={ui.okMsg}>{message}</p> : null}

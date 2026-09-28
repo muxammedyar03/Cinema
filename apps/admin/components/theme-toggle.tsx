@@ -13,7 +13,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
 			onClick={toggle}
 			title={label}
 			aria-label={label}
-			className={`grid size-[34px] place-items-center rounded-lg border border-line bg-elev/60 text-muted hover:bg-orange/10 hover:text-orange ${className}`}
+			className={`grid size-[34px] place-items-center rounded-lg border border-line bg-elev/60 text-muted hover:bg-primary/10 hover:text-primary ${className}`}
 		>
 			{theme === "dark" ? (
 				<Sun className="size-6" strokeWidth={2} />

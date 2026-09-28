@@ -73,7 +73,7 @@ function statusCls(status: string) {
 	return cx(ui.badge, ui.badgeMuted);
 }
 
-const statBox = "rounded-2xl border border-line bg-white/[0.04] px-[18px] py-4";
+const statBox = "rounded-[var(--radius-card)] border border-line bg-panel px-[18px] py-4";
 
 export default async function ClientDetailPage({ params }: { params: Promise<{ id: string }> }) {
 	const user = await getMe();
@@ -103,7 +103,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
 			</div>
 
 			{profile && !profile.profileCompletion.profileComplete ? (
-				<div className="mb-5 rounded-xl border border-orange/35 bg-orange/[0.08] px-[18px] py-4">
+				<div className="mb-5 rounded-xl border border-primary/35 bg-primary/10 px-[18px] py-4">
 					<div className="flex flex-wrap items-center justify-between gap-3">
 						<div>
 							<p className="text-sm font-semibold">Профиль кинотеатра не заполнен</p>
@@ -138,7 +138,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
 				<section className={ui.card}>
 					<div className={ui.cardH}>
 						<span>Подписка и комиссия</span>
-						<Link className="text-xs font-semibold text-orange" href={`/clients/${id}/edit`}>
+						<Link className="text-xs font-semibold text-primary" href={`/clients/${id}/edit`}>
 							Изменить
 						</Link>
 					</div>
@@ -221,7 +221,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
 				<div className={cx(ui.cardH, "flex items-center justify-between")}>
 					<span>Инвойсы и история оплат</span>
 					<Link
-						className="text-xs font-semibold text-orange"
+						className="text-xs font-semibold text-primary"
 						href={`/billing/invoices?cinemaId=${client.id}`}
 					>
 						Все инвойсы

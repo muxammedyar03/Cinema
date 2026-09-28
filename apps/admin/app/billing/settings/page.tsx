@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { Shell } from "../../../components/shell";
 import { roleOf } from "../../../lib/rbac";
 import { getMe, serverApi } from "../../../lib/server-api";
-import { ui } from "../../../lib/ui";
+import { Card, CardHeader, PageHeader } from "../../../lib/ui-kit";
 import { SettingsForm } from "./settings-form";
 
 type Settings = {
@@ -23,20 +23,16 @@ export default async function BillingSettingsPage() {
 
 	return (
 		<Shell user={user}>
-			<div className={ui.row}>
-				<div>
-					<h1 className={ui.pageTitle}>Комиссия и уведомления</h1>
-					<p className={ui.sub}>
-						Default комиссия с билета · порог авто-lock · ежедневные Telegram/App напоминания
-					</p>
-				</div>
-			</div>
-			<div className={ui.card}>
-				<div className={ui.cardH}>Платформенные настройки</div>
+			<PageHeader
+				title="Комиссия и уведомления"
+				description="Комиссия с билета, порог автоблокировки и ежедневные напоминания"
+			/>
+			<Card>
+				<CardHeader title="Платформенные настройки" />
 				<div className="p-[18px]">
 					<SettingsForm initial={settings} />
 				</div>
-			</div>
+			</Card>
 		</Shell>
 	);
 }

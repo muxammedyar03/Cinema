@@ -1,18 +1,22 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ButtonLink } from "../components/button-link";
 import {
 	type DashboardKpis,
 	KpiCharts,
 	type KpiTrendPoint,
 	KpiWidgets,
 	money,
+	pct,
 } from "../components/dashboard-analytics";
 import { RevenueChart } from "../components/revenue-chart";
 import { Shell } from "../components/shell";
+import { StatusBadge } from "../components/status-badge";
 import { assertBillingAccess } from "../lib/billing-access";
+import { tashkentTime } from "../lib/format";
 import { primaryCinemaName, roleOf } from "../lib/rbac";
 import { getMe, serverApi } from "../lib/server-api";
-import { cx, ui } from "../lib/ui";
+import { Card, CardHeader, DataTable, EmptyState, MetricCard, PageHeader } from "../lib/ui-kit";
 
 type Dashboard = {
 	mode?: "platform" | "cinema";
@@ -42,6 +46,7 @@ type Dashboard = {
 		capacity: number;
 		occupied: number;
 		remaining: number;
+		posterUrl?: string | null;
 	}>;
 	recentOrders: Array<{
 		id: string;
@@ -85,30 +90,14 @@ function emptyKpis(): DashboardKpis {
 	};
 }
 
-function timeLabel(iso: string) {
-	return new Date(iso).toLocaleString("ru-RU", {
-		timeZone: "Asia/Tashkent",
+function todayHeading() {
+	return new Date().toLocaleDateString("ru-RU", {
 		day: "numeric",
-		month: "short",
-		hour: "2-digit",
-		minute: "2-digit",
+		month: "long",
+		weekday: "long",
+		timeZone: "Asia/Tashkent",
 	});
 }
-
-function statusClass(status: string) {
-	if (status === "PAID" || status === "PUBLISHED" || status === "ACTIVE") {
-		return cx(ui.badge, ui.badgeOk);
-	}
-	if (status === "PENDING_PAYMENT" || status === "PENDING" || status === "DRAFT") {
-		return cx(ui.badge, ui.badgeWarn);
-	}
-	return cx(ui.badge, ui.badgeMuted);
-}
-
-const statCls = "rounded-2xl border border-line bg-white/[0.04] px-[18px] py-4";
-const cashPill = "rounded-[14px] border border-line bg-white/[0.02] px-3 py-2";
-const quickLink =
-	"inline-flex h-8 items-center rounded-full border border-line px-3 text-xs font-semibold text-muted hover:border-orange/40 hover:text-orange";
 
 export default async function HomePage({
 	searchParams,
@@ -124,273 +113,256 @@ export default async function HomePage({
 	const { stats, cashflow, todaySessions, recentOrders, recentPayments, revenueTrend } = data;
 	const kpis = data.kpis ?? emptyKpis();
 	const kpiTrend = data.kpiTrend ?? [];
-	const publishedToday = todaySessions.filter((s) => s.status === "PUBLISHED").length;
 	const role = roleOf(user);
 	const cinemaName = primaryCinemaName(user);
-	const todayLabel = new Date().toLocaleDateString("ru-RU", {
-		day: "numeric",
-		month: "long",
-		timeZone: "Asia/Tashkent",
-	});
+	const todayLabel = todayHeading();
+	const periodIncome = revenueTrend.reduce((sum, point) => sum + point.incomeUzs, 0);
 
 	if (role === "super") {
 		return (
 			<Shell user={user}>
-				<div className="mb-4 rounded-[10px] border border-[#7a6b9c]/35 bg-[#7a6b9c]/12 px-3.5 py-3 text-[12.5px] leading-snug text-muted">
-					<strong className="text-ink">Конфиденциальность:</strong> Super Admin не видит заказы,
-					покупателей, билеты и выручку клиентов. Только агрегаты платформы, биллинг и комиссия.
+				<div className="mb-4 rounded-[10px] border border-primary/30 bg-primary/10 px-3.5 py-3 text-[12.5px] leading-snug text-muted">
+					<strong className="text-ink">Конфиденциальность:</strong> суперадминистратор не видит
+					заказы, покупателей, билеты и выручку клиентов. Только агрегаты платформы, биллинг и
+					комиссия.
 				</div>
-				<div className="mb-[18px]">
-					<h1>Платформа</h1>
-					<p className={cx(ui.sub, "mb-0")}>{todayLabel} · все клиенты · Asia/Tashkent</p>
-				</div>
-				<div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-4">
-					<div className={statCls}>
-						<b className="mb-1 block text-[26px] font-bold">{stats.cinemas}</b>
-						<span className="text-xs text-muted">Клиентов</span>
-					</div>
-					<div className={statCls}>
-						<b className="mb-1 block text-[26px] font-bold">{stats.ordersPaid}</b>
-						<span className="text-xs text-muted">Оплаченных заказов (кол-во)</span>
-					</div>
-					<div className={statCls}>
-						<b className="mb-1 block text-[26px] font-bold">{stats.sessionsToday}</b>
-						<span className="text-xs text-muted">Сеансы сегодня (кол-во)</span>
-					</div>
-					<div className={statCls}>
-						<b className="mb-1 block text-[26px] font-bold">{stats.sessionsPublished}</b>
-						<span className="text-xs text-muted">Активных сеансов (кол-во)</span>
-					</div>
+				<PageHeader
+					title="Платформа"
+					description={`${todayLabel} · все клиенты · Asia/Tashkent`}
+					actions={
+						<>
+							<ButtonLink href="/clients" variant="secondary">
+								Клиенты
+							</ButtonLink>
+							<ButtonLink href="/billing" variant="secondary">
+								Биллинг
+							</ButtonLink>
+						</>
+					}
+				/>
+				<div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+					<MetricCard label="Клиентов" value={stats.cinemas} variant="primary" />
+					<MetricCard
+						label="Оплаченных заказов"
+						value={stats.ordersPaid}
+						hint="Только количество"
+					/>
+					<MetricCard label="Сеансы сегодня" value={stats.sessionsToday} hint="Количество" />
+					<MetricCard label="Активных сеансов" value={stats.sessionsPublished} hint="Количество" />
 				</div>
 				<KpiWidgets kpis={kpis} hideMoney range={range} />
-				<div className="mb-4">
-					<KpiCharts points={kpiTrend} hideMoney range={range} />
-				</div>
-				<section className={ui.card}>
-					<div className={ui.cardH}>Клиенты и биллинг</div>
-					<p className="px-[18px] py-6 text-[13px] leading-relaxed text-muted">
-						Управление клиентами, месячными планами, инвойсами, комиссией с билета и авто-lock при
-						просрочке.
+				<KpiCharts points={kpiTrend} hideMoney range={range} />
+				<Card>
+					<CardHeader title="Клиенты и биллинг" />
+					<p className="px-[22px] py-4 text-[13px] leading-relaxed text-muted">
+						Управление клиентами, месячными планами, инвойсами, комиссией с билета и автоматической
+						блокировкой при просрочке.
 					</p>
-					<div className="flex flex-wrap gap-2 border-t border-line px-4 py-4">
-						<Link className={quickLink} href="/clients">
+					<div className="flex flex-wrap gap-2 border-t border-line px-5 py-4">
+						<ButtonLink href="/clients" variant="secondary" size="small">
 							Клиенты
-						</Link>
-						<Link className={quickLink} href="/billing">
+						</ButtonLink>
+						<ButtonLink href="/billing" variant="secondary" size="small">
 							Биллинг
-						</Link>
-						<Link className={quickLink} href="/billing/invoices">
+						</ButtonLink>
+						<ButtonLink href="/billing/invoices" variant="secondary" size="small">
 							Инвойсы
-						</Link>
-						<Link className={quickLink} href="/billing/settings">
+						</ButtonLink>
+						<ButtonLink href="/billing/settings" variant="secondary" size="small">
 							Комиссия
-						</Link>
+						</ButtonLink>
 					</div>
-				</section>
+				</Card>
 			</Shell>
 		);
 	}
 
 	return (
 		<Shell user={user}>
-			<div className="mb-[18px]">
-				<h1>Сегодня</h1>
-				<p className={cx(ui.sub, "mb-0")}>
-					{todayLabel} · {cinemaName ?? "ваш кинотеатр"} · Asia/Tashkent
-				</p>
-			</div>
+			<PageHeader
+				title="Хорошего дня"
+				description={`${todayLabel} · ${cinemaName ?? "ваш кинотеатр"} · Вот что происходит в кинотеатре`}
+				actions={<ButtonLink href="/sessions/new">+ Создать сеанс</ButtonLink>}
+			/>
 
-			<div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-				<div className={statCls}>
-					<b className="mb-1 block text-[26px] font-bold">{stats.sessionsToday}</b>
-					<span className="text-xs text-muted">Сеансы (сегодня)</span>
-				</div>
-				<div className={statCls}>
-					<b className="mb-1 block text-[26px] font-bold">{stats.ticketsActive}</b>
-					<span className="text-xs text-muted">Активные билеты</span>
-				</div>
-				<div className={statCls}>
-					<b className="mb-1 block text-[26px] font-bold">{money(stats.revenueTodayUzs)}</b>
-					<span className="text-xs text-muted">Выручка сегодня</span>
-				</div>
+			<div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+				<MetricCard
+					label="Выручка сегодня"
+					value={money(stats.revenueTodayUzs)}
+					hint="За сегодня, Asia/Tashkent"
+					variant="primary"
+				/>
+				<MetricCard
+					label="Активные билеты"
+					value={stats.ticketsActive.toLocaleString("ru-RU")}
+					hint="Сейчас в системе"
+				/>
+				<MetricCard
+					label="Заполняемость"
+					value={pct(kpis.occupancyRate)}
+					hint="По опубликованным сеансам выбранного периода"
+				/>
+				<MetricCard
+					label="Сеансы сегодня"
+					value={stats.sessionsToday}
+					hint={stats.halls > 0 ? `Залов в кинотеатре: ${stats.halls}` : "На сегодня"}
+				/>
 			</div>
 
 			<KpiWidgets kpis={kpis} hideMoney={false} range={range} />
-			<div className="mb-4">
-				<KpiCharts points={kpiTrend} hideMoney={false} range={range} />
-			</div>
 
-			<div className="grid grid-cols-1 gap-3.5 lg:grid-cols-[1fr_1fr_1fr]">
-				<section className={ui.card}>
-					<div className={cx(ui.cardH, "flex items-center justify-between gap-3")}>
-						<span>Доходы / расходы</span>
-						<span className="text-xs font-medium text-muted">Итого: {money(cashflow.netUzs)}</span>
+			<div className="mb-6 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(285px,1fr)]">
+				<Card>
+					<CardHeader
+						title="Динамика выручки"
+						extra={<span className="text-[11px] text-muted">7 дней</span>}
+					/>
+					<div className="flex flex-wrap items-baseline gap-3 px-6 pt-4">
+						<b className="text-[25px] font-bold tracking-tight">{money(periodIncome)}</b>
+						<span className="text-[11px] text-muted">доход за показанные дни</span>
 					</div>
-					<div className="grid grid-cols-3 gap-2.5 px-4 pt-2">
-						<div className={cashPill}>
-							<span className="mb-0.5 block text-[11px] text-muted">Доход</span>
-							<b className="text-base text-ok">{money(cashflow.incomeUzs)}</b>
-						</div>
-						<div className={cashPill}>
-							<span className="mb-0.5 block text-[11px] text-muted">Расход (refund)</span>
-							<b className="text-base text-bad">{money(cashflow.expenseUzs)}</b>
-						</div>
-						<div className={cashPill}>
-							<span className="mb-0.5 block text-[11px] text-muted">Итог</span>
-							<b className="text-base text-orange">{money(cashflow.netUzs)}</b>
-						</div>
-					</div>
-					<div className="px-3 pt-2">
+					{revenueTrend.length === 0 ? (
+						<EmptyState
+							title="Нет данных о выручке"
+							description="График появится после первых оплат."
+						/>
+					) : (
 						<RevenueChart points={revenueTrend} />
-					</div>
-					<div className="flex flex-wrap gap-2 border-t border-line px-4 py-4">
-						<Link className={quickLink} href="/sessions/new">
-							+ Сеанс
-						</Link>
-						<Link className={quickLink} href="/movies/new">
-							+ Фильм
-						</Link>
-						<Link className={quickLink} href="/halls">
-							Залы
-						</Link>
-						<Link className={quickLink} href="/sessions">
-							Все сеансы
-						</Link>
-					</div>
-				</section>
-
-				<section className={cx(ui.card, "flex min-h-[360px] flex-col")}>
-					<div className={ui.cardH}>Последние заказы</div>
-					{recentOrders.length === 0 ? (
-						<p className="px-[18px] py-6 text-[13px] leading-relaxed text-muted">
-							Заказов пока нет — после брони в Mini App появятся здесь.
-						</p>
-					) : (
-						<table>
-							<thead>
-								<tr>
-									<th>#</th>
-									<th>Фильм</th>
-									<th>Клиент</th>
-									<th>Сумма</th>
-									<th>Статус</th>
-								</tr>
-							</thead>
-							<tbody>
-								{recentOrders.map((o) => (
-									<tr key={o.id}>
-										<td>{o.publicNumber}</td>
-										<td>
-											{o.movieTitle}
-											<br />
-											<small className="text-xs text-muted">{o.cinemaName}</small>
-										</td>
-										<td>{o.customer}</td>
-										<td>{money(o.totalUzs)}</td>
-										<td>
-											<span className={statusClass(o.status)}>{o.status}</span>
-										</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
 					)}
-					<div className="mt-auto flex items-center justify-between border-t border-line px-4 py-3 text-xs text-muted">
-						<span>Показаны последние {recentOrders.length || 0}</span>
-						<Link className="font-semibold text-orange" href="/orders">
-							Ещё
-						</Link>
+					<div className="grid grid-cols-1 gap-2 border-t border-line px-5 py-4 sm:grid-cols-3">
+						<div>
+							<span className="block text-[11px] text-muted">Доход</span>
+							<b className="text-ok">{money(cashflow.incomeUzs)}</b>
+						</div>
+						<div>
+							<span className="block text-[11px] text-muted">Расход (возвраты)</span>
+							<b className="text-bad">{money(cashflow.expenseUzs)}</b>
+						</div>
+						<div>
+							<span className="block text-[11px] text-muted">Итог</span>
+							<b className="text-primary">{money(cashflow.netUzs)}</b>
+						</div>
 					</div>
-				</section>
+				</Card>
 
-				<aside className={cx(ui.card, "flex min-h-[360px] flex-col")}>
-					<div className={cx(ui.cardH, "flex items-center justify-between gap-3")}>
-						<span>Сеансы</span>
-						<Link className={cx(ui.btn, ui.btnSm, ui.btnPri)} href="/sessions/new">
-							+
-						</Link>
-					</div>
+				<Card>
+					<CardHeader
+						title="Сегодня на экране"
+						extra={
+							<Link href="/sessions" className="text-xs font-semibold text-primary">
+								Все сеансы
+							</Link>
+						}
+					/>
 					{todaySessions.length === 0 ? (
-						<p className="px-[18px] py-6 text-[13px] leading-relaxed text-muted">
-							Ближайших сеансов нет. Опубликованные сеансы появятся здесь.
-						</p>
+						<EmptyState
+							title="Сеансов нет"
+							description="Опубликованные сеансы на сегодня появятся здесь."
+						/>
 					) : (
-						<ul className="m-0 flex-1 list-none p-0">
-							{todaySessions.map((s) => {
-								const full = s.occupied >= s.capacity;
+						<ul className="m-0 list-none px-5">
+							{todaySessions.map((session) => {
+								const ratio =
+									session.capacity > 0
+										? Math.min(100, Math.round((session.occupied / session.capacity) * 100))
+										: 0;
 								return (
 									<li
-										key={s.id}
-										className="flex items-center justify-between gap-3 border-b border-line px-4 py-3"
+										key={session.id}
+										className="flex items-center gap-3 border-b border-[var(--card-line)] py-4 last:border-0"
 									>
-										<div>
-											<strong className="mb-1 block text-[13px]">{s.movieTitle}</strong>
-											<small className="text-[11px] leading-snug text-muted">
-												{s.cinemaName} · {s.hallName}
-												<br />
-												{timeLabel(s.startsAt)}
+										<div className="min-w-0 flex-1">
+											<b className="block text-[13px]">{session.movieTitle}</b>
+											<small className="text-[11px] text-muted">
+												{session.hallName} · {session.occupied}/{session.capacity} мест
 											</small>
+											<div className="mt-1 h-1 w-20 overflow-hidden rounded-sm bg-elev">
+												<div className="h-full bg-primary" style={{ width: `${ratio}%` }} />
+											</div>
 										</div>
-										<div
-											className={cx(
-												"inline-flex h-7 items-center gap-1.5 self-center rounded-full px-2.5 text-xs font-bold",
-												full ? "bg-bad/12 text-bad" : "bg-ok/12 text-ok",
-											)}
-										>
-											<span className="size-1.5 rounded-full bg-current" />
-											{s.occupied}/{s.capacity}
-										</div>
+										<time className="text-[13px] font-bold">{tashkentTime(session.startsAt)}</time>
 									</li>
 								);
 							})}
 						</ul>
 					)}
-					<div className="flex items-center justify-between border-t border-line px-4 py-3 text-xs text-muted">
-						<span>
-							{publishedToday}/{todaySessions.length} ближайших сеансов
-						</span>
-						<Link className="font-semibold text-orange" href="/sessions">
-							Ещё
-						</Link>
-					</div>
-				</aside>
-
-				<section className={ui.card}>
-					<div className={ui.cardH}>Платежи</div>
-					{recentPayments.length === 0 ? (
-						<p className="px-[18px] py-6 text-[13px] leading-relaxed text-muted">
-							Платежей пока нет (Phase 11 payment).
-						</p>
-					) : (
-						<table>
-							<thead>
-								<tr>
-									<th>Заказ</th>
-									<th>Провайдер</th>
-									<th>Сумма</th>
-									<th>Статус</th>
-								</tr>
-							</thead>
-							<tbody>
-								{recentPayments.map((p) => (
-									<tr key={p.id}>
-										<td>
-											#{p.orderNumber}
-											<br />
-											<small className="text-xs text-muted">{p.cinemaName}</small>
-										</td>
-										<td>{p.provider}</td>
-										<td>{money(p.amountUzs)}</td>
-										<td>
-											<span className={statusClass(p.status)}>{p.status}</span>
-										</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
-					)}
-				</section>
+				</Card>
 			</div>
+
+			<KpiCharts points={kpiTrend} hideMoney={false} range={range} />
+
+			<Card className="mb-6">
+				<CardHeader
+					title="Последние заказы"
+					extra={
+						<Link href="/orders" className="text-xs font-semibold text-primary">
+							Все заказы
+						</Link>
+					}
+				/>
+				<DataTable
+					rows={recentOrders}
+					getRowKey={(order) => order.id}
+					emptyTitle="Заказов пока нет"
+					emptyDescription="После брони в мини-приложении заказы появятся здесь."
+					columns={[
+						{
+							id: "number",
+							header: "Заказ",
+							cell: (order) => <strong className="text-ink">#{order.publicNumber}</strong>,
+						},
+						{ id: "movie", header: "Фильм", cell: (order) => order.movieTitle },
+						{ id: "customer", header: "Покупатель", cell: (order) => order.customer },
+						{
+							id: "total",
+							header: "Сумма",
+							cell: (order) => <strong className="text-ink">{money(order.totalUzs)}</strong>,
+						},
+						{
+							id: "status",
+							header: "Статус",
+							cell: (order) => <StatusBadge status={order.status} />,
+						},
+						{
+							id: "open",
+							header: "",
+							cell: (order) => (
+								<Link href={`/orders/${order.id}`} className="text-xs font-semibold text-primary">
+									Подробнее
+								</Link>
+							),
+						},
+					]}
+				/>
+			</Card>
+
+			<Card>
+				<CardHeader title="Платежи" />
+				<DataTable
+					rows={recentPayments}
+					getRowKey={(payment) => payment.id}
+					emptyTitle="Платежей пока нет"
+					emptyDescription="Оплаты появятся здесь после подтверждения."
+					columns={[
+						{
+							id: "order",
+							header: "Заказ",
+							cell: (payment) => <strong className="text-ink">#{payment.orderNumber}</strong>,
+						},
+						{ id: "provider", header: "Провайдер", cell: (payment) => payment.provider },
+						{
+							id: "amount",
+							header: "Сумма",
+							cell: (payment) => money(payment.amountUzs),
+						},
+						{
+							id: "status",
+							header: "Статус",
+							cell: (payment) => <StatusBadge status={payment.status} />,
+						},
+					]}
+				/>
+			</Card>
 		</Shell>
 	);
 }

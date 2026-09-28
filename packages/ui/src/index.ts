@@ -1,5 +1,11 @@
 export { Badge, type BadgeTone } from "./components/badge";
-export { Button, type ButtonProps, type ButtonSize, type ButtonVariant } from "./components/button";
+export {
+	Button,
+	type ButtonProps,
+	type ButtonSize,
+	type ButtonVariant,
+	buttonClassName,
+} from "./components/button";
 export { Card, CardBody, CardHeader } from "./components/card";
 export { Chip, type ChipProps } from "./components/chip";
 export { DataTable, type DataTableColumn } from "./components/data-table";

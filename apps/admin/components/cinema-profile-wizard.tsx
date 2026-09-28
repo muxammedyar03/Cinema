@@ -3,7 +3,6 @@
 import type { CinemaSecurityStatus, MapProvider, SessionUser } from "@cinema/types";
 import { ImagePlus, X } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { clientApi } from "../lib/api";
@@ -12,6 +11,8 @@ import type { CinemaAdminProfile } from "../lib/cinema-profile";
 import { uploadCinemaPhoto } from "../lib/cinema-profile";
 import { parseMapsPaste } from "../lib/maps";
 import { cx, ui } from "../lib/ui";
+import { PageHeader } from "../lib/ui-kit";
+import { ButtonLink } from "./button-link";
 import { CinemaMapEmbed } from "./cinema-map-embed";
 
 const STEPS = [
@@ -94,20 +95,19 @@ export function CinemaProfileWizard({
 
 	return (
 		<div className="max-w-3xl">
-			<div className={ui.row}>
-				<div>
-					<h1 className={ui.pageTitle}>Профиль кинотеатра</h1>
-					<p className={ui.sub}>
-						{profile.name}
-						{complete
-							? " · профиль заполнен"
-							: ` · осталось: ${profile.profileCompletion.missing.length} шагов`}
-					</p>
-				</div>
-				<Link className={cx(ui.btn, ui.btnGhost)} href={backHref}>
-					{backLabel}
-				</Link>
-			</div>
+			<PageHeader
+				title="Профиль кинотеатра"
+				description={`${profile.name}${
+					complete
+						? " · профиль заполнен"
+						: ` · осталось шагов: ${profile.profileCompletion.missing.length}`
+				}`}
+				actions={
+					<ButtonLink href={backHref} variant="secondary">
+						{backLabel}
+					</ButtonLink>
+				}
+			/>
 
 			<ol className="mb-5 flex flex-wrap gap-2">
 				{STEPS.map((item, i) => {
@@ -128,7 +128,7 @@ export function CinemaProfileWizard({
 								className={cx(
 									"inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[12px] font-semibold",
 									on
-										? "border-orange bg-orange text-[#171310]"
+										? "border-primary bg-primary text-[var(--nav-ink)]"
 										: done
 											? "border-ok/40 bg-ok/10 text-ok"
 											: "border-line-strong text-muted",
@@ -281,7 +281,7 @@ function PhotosStep({
 							/>
 							<button
 								type="button"
-								className="absolute right-1.5 top-1.5 grid size-7 place-items-center rounded-full bg-black/55 text-white"
+								className="absolute right-1.5 top-1.5 grid size-7 place-items-center rounded-full bg-[color-mix(in_srgb,var(--ink)_55%,transparent)] text-[var(--nav-ink)]"
 								onClick={() => void remove(photo.id)}
 								disabled={busy}
 								aria-label="Удалить фото"
@@ -291,7 +291,7 @@ function PhotosStep({
 						</div>
 					))}
 					{profile.photos.length < 12 ? (
-						<label className="grid h-28 cursor-pointer place-items-center rounded-lg border border-dashed border-line-strong text-muted hover:border-orange hover:text-orange">
+						<label className="grid h-28 cursor-pointer place-items-center rounded-lg border border-dashed border-line-strong text-muted hover:border-primary hover:text-primary">
 							<input
 								type="file"
 								accept="image/jpeg,image/png,image/webp"

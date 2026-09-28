@@ -1,11 +1,11 @@
-import { LayoutTemplate } from "lucide-react";
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ButtonLink } from "../../components/button-link";
 import { Shell } from "../../components/shell";
 import { assertBillingAccess } from "../../lib/billing-access";
+import { ruCount } from "../../lib/format";
 import { primaryCinemaId, primaryCinemaName, roleOf } from "../../lib/rbac";
 import { getMe, serverApi } from "../../lib/server-api";
-import { cx, ui } from "../../lib/ui";
+import { Card, CardBody, EmptyState, PageHeader } from "../../lib/ui-kit";
 import { AddHallButton } from "./add-hall-button";
 import { HallRowActions } from "./hall-actions";
 
@@ -16,6 +16,18 @@ type Cinema = {
 	timezone: string;
 	halls: Array<{ id: string; name: string; capacity: number }>;
 };
+
+type SessionRow = {
+	startsAt: string;
+	hall: { id: string };
+};
+
+function isToday(iso: string) {
+	const date = new Date(iso);
+	const now = new Date();
+	const key = (value: Date) => value.toLocaleDateString("en-CA", { timeZone: "Asia/Tashkent" });
+	return key(date) === key(now);
+}
 
 export default async function HallsPage() {
 	const user = await getMe();
@@ -28,49 +40,54 @@ export default async function HallsPage() {
 	const cinemaId = primaryCinemaId(user);
 	if (!cinemaId) redirect("/login");
 
-	const cinema = await serverApi<Cinema>(`/admin/cinemas/${cinemaId}`);
+	const [cinema, sessions] = await Promise.all([
+		serverApi<Cinema>(`/admin/cinemas/${cinemaId}`),
+		serverApi<SessionRow[]>("/admin/sessions"),
+	]);
 	const cinemaName = primaryCinemaName(user) ?? cinema.name;
-	const canManage = user.staff.some((s) => s.cinemaId === cinemaId && s.role === "CINEMA_ADMIN");
+	const canManage = user.staff.some(
+		(member) => member.cinemaId === cinemaId && member.role === "CINEMA_ADMIN",
+	);
+	const todayByHall = new Map<string, number>();
+	for (const session of sessions) {
+		if (!isToday(session.startsAt)) continue;
+		todayByHall.set(session.hall.id, (todayByHall.get(session.hall.id) ?? 0) + 1);
+	}
 
 	return (
 		<Shell user={user}>
-			<div className={ui.row}>
-				<div>
-					<h1 className={ui.pageTitle}>Залы</h1>
-					<p className={ui.sub}>
-						{cinemaName}
-						{cinema.address ? ` · ${cinema.address}` : ""} · {cinema.timezone}
-					</p>
-				</div>
-				{canManage ? <AddHallButton cinemaId={cinema.id} /> : null}
-			</div>
+			<PageHeader
+				title="Залы"
+				description={`${cinemaName}${cinema.address ? ` · ${cinema.address}` : ""} · ${cinema.timezone}`}
+				actions={canManage ? <AddHallButton cinemaId={cinema.id} /> : null}
+			/>
 
 			{cinema.halls.length === 0 ? (
-				<div className={ui.card}>
-					<p className="px-5 py-10 text-center text-sm text-muted">
-						Залов пока нет. Нажмите «Новый зал», чтобы добавить.
-					</p>
-				</div>
+				<Card>
+					<EmptyState title="Залов пока нет" description="Нажмите «Новый зал», чтобы добавить." />
+				</Card>
 			) : (
-				<div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-					{cinema.halls.map((h) => (
-						<div key={h.id} className={cx(ui.card, "p-[18px]")}>
-							<h2 className="mb-1.5 font-brand text-lg font-bold">{h.name}</h2>
-							<p className="mb-3.5 text-[13px] text-muted">
-								Вместимость {h.capacity} · capacity ≠ число кресел
-							</p>
-							<div className="mb-3 flex flex-wrap gap-2">
-								<Link
-									className={cx(ui.btn, ui.btnSm, ui.btnPri)}
-									href={`/cinemas/${cinema.id}/halls/${h.id}/layout`}
-								>
-									<LayoutTemplate className="size-3.5" strokeWidth={2} />
-									Схема
-								</Link>
-							</div>
-							{canManage ? <HallRowActions cinemaId={cinema.id} hall={h} /> : null}
-						</div>
-					))}
+				<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+					{cinema.halls.map((hall) => {
+						const today = todayByHall.get(hall.id) ?? 0;
+						return (
+							<Card key={hall.id}>
+								<CardBody>
+									<h2 className="m-0 text-[21px] font-semibold">{hall.name}</h2>
+									<p className="mb-4 mt-1 text-[13px] text-muted">
+										{hall.capacity} мест · {today} {ruCount(today, "сеанс", "сеанса", "сеансов")}{" "}
+										сегодня · вместимость не равна числу кресел на схеме
+									</p>
+									<div className="flex flex-wrap items-center gap-2">
+										<ButtonLink href={`/cinemas/${cinema.id}/halls/${hall.id}/layout`} size="small">
+											Редактировать схему
+										</ButtonLink>
+										{canManage ? <HallRowActions cinemaId={cinema.id} hall={hall} /> : null}
+									</div>
+								</CardBody>
+							</Card>
+						);
+					})}
 				</div>
 			)}
 		</Shell>

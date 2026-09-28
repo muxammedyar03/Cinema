@@ -41,9 +41,9 @@
 .tb-icon.on,
 .toolbar > button.tb-type:hover,
 .toolbar > button.tb-type.on {
-	border-color: color-mix(in srgb, var(--color-orange) 45%, transparent);
-	color: var(--color-orange);
-	background: color-mix(in srgb, var(--color-orange) 10%, transparent);
+	border-color: color-mix(in srgb, var(--primary) 45%, transparent);
+	color: var(--primary);
+	background: color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 .tb-icon:disabled {
@@ -52,12 +52,12 @@
 }
 
 .tb-type.vip.on {
-	background: color-mix(in srgb, var(--color-orange) 20%, transparent);
-	color: var(--color-orange);
+	background: color-mix(in srgb, var(--primary) 20%, transparent);
+	color: var(--primary);
 }
 
 .tb-type.blocked.on {
-	background: rgba(255, 255, 255, 0.08);
+	background: color-mix(in srgb, var(--ink) 8%, transparent);
 	color: var(--color-muted);
 }
 
@@ -93,8 +93,8 @@
 	border: 1px dashed var(--color-line);
 	border-radius: 12px;
 	background:
-		radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.06) 1px, transparent 0) 0 0 / 8px 8px,
-		#0a0a0a;
+		radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--ink) 12%, transparent) 1px, transparent 0) 0 0 / 8px 8px,
+		var(--nav);
 	touch-action: none;
 	user-select: none;
 }
@@ -105,7 +105,7 @@
 	right: 10%;
 	top: 18px;
 	height: 36px;
-	border: 2px solid color-mix(in srgb, var(--color-orange) 35%, transparent);
+	border: 2px solid color-mix(in srgb, var(--primary) 35%, transparent);
 	border-bottom: 0;
 	border-radius: 120px 120px 0 0;
 	display: grid;
@@ -121,38 +121,38 @@
 	border: 0;
 	border-radius: 8px;
 	font: 600 9px var(--font-ui);
-	color: #0a0a0a;
+	color: var(--nav);
 	cursor: pointer;
 	padding: 0;
 	display: grid;
 	place-items: center;
-	box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nav) 25%, transparent);
 	pointer-events: none;
 }
 
 .layout-seat.standard {
-	background: #d8d8d8;
+	background: color-mix(in srgb, var(--nav-ink) 82%, var(--panel));
 }
 
 .layout-seat.vip {
-	background: var(--color-orange);
+	background: var(--primary);
 }
 
 .layout-seat.blocked {
-	background: #444;
+	background: color-mix(in srgb, var(--muted) 70%, var(--nav));
 	color: var(--color-muted);
 }
 
 .layout-seat.selected {
-	outline: 2px solid #fff;
+	outline: 2px solid var(--ink);
 	outline-offset: 2px;
 	z-index: 2;
 }
 
 .layout-marquee {
 	position: absolute;
-	border: 1px solid var(--color-orange);
-	background: color-mix(in srgb, var(--color-orange) 12%, transparent);
+	border: 1px solid var(--primary);
+	background: color-mix(in srgb, var(--primary) 12%, transparent);
 	pointer-events: none;
 	z-index: 3;
 }
@@ -169,7 +169,7 @@
 	top: 0;
 	bottom: 0;
 	width: 0;
-	border-left: 1px dashed rgba(255, 255, 255, 0.12);
+	border-left: 1px dashed color-mix(in srgb, var(--ink) 18%, transparent);
 }
 
 .layout-center-y {
@@ -177,7 +177,7 @@
 	left: 0;
 	right: 0;
 	height: 0;
-	border-top: 1px dashed rgba(255, 255, 255, 0.12);
+	border-top: 1px dashed color-mix(in srgb, var(--ink) 18%, transparent);
 }
 
 .layout-guide {
@@ -190,16 +190,16 @@
 	top: 0;
 	bottom: 0;
 	width: 0;
-	border-left: 1px solid var(--color-orange);
-	box-shadow: 0 0 8px color-mix(in srgb, var(--color-orange) 55%, transparent);
+	border-left: 1px solid var(--primary);
+	box-shadow: 0 0 8px color-mix(in srgb, var(--primary) 55%, transparent);
 }
 
 .layout-guide.h {
 	left: 0;
 	right: 0;
 	height: 0;
-	border-top: 1px solid var(--color-orange);
-	box-shadow: 0 0 8px color-mix(in srgb, var(--color-orange) 55%, transparent);
+	border-top: 1px solid var(--primary);
+	box-shadow: 0 0 8px color-mix(in srgb, var(--primary) 55%, transparent);
 }
 
 .layout-side {
@@ -240,9 +240,9 @@
 }
 
 .seg button.on {
-	border-color: color-mix(in srgb, var(--color-orange) 45%, transparent);
-	color: var(--color-orange);
-	background: color-mix(in srgb, var(--color-orange) 10%, transparent);
+	border-color: color-mix(in srgb, var(--primary) 45%, transparent);
+	color: var(--primary);
+	background: color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 .side-actions {
@@ -261,4 +261,15 @@
 	display: grid;
 	grid-template-columns: 1fr 1fr;
 	gap: 8px;
+}
+
+@media (max-width: 900px) {
+	.layout-card {
+		grid-template-columns: 1fr;
+	}
+
+	.layout-side {
+		border-left: 0;
+		border-top: 1px solid var(--color-line);
+	}
 }

@@ -44,6 +44,18 @@
 	border-color: var(--button-secondary-border);
 }
 
+.danger {
+	background: var(--bad);
+	border-color: var(--bad);
+	color: var(--nav-ink);
+}
+
+.danger:hover:not(:disabled) {
+	background: var(--bad);
+	border-color: var(--bad);
+	filter: var(--button-hover-filter);
+}
+
 .small {
 	padding: 5px 10px;
 	min-height: 32px;

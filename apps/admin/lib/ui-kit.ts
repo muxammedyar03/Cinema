@@ -1,6 +1,7 @@
 export {
 	Badge,
 	Button,
+	buttonClassName,
 	Card,
 	CardBody,
 	CardHeader,

@@ -1,7 +1,11 @@
-import { Clock3, Plus } from "lucide-react";
-import Link from "next/link";
+import { Plus } from "lucide-react";
+import Image from "next/image";
+import { ButtonLink } from "../../components/button-link";
+import { QuerySearch } from "../../components/query-search";
+import { StatusBadge } from "../../components/status-badge";
+import { tashkentDate, tashkentTime } from "../../lib/format";
 import { getMe, serverApi } from "../../lib/server-api";
-import { cx, ui } from "../../lib/ui";
+import { Badge, Card, DataTable, PageHeader } from "../../lib/ui-kit";
 import { SessionActions } from "./session-actions";
 import { SessionFilters } from "./session-filters";
 
@@ -10,7 +14,12 @@ type SessionRow = {
 	startsAt: string;
 	status: string;
 	basePriceUzs: number;
-	movie: { title: string };
+	movie: {
+		title: string;
+		durationMin?: number;
+		ageRating?: string | null;
+		posterUrl?: string | null;
+	};
 	cinema: { name: string };
 	hall: { name: string };
 	_count: { sessionSeats: number };
@@ -19,112 +28,116 @@ type SessionRow = {
 export default async function SessionsPage({
 	searchParams,
 }: {
-	searchParams: Promise<{ status?: string }>;
+	searchParams: Promise<{ status?: string; q?: string }>;
 }) {
 	const user = await getMe();
 	if (!user) return null;
-	const { status } = await searchParams;
+	const { status, q } = await searchParams;
 	const sessions = await serverApi<SessionRow[]>("/admin/sessions");
-	const filtered =
-		status && status !== "ALL" ? sessions.filter((s) => s.status === status) : sessions;
+	const query = (q ?? "").trim().toLowerCase();
+	const filtered = sessions.filter((session) => {
+		if (status && status !== "ALL" && session.status !== status) return false;
+		if (!query) return true;
+		return [session.movie.title, session.hall.name, session.cinema.name]
+			.join(" ")
+			.toLowerCase()
+			.includes(query);
+	});
 	const canManage =
-		user.role === "SUPER_ADMIN" || user.staff.some((s) => s.role === "CINEMA_ADMIN");
+		user.role === "SUPER_ADMIN" || user.staff.some((member) => member.role === "CINEMA_ADMIN");
 
 	return (
 		<>
-			<div className={ui.row}>
-				<div>
-					<h1 className={ui.pageTitle}>Сеансы</h1>
-					<p className={ui.sub}>Цена и скидка относятся к сеансу · фильм — отдельная сущность</p>
-				</div>
-				{canManage ? (
-					<Link className={cx(ui.btn, ui.btnPri)} href="/sessions/new">
-						<Plus className="size-4" strokeWidth={2} />
-						Создать сеанс
-					</Link>
-				) : null}
+			<PageHeader
+				title="Сеансы"
+				description="Планируйте показы и управляйте продажей билетов"
+				actions={
+					canManage ? (
+						<ButtonLink href="/sessions/new">
+							<Plus className="size-4" strokeWidth={2} />
+							Создать сеанс
+						</ButtonLink>
+					) : null
+				}
+			/>
+			<div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+				<SessionFilters active={status ?? "ALL"} />
+				<QuerySearch placeholder="Поиск по названию" initial={q ?? ""} />
 			</div>
-			<SessionFilters active={status ?? "ALL"} />
-			<div className={ui.card}>
-				<div className={ui.cardH}>
-					<span>Список</span>
-					<span className="font-mono text-xs font-medium text-muted">{filtered.length}</span>
-				</div>
-				{filtered.length === 0 ? (
-					<div className="px-5 py-10 text-center text-sm text-muted">
-						<Clock3 className="mx-auto mb-3 size-8 text-faint" strokeWidth={1.4} />
-						Сеансов нет
-					</div>
-				) : (
-					<table>
-						<thead>
-							<tr>
-								<th>Дата</th>
-								<th>Время</th>
-								<th>Фильм</th>
-								<th>Зал</th>
-								<th>Цена</th>
-								<th>Места</th>
-								<th>Статус</th>
-								<th />
-							</tr>
-						</thead>
-						<tbody>
-							{filtered.map((s) => {
-								const d = new Date(s.startsAt);
-								return (
-									<tr key={s.id} className="clickable">
-										<td>
-											{d.toLocaleDateString("ru-RU", {
-												day: "numeric",
-												month: "short",
-												timeZone: "Asia/Tashkent",
-											})}
-										</td>
-										<td>
-											{d.toLocaleTimeString("ru-RU", {
-												hour: "2-digit",
-												minute: "2-digit",
-												timeZone: "Asia/Tashkent",
-											})}
-										</td>
-										<td>
-											<b>{s.movie.title}</b>
-											<div className="mt-0.5 font-ui text-xs text-muted">{s.cinema.name}</div>
-										</td>
-										<td>{s.hall.name}</td>
-										<td>{s.basePriceUzs.toLocaleString("ru-RU")}</td>
-										<td>
-											{s._count.sessionSeats > 0 ? (
-												s._count.sessionSeats
-											) : (
-												<span className={cx(ui.badge, ui.badgeOrange)}>GA</span>
-											)}
-										</td>
-										<td>
-											<span
-												className={cx(
-													ui.badge,
-													s.status === "PUBLISHED"
-														? ui.badgeOk
-														: s.status === "CANCELLED"
-															? ui.badgeBad
-															: ui.badgeMuted,
-												)}
-											>
-												{s.status}
-											</span>
-										</td>
-										<td className="text-right">
-											{canManage ? <SessionActions id={s.id} status={s.status} /> : null}
-										</td>
-									</tr>
-								);
-							})}
-						</tbody>
-					</table>
-				)}
-			</div>
+			<Card>
+				<DataTable
+					rows={filtered}
+					getRowKey={(session) => session.id}
+					emptyTitle="Сеансов нет"
+					emptyDescription="Создайте сеанс или измените фильтр."
+					columns={[
+						{
+							id: "movie",
+							header: "Фильм",
+							cell: (session) => (
+								<div className="flex items-center gap-3">
+									{session.movie.posterUrl ? (
+										<Image
+											src={session.movie.posterUrl}
+											alt=""
+											width={34}
+											height={48}
+											unoptimized
+											className="h-12 w-[34px] rounded object-cover"
+										/>
+									) : null}
+									<div>
+										<strong className="text-ink">{session.movie.title}</strong>
+										<small className="block text-[11px] text-muted">
+											{session.movie.durationMin ? `${session.movie.durationMin} мин` : "—"}
+											{session.movie.ageRating ? ` · ${session.movie.ageRating}` : ""}
+										</small>
+									</div>
+								</div>
+							),
+						},
+						{
+							id: "time",
+							header: "Время",
+							cell: (session) => (
+								<div>
+									<strong className="text-ink">{tashkentTime(session.startsAt)}</strong>
+									<small className="block text-[11px] text-muted">
+										{tashkentDate(session.startsAt)}
+									</small>
+								</div>
+							),
+						},
+						{ id: "hall", header: "Зал", cell: (session) => session.hall.name },
+						{
+							id: "seats",
+							header: "Места",
+							cell: (session) =>
+								session._count.sessionSeats > 0 ? (
+									session._count.sessionSeats
+								) : (
+									<Badge tone="blue">Без мест</Badge>
+								),
+						},
+						{
+							id: "price",
+							header: "Цена",
+							cell: (session) => `${session.basePriceUzs.toLocaleString("ru-RU")} сум`,
+						},
+						{
+							id: "status",
+							header: "Статус",
+							cell: (session) => <StatusBadge status={session.status} />,
+						},
+						{
+							id: "actions",
+							header: "",
+							cell: (session) =>
+								canManage ? <SessionActions id={session.id} status={session.status} /> : null,
+						},
+					]}
+				/>
+			</Card>
 		</>
 	);
 }

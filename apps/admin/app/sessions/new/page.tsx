@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { clientApi } from "../../../lib/api";
 import { cx, ui } from "../../../lib/ui";
+import { Button, PageHeader } from "../../../lib/ui-kit";
 
 type Movie = { id: string; title: string };
 type Cinema = { id: string; name: string };
@@ -40,9 +41,12 @@ export default function NewSessionPage() {
 	const [error, setError] = useState("");
 
 	useEffect(() => {
+		const preset = new URLSearchParams(window.location.search).get("movie");
 		void clientApi<Movie[]>("/admin/movies").then((rows) => {
 			setMovies(rows);
-			if (rows[0]) setMovieId(rows[0].id);
+			const match = rows.find((row) => row.id === preset);
+			if (match) setMovieId(match.id);
+			else if (rows[0]) setMovieId(rows[0].id);
 		});
 		void clientApi<Cinema[]>("/admin/cinemas").then((rows) => {
 			setCinemas(rows);
@@ -86,8 +90,10 @@ export default function NewSessionPage() {
 
 	return (
 		<>
-			<h1>Новый сеанс</h1>
-			<p className={ui.sub}>DRAFT + снимок SessionSeat. Затем опубликуйте.</p>
+			<PageHeader
+				title="Новый сеанс"
+				description="Черновик и снимок мест. Затем опубликуйте сеанс."
+			/>
 			<form className={cx(ui.card, "max-w-[520px] p-[18px]")} onSubmit={onSubmit}>
 				{error ? <p className={ui.err}>{error}</p> : null}
 				<div className={ui.field}>
@@ -233,9 +239,7 @@ export default function NewSessionPage() {
 						/>
 					</div>
 				) : null}
-				<button className={cx(ui.btn, ui.btnPri)} type="submit">
-					Создать
-				</button>
+				<Button type="submit">Создать</Button>
 			</form>
 		</>
 	);

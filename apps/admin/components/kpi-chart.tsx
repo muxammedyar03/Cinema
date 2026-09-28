@@ -61,7 +61,7 @@ export function KpiChart({
 						x2={w - pad}
 						y1={h - pad - t * (h - pad * 2)}
 						y2={h - pad - t * (h - pad * 2)}
-						stroke="rgba(255,255,255,0.06)"
+						stroke="var(--line)"
 					/>
 				))}
 				{series.map((s) => (

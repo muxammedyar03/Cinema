@@ -32,8 +32,8 @@ export const emptyMovieForm = (): MovieFormValues => ({
 
 const AUDIO_OPTIONS: Array<{ id: "ru" | "uz" | "en"; label: string }> = [
 	{ id: "ru", label: "Русский" },
-	{ id: "uz", label: "Oʻzbek" },
-	{ id: "en", label: "English" },
+	{ id: "uz", label: "Узбекский" },
+	{ id: "en", label: "Английский" },
 ];
 
 const GENRE_SUGGESTIONS = [
@@ -179,7 +179,7 @@ export function MovieForm({
 							/>
 							<button
 								type="button"
-								className="absolute top-1.5 right-1.5 grid size-7 place-items-center rounded-md bg-black/55 text-white hover:bg-black/75"
+								className="absolute top-1.5 right-1.5 grid size-7 place-items-center rounded-md bg-[color-mix(in_srgb,var(--ink)_55%,transparent)] text-[var(--nav-ink)]"
 								aria-label="Удалить постер"
 								onClick={() => {
 									setPosterFile(null);
@@ -191,7 +191,7 @@ export function MovieForm({
 							</button>
 						</div>
 					) : (
-						<label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-line-strong bg-elev px-4 py-8 text-center transition-colors hover:border-orange/50 hover:bg-orange/5">
+						<label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-line-strong bg-elev px-4 py-8 text-center transition-colors hover:border-primary/50 hover:bg-primary/5">
 							<ImagePlus className="size-7 text-muted" strokeWidth={1.6} />
 							<span className="text-[13px] font-medium text-ink">Загрузить постер</span>
 							<span className="text-[11px] text-faint">JPEG, PNG, WebP · до 5 МБ</span>

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Shell } from "../../../components/shell";
 import { roleOf } from "../../../lib/rbac";
 import { getMe, serverApi } from "../../../lib/server-api";
+import { statusLabel } from "../../../lib/status";
 import { cx, ui } from "../../../lib/ui";
 import { InvoiceRowActions } from "./invoice-row-actions";
 
@@ -75,11 +76,11 @@ export default async function InvoicesPage({
 						}
 						className={cx(ui.chip, (status ?? "ALL") === s && ui.chipOn)}
 					>
-						{s === "ALL" ? "Все" : s}
+						{s === "ALL" ? "Все" : statusLabel(s)}
 					</Link>
 				))}
 				{cinemaId ? (
-					<Link href="/billing/invoices" className={cx(ui.chip, "text-orange")}>
+					<Link href="/billing/invoices" className={cx(ui.chip, "text-primary")}>
 						Сбросить клиент
 					</Link>
 				) : null}
@@ -101,7 +102,7 @@ export default async function InvoicesPage({
 								<th>Период</th>
 								<th>Сумма</th>
 								<th>Статус</th>
-								<th>Due</th>
+								<th>Срок</th>
 								<th>Просрочка</th>
 								<th />
 							</tr>
@@ -115,7 +116,7 @@ export default async function InvoicesPage({
 											<b>{inv.cinemaName}</b>
 										</Link>
 										<br />
-										<small className="text-xs text-muted">{inv.cinemaStatus}</small>
+										<small className="text-xs text-muted">{statusLabel(inv.cinemaStatus)}</small>
 									</td>
 									<td>
 										{inv.periodMonth}/{inv.periodYear}
@@ -132,7 +133,7 @@ export default async function InvoicesPage({
 														: ui.badgeWarn,
 											)}
 										>
-											{inv.status}
+											{statusLabel(inv.status)}
 										</span>
 									</td>
 									<td>
