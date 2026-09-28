@@ -11,6 +11,7 @@ import {
 	ListOrdered,
 	Receipt,
 	ScanLine,
+	Users,
 	Wallet,
 } from "lucide-react";
 import Link from "next/link";
@@ -108,18 +109,25 @@ const groups: NavGroup[] = [
 				match: (pathname) => pathname === "/",
 			},
 			{
-				href: "/clients",
-				label: "Клиенты",
+				href: "/cinemas",
+				label: "Кинотеатры",
 				icon: Building2,
 				roles: ["super"],
-				match: (pathname) => pathname.startsWith("/clients") || pathname.startsWith("/cinemas"),
+				match: (pathname) => pathname.startsWith("/cinemas"),
+			},
+			{
+				href: "/clients",
+				label: "Администраторы",
+				icon: Users,
+				roles: ["super"],
+				match: (pathname) => pathname.startsWith("/clients"),
 			},
 			{
 				href: "/billing",
 				label: "Биллинг",
 				icon: CreditCard,
 				roles: ["super"],
-				match: (pathname) => pathname === "/billing",
+				match: (pathname) => pathname === "/billing" || pathname.startsWith("/billing/locked"),
 			},
 			{
 				href: "/billing/invoices",

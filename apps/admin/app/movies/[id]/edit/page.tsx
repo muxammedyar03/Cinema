@@ -14,6 +14,7 @@ type Movie = {
 	audioLanguages: string[];
 	releasedAt: string | null;
 	status: "ACTIVE" | "ARCHIVED";
+	isFeatured?: boolean | null;
 };
 
 export default async function EditMoviePage({ params }: { params: Promise<{ id: string }> }) {

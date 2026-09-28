@@ -14,6 +14,7 @@ export type MovieListItem = {
 	audioLanguages: string[];
 	releasedAt: string | null;
 	status: "ACTIVE" | "ARCHIVED";
+	isFeatured?: boolean | null;
 };
 
 const AUDIO_LABEL: Record<string, string> = {

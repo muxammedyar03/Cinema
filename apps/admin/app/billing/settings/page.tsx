@@ -1,8 +1,8 @@
+import { Card, CardHeader, EmptyState, PageHeader } from "@cinema/ui";
 import { redirect } from "next/navigation";
 import { Shell } from "../../../components/shell";
 import { roleOf } from "../../../lib/rbac";
 import { getMe, serverApi } from "../../../lib/server-api";
-import { Card, CardHeader, PageHeader } from "../../../lib/ui-kit";
 import { SettingsForm } from "./settings-form";
 
 type Settings = {
@@ -19,7 +19,12 @@ export default async function BillingSettingsPage() {
 	if (!user) redirect("/login");
 	if (roleOf(user) !== "super") redirect("/");
 
-	const settings = await serverApi<Settings>("/admin/billing/settings");
+	let settings: Settings | null = null;
+	try {
+		settings = await serverApi<Settings>("/admin/billing/settings");
+	} catch {
+		settings = null;
+	}
 
 	return (
 		<Shell user={user}>
@@ -27,12 +32,19 @@ export default async function BillingSettingsPage() {
 				title="Комиссия и уведомления"
 				description="Комиссия с билета, порог автоблокировки и ежедневные напоминания"
 			/>
-			<Card>
-				<CardHeader title="Платформенные настройки" />
-				<div className="p-[18px]">
+			{settings ? (
+				<Card>
+					<CardHeader title="Настройки платформы" />
 					<SettingsForm initial={settings} />
-				</div>
-			</Card>
+				</Card>
+			) : (
+				<Card>
+					<EmptyState
+						title="Не удалось загрузить настройки"
+						description="Повторите попытку позже."
+					/>
+				</Card>
+			)}
 		</Shell>
 	);
 }

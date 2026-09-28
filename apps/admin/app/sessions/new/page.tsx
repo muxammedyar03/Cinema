@@ -2,7 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ButtonLink } from "../../../components/button-link";
 import { clientApi } from "../../../lib/api";
+import {
+	languageAccepted,
+	languagePayload,
+	SESSION_LANGUAGE_SAVE_ERROR,
+	type SessionLanguage,
+} from "../../../lib/session-language";
 import { cx, ui } from "../../../lib/ui";
 import { Button, PageHeader } from "../../../lib/ui-kit";
 
@@ -38,6 +45,8 @@ export default function NewSessionPage() {
 	const [basePriceUzs, setBasePriceUzs] = useState(45000);
 	const [vipPriceUzs, setVipPriceUzs] = useState(65000);
 	const [generalAdmission, setGeneralAdmission] = useState(false);
+	const [audioLanguage, setAudioLanguage] = useState<SessionLanguage | "">("");
+	const [createdId, setCreatedId] = useState<string | null>(null);
 	const [error, setError] = useState("");
 
 	useEffect(() => {
@@ -64,19 +73,32 @@ export default function NewSessionPage() {
 
 	async function onSubmit(e: React.FormEvent) {
 		e.preventDefault();
+		if (createdId) return;
 		setError("");
 		try {
-			await clientApi("/admin/sessions", {
-				method: "POST",
-				body: JSON.stringify({
-					movieId,
-					cinemaId,
-					hallId,
-					startsAt: new Date(`${date}T${time}`).toISOString(),
-					basePriceUzs: Number(basePriceUzs),
-					...(generalAdmission ? { generalAdmission: true } : { vipPriceUzs: Number(vipPriceUzs) }),
-				}),
-			});
+			const requested = audioLanguage === "" ? null : audioLanguage;
+			const created = await clientApi<{ id: string; audioLanguage?: string | null }>(
+				"/admin/sessions",
+				{
+					method: "POST",
+					body: JSON.stringify({
+						movieId,
+						cinemaId,
+						hallId,
+						startsAt: new Date(`${date}T${time}`).toISOString(),
+						basePriceUzs: Number(basePriceUzs),
+						...(generalAdmission
+							? { generalAdmission: true }
+							: { vipPriceUzs: Number(vipPriceUzs) }),
+						...languagePayload(requested),
+					}),
+				},
+			);
+			if (!languageAccepted(requested, created)) {
+				setCreatedId(created.id);
+				setError(SESSION_LANGUAGE_SAVE_ERROR);
+				return;
+			}
 			router.push("/sessions");
 			router.refresh();
 		} catch {
@@ -96,6 +118,11 @@ export default function NewSessionPage() {
 			/>
 			<form className={cx(ui.card, "max-w-[520px] p-[18px]")} onSubmit={onSubmit}>
 				{error ? <p className={ui.err}>{error}</p> : null}
+				{createdId ? (
+					<ButtonLink href="/sessions" variant="secondary">
+						К списку сеансов
+					</ButtonLink>
+				) : null}
 				<div className={ui.field}>
 					<label className={ui.label} htmlFor="movie">
 						Фильм
@@ -148,6 +175,21 @@ export default function NewSessionPage() {
 								{h.name}
 							</option>
 						))}
+					</select>
+				</div>
+				<div className={ui.field}>
+					<label className={ui.label} htmlFor="language">
+						Язык
+					</label>
+					<select
+						id="language"
+						className={ui.input}
+						value={audioLanguage}
+						onChange={(e) => setAudioLanguage(e.target.value as SessionLanguage | "")}
+					>
+						<option value="">Не указан</option>
+						<option value="ru">Русский</option>
+						<option value="uz">Узбекский</option>
 					</select>
 				</div>
 				<div className="mb-3.5 grid grid-cols-2 gap-3">
@@ -239,7 +281,9 @@ export default function NewSessionPage() {
 						/>
 					</div>
 				) : null}
-				<Button type="submit">Создать</Button>
+				<Button type="submit" disabled={createdId != null}>
+					Создать
+				</Button>
 			</form>
 		</>
 	);

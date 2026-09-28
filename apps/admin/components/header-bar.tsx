@@ -63,32 +63,45 @@ function crumbsFor(pathname: string): Crumb[] {
 		];
 	}
 	if (pathname.startsWith("/billing")) return [{ href: "/billing", label: "Биллинг" }];
+	if (pathname === "/cinemas/new") {
+		return [
+			{ href: "/cinemas", label: "Кинотеатры" },
+			{ href: pathname, label: "Новый кинотеатр" },
+		];
+	}
+	if (pathname === "/cinemas") return [{ href: "/cinemas", label: "Кинотеатры" }];
+	if (pathname.startsWith("/cinemas")) {
+		return [
+			{ href: "/cinemas", label: "Кинотеатры" },
+			{ href: pathname, label: "Кинотеатр" },
+		];
+	}
 	if (pathname === "/clients/new") {
 		return [
-			{ href: "/clients", label: "Клиенты" },
+			{ href: "/clients", label: "Администраторы" },
 			{ href: pathname, label: "Новый клиент" },
 		];
 	}
 	if (/^\/clients\/[^/]+\/edit/.test(pathname)) {
 		return [
-			{ href: "/clients", label: "Клиенты" },
+			{ href: "/clients", label: "Администраторы" },
 			{ href: pathname, label: "Редактирование" },
 		];
 	}
 	if (/^\/clients\/[^/]+\/profile/.test(pathname)) {
 		return [
-			{ href: "/clients", label: "Клиенты" },
+			{ href: "/clients", label: "Администраторы" },
 			{ href: pathname, label: "Профиль" },
 		];
 	}
 	if (/^\/clients\/[^/]+/.test(pathname)) {
 		return [
-			{ href: "/clients", label: "Клиенты" },
+			{ href: "/clients", label: "Администраторы" },
 			{ href: pathname, label: "Карточка" },
 		];
 	}
-	if (pathname.startsWith("/clients") || pathname.startsWith("/cinemas")) {
-		return [{ href: "/clients", label: "Клиенты" }];
+	if (pathname.startsWith("/clients")) {
+		return [{ href: "/clients", label: "Администраторы" }];
 	}
 	return [{ href: pathname, label: "Раздел" }];
 }

@@ -4,6 +4,7 @@ import { ImagePlus, X } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { clientApi } from "../../lib/api";
+import { FEATURED_WARNING, featuredWrite, isOptionalFieldError } from "../../lib/featured-film";
 import { cx, ui } from "../../lib/ui";
 
 export type MovieFormValues = {
@@ -16,6 +17,7 @@ export type MovieFormValues = {
 	releasedAt: string;
 	audioLanguages: Array<"ru" | "uz" | "en">;
 	posterUrl: string | null;
+	isFeatured: boolean;
 };
 
 export const emptyMovieForm = (): MovieFormValues => ({
@@ -28,6 +30,7 @@ export const emptyMovieForm = (): MovieFormValues => ({
 	releasedAt: "",
 	audioLanguages: ["ru"],
 	posterUrl: null,
+	isFeatured: false,
 });
 
 const AUDIO_OPTIONS: Array<{ id: "ru" | "uz" | "en"; label: string }> = [
@@ -98,9 +101,15 @@ export function MovieForm({
 		audioLanguages: Array<"ru" | "uz" | "en">;
 		releasedAt?: string | null;
 		posterUrl?: string;
+		isFeatured?: boolean;
 	}) => Promise<void>;
 }) {
-	const [values, setValues] = useState<MovieFormValues>({ ...emptyMovieForm(), ...initial });
+	const initialFeatured = initial?.isFeatured;
+	const [values, setValues] = useState<MovieFormValues>({
+		...emptyMovieForm(),
+		...initial,
+		isFeatured: initial?.isFeatured === true,
+	});
 	const [posterFile, setPosterFile] = useState<File | null>(null);
 	const [posterPreview, setPosterPreview] = useState<string | null>(initial?.posterUrl ?? null);
 	const [busy, setBusy] = useState(false);
@@ -143,6 +152,7 @@ export function MovieForm({
 		try {
 			const posterUrl = await resolvePosterUrl(posterFile, values.posterUrl);
 			const rating = parseRating(values.rating);
+			const isFeatured = featuredWrite(initialFeatured, values.isFeatured);
 			await onSubmit({
 				title: values.title,
 				description: values.description.trim() || undefined,
@@ -153,9 +163,12 @@ export function MovieForm({
 				audioLanguages: values.audioLanguages,
 				releasedAt: values.releasedAt || null,
 				posterUrl: posterUrl ?? values.posterUrl ?? "",
+				...(isFeatured !== undefined ? { isFeatured } : {}),
 			});
-		} catch {
-			setError("Не удалось сохранить фильм. Проверьте поля.");
+		} catch (err) {
+			setError(
+				isOptionalFieldError(err) ? err.message : "Не удалось сохранить фильм. Проверьте поля.",
+			);
 		} finally {
 			setBusy(false);
 		}
@@ -338,6 +351,23 @@ export function MovieForm({
 						onChange={(e) => patch("releasedAt", e.target.value)}
 					/>
 				</div>
+			</div>
+
+			<div className={ui.field}>
+				<label className="flex cursor-pointer items-center gap-2 text-[13px] font-medium text-ink">
+					<input
+						type="checkbox"
+						role="switch"
+						className="size-4 accent-[var(--primary)]"
+						checked={values.isFeatured}
+						aria-checked={values.isFeatured}
+						onChange={(e) => patch("isFeatured", e.target.checked)}
+					/>
+					В центре внимания
+				</label>
+				{values.isFeatured ? null : (
+					<p className="mb-0 text-[12px] text-[var(--warn)]">{FEATURED_WARNING}</p>
+				)}
 			</div>
 
 			<button className={cx(ui.btn, ui.btnPri)} type="submit" disabled={busy}>

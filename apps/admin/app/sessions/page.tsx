@@ -5,6 +5,7 @@ import { QuerySearch } from "../../components/query-search";
 import { StatusBadge } from "../../components/status-badge";
 import { tashkentDate, tashkentTime } from "../../lib/format";
 import { getMe, serverApi } from "../../lib/server-api";
+import { languageBadgeLabel } from "../../lib/session-language";
 import { Badge, Card, DataTable, PageHeader } from "../../lib/ui-kit";
 import { SessionActions } from "./session-actions";
 import { SessionFilters } from "./session-filters";
@@ -23,6 +24,7 @@ type SessionRow = {
 	cinema: { name: string };
 	hall: { name: string };
 	_count: { sessionSeats: number };
+	audioLanguage?: string | null;
 };
 
 export default async function SessionsPage({
@@ -108,7 +110,19 @@ export default async function SessionsPage({
 								</div>
 							),
 						},
-						{ id: "hall", header: "Зал", cell: (session) => session.hall.name },
+						{
+							id: "hall",
+							header: "Зал",
+							cell: (session) => {
+								const language = languageBadgeLabel(session.audioLanguage);
+								return (
+									<div className="flex flex-wrap items-center gap-2">
+										<span>{session.hall.name}</span>
+										{language ? <Badge tone="neutral">{language}</Badge> : null}
+									</div>
+								);
+							},
+						},
 						{
 							id: "seats",
 							header: "Места",

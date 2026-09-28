@@ -1,30 +1,13 @@
-import Link from "next/link";
+import { Card, EmptyState, PageHeader } from "@cinema/ui";
 import { redirect } from "next/navigation";
+import { ButtonLink } from "../../../components/platform/button-link";
+import { InvoiceStatusFilter } from "../../../components/platform/invoice-filters";
+import { InvoicesTable } from "../../../components/platform/invoices-table";
+import styles from "../../../components/platform/platform.module.css";
 import { Shell } from "../../../components/shell";
+import { loadInvoices } from "../../../lib/platform/load";
 import { roleOf } from "../../../lib/rbac";
-import { getMe, serverApi } from "../../../lib/server-api";
-import { statusLabel } from "../../../lib/status";
-import { cx, ui } from "../../../lib/ui";
-import { InvoiceRowActions } from "./invoice-row-actions";
-
-type Invoice = {
-	id: string;
-	publicNumber: string;
-	cinemaId: string;
-	cinemaName: string;
-	cinemaStatus: string;
-	periodYear: number;
-	periodMonth: number;
-	amountUzs: number;
-	status: string;
-	dueAt: string;
-	paidAt: string | null;
-	daysLate: number;
-};
-
-function money(n: number) {
-	return `${n.toLocaleString("ru-RU")} сум`;
-}
+import { getMe } from "../../../lib/server-api";
 
 export default async function InvoicesPage({
 	searchParams,
@@ -36,125 +19,56 @@ export default async function InvoicesPage({
 	if (roleOf(user) !== "super") redirect("/");
 
 	const { cinemaId, status } = await searchParams;
-	const invoices = await serverApi<Invoice[]>("/admin/billing/invoices");
-	const filtered = invoices.filter((inv) => {
-		if (cinemaId && inv.cinemaId !== cinemaId) return false;
-		if (status && status !== "ALL" && inv.status !== status) return false;
-		return true;
-	});
-
-	const statuses = ["ALL", "DUE", "OVERDUE", "PAID", "VOID"] as const;
+	const invoices = await loadInvoices();
+	const rows =
+		invoices.status === "ready"
+			? invoices.data.filter((invoice) => {
+					if (cinemaId && invoice.cinemaId !== cinemaId) return false;
+					if (status && status !== "ALL" && invoice.status !== status) return false;
+					return true;
+				})
+			: [];
 
 	return (
 		<Shell user={user}>
-			<div className={ui.row}>
-				<div>
-					<h1 className={ui.pageTitle}>Инвойсы</h1>
-					<p className={ui.sub}>
-						Ежемесячные счета подписки
-						{cinemaId ? " · фильтр по клиенту" : ""} · история оплат
-					</p>
+			<PageHeader
+				title="Счета"
+				description={
+					cinemaId
+						? "Ежемесячные счета подписки · фильтр по кинотеатру"
+						: "Ежемесячные счета подписки"
+				}
+				actions={
+					<>
+						<ButtonLink href="/billing" variant="secondary">
+							Биллинг
+						</ButtonLink>
+						<ButtonLink href="/cinemas" variant="secondary">
+							Кинотеатры
+						</ButtonLink>
+					</>
+				}
+			/>
+			<InvoiceStatusFilter status={status ?? "ALL"} cinemaId={cinemaId} />
+			{cinemaId ? (
+				<div className={styles.block}>
+					<ButtonLink href="/billing/invoices" variant="secondary" size="small">
+						Сбросить кинотеатр
+					</ButtonLink>
 				</div>
-				<div className="flex flex-wrap gap-2">
-					<Link className={cx(ui.btn, ui.btnGhost)} href="/billing">
-						Биллинг
-					</Link>
-					<Link className={cx(ui.btn, ui.btnGhost)} href="/clients">
-						Клиенты
-					</Link>
-				</div>
-			</div>
-
-			<div className="mb-4 flex flex-wrap gap-2">
-				{statuses.map((s) => (
-					<Link
-						key={s}
-						href={
-							cinemaId
-								? `/billing/invoices?status=${s}&cinemaId=${cinemaId}`
-								: `/billing/invoices?status=${s}`
+			) : null}
+			{invoices.status === "ready" ? (
+				<InvoicesTable rows={rows} />
+			) : (
+				<Card>
+					<EmptyState
+						title="Не удалось загрузить счета"
+						description={
+							invoices.status === "error" ? invoices.message : "Список временно недоступен."
 						}
-						className={cx(ui.chip, (status ?? "ALL") === s && ui.chipOn)}
-					>
-						{s === "ALL" ? "Все" : statusLabel(s)}
-					</Link>
-				))}
-				{cinemaId ? (
-					<Link href="/billing/invoices" className={cx(ui.chip, "text-primary")}>
-						Сбросить клиент
-					</Link>
-				) : null}
-			</div>
-
-			<div className={ui.card}>
-				<div className={ui.cardH}>
-					<span>Список</span>
-					<span className="font-mono text-xs text-muted">{filtered.length}</span>
-				</div>
-				{filtered.length === 0 ? (
-					<p className="px-[18px] py-8 text-center text-sm text-muted">Инвойсов нет</p>
-				) : (
-					<table>
-						<thead>
-							<tr>
-								<th>#</th>
-								<th>Клиент</th>
-								<th>Период</th>
-								<th>Сумма</th>
-								<th>Статус</th>
-								<th>Срок</th>
-								<th>Просрочка</th>
-								<th />
-							</tr>
-						</thead>
-						<tbody>
-							{filtered.map((inv) => (
-								<tr key={inv.id}>
-									<td>{inv.publicNumber}</td>
-									<td>
-										<Link href={`/clients/${inv.cinemaId}`}>
-											<b>{inv.cinemaName}</b>
-										</Link>
-										<br />
-										<small className="text-xs text-muted">{statusLabel(inv.cinemaStatus)}</small>
-									</td>
-									<td>
-										{inv.periodMonth}/{inv.periodYear}
-									</td>
-									<td>{money(inv.amountUzs)}</td>
-									<td>
-										<span
-											className={cx(
-												ui.badge,
-												inv.status === "PAID"
-													? ui.badgeOk
-													: inv.status === "OVERDUE"
-														? ui.badgeBad
-														: ui.badgeWarn,
-											)}
-										>
-											{statusLabel(inv.status)}
-										</span>
-									</td>
-									<td>
-										{new Date(inv.dueAt).toLocaleDateString("ru-RU", {
-											timeZone: "Asia/Tashkent",
-										})}
-									</td>
-									<td>{inv.daysLate > 0 ? `${inv.daysLate} дн.` : "—"}</td>
-									<td className="text-right">
-										<InvoiceRowActions
-											invoiceId={inv.id}
-											status={inv.status}
-											cinemaId={inv.cinemaId}
-										/>
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				)}
-			</div>
+					/>
+				</Card>
+			)}
 		</Shell>
 	);
 }

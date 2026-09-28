@@ -2,8 +2,10 @@ import { Clapperboard, Plus } from "lucide-react";
 import Image from "next/image";
 import { ButtonLink } from "../../components/button-link";
 import { StatusBadge } from "../../components/status-badge";
+import { featuredBadgeVisible } from "../../lib/featured-film";
 import { getMe, serverApi } from "../../lib/server-api";
-import { Card, CardBody, EmptyState, PageHeader } from "../../lib/ui-kit";
+import { Badge, Card, CardBody, EmptyState, PageHeader } from "../../lib/ui-kit";
+import { FeaturedSwitch } from "./featured-switch";
 import { MovieRowActions } from "./movie-actions";
 import type { MovieListItem } from "./movie-table-row";
 
@@ -60,7 +62,17 @@ export default async function MoviesPage() {
 								<div className="mb-2 flex flex-wrap items-center gap-2">
 									<h2 className="m-0 text-[19px] font-semibold">{movie.title}</h2>
 									<StatusBadge status={movie.status} />
+									{featuredBadgeVisible(movie) ? (
+										<Badge tone="blue">В центре внимания</Badge>
+									) : null}
 								</div>
+								{canManage ? (
+									<FeaturedSwitch
+										movieId={movie.id}
+										featured={movie.isFeatured === true}
+										others={movies}
+									/>
+								) : null}
 								<p className="m-0 text-[13px] text-muted">
 									{movie.genres.length > 0 ? movie.genres.join(", ") : "Жанр не указан"}
 									{" · "}

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { clientApi } from "../../../../lib/api";
 import { PageHeader } from "../../../../lib/ui-kit";
 import { MovieForm } from "../../movie-form";
+import { saveFeatured } from "../../save-featured";
 
 type Movie = {
 	id: string;
@@ -16,6 +17,7 @@ type Movie = {
 	genres: string[];
 	audioLanguages: string[];
 	releasedAt: string | null;
+	isFeatured?: boolean | null;
 };
 
 function toDateInput(value: string | null) {
@@ -44,12 +46,19 @@ export function EditMovieClient({ movie }: { movie: Movie }) {
 					releasedAt: toDateInput(movie.releasedAt),
 					audioLanguages: audio.length > 0 ? audio : ["ru"],
 					posterUrl: movie.posterUrl,
+					isFeatured: movie.isFeatured === true,
 				}}
 				onSubmit={async (payload) => {
+					const { isFeatured, ...rest } = payload;
 					await clientApi(`/admin/movies/${movie.id}`, {
 						method: "PATCH",
-						body: JSON.stringify(payload),
+						body: JSON.stringify(rest),
 					});
+					if (isFeatured !== undefined) {
+						const movies =
+							await clientApi<Array<{ id: string; isFeatured?: boolean | null }>>("/admin/movies");
+						await saveFeatured(movie.id, isFeatured, movies);
+					}
 					router.push("/movies");
 					router.refresh();
 				}}
