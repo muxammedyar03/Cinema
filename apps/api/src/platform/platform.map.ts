@@ -59,23 +59,17 @@ export function toPlatformCinema(row: PlatformCinemaRow) {
 	};
 }
 
+/** Shape parsed by apps/admin/lib/platform/parse.ts `parseAdmin`. */
 export function toPlatformAdmin(row: PlatformAdminRow) {
 	const invoice = row.cinema.invoices[0] ?? null;
 	return {
-		staffId: row.id,
 		userId: row.user.id,
-		firstName: emptyToNull(row.user.firstName),
-		lastName: emptyToNull(row.user.lastName),
 		name: displayName(row.user.firstName, row.user.lastName),
 		email: emptyToNull(row.user.email),
-		login: emptyToNull(row.user.login),
-		role: row.role,
-		active: row.active,
 		cinemaId: row.cinema.id,
 		cinemaName: row.cinema.name,
-		city: emptyToNull(row.cinema.city),
+		role: row.role,
 		profileComplete: row.cinema.profileComplete,
-		cinemaStatus: row.cinema.status,
 		billingStatus: invoice?.status ?? null,
 	};
 }

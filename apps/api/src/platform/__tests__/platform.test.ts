@@ -8,7 +8,7 @@ import { pageById, toPlatformAdmin, toPlatformCinema } from "../platform.map";
 import { PlatformService } from "../platform.service";
 
 describe("PlatformService.summary", () => {
-	it("counts admins, awaiting connection, and unpaid or locked billing without inventing rows", async () => {
+	it("returns the five counts the admin app parses", async () => {
 		const staffWhere: unknown[] = [];
 		const invoiceWhere: unknown[] = [];
 		const cinemaWhere: unknown[] = [];
@@ -17,10 +17,8 @@ describe("PlatformService.summary", () => {
 				count: async (args?: { where?: unknown }) => {
 					cinemaWhere.push(args?.where ?? null);
 					if (!args?.where) return 4;
-					const where = args.where as { status?: string; profileComplete?: boolean };
-					if (where.profileComplete === false) return 2;
+					const where = args.where as { status?: string };
 					if (where.status === "ACTIVE") return 3;
-					if (where.status === "LOCKED") return 1;
 					return 0;
 				},
 			},
@@ -47,22 +45,22 @@ describe("PlatformService.summary", () => {
 			halls: 9,
 			cinemaAdmins: 5,
 			invoicesUnpaid: 2,
-			awaitingConnection: 2,
-			cinemasLocked: 1,
 		});
+		assert.deepEqual(Object.keys(summary), [
+			"cinemas",
+			"cinemasActive",
+			"halls",
+			"cinemaAdmins",
+			"invoicesUnpaid",
+		]);
 		assert.deepEqual(staffWhere, [{ role: "CINEMA_ADMIN", active: true }]);
 		assert.deepEqual(invoiceWhere, [{ status: { in: ["DUE", "OVERDUE"] } }]);
-		assert.deepEqual(cinemaWhere, [
-			null,
-			{ status: "ACTIVE" },
-			{ profileComplete: false },
-			{ status: "LOCKED" },
-		]);
+		assert.deepEqual(cinemaWhere, [null, { status: "ACTIVE" }]);
 	});
 });
 
 describe("platform list mapping", () => {
-	it("returns null for a missing name, email, city, and invoice", () => {
+	it("returns the admin fields the admin app parses, with null for unknowns", () => {
 		const admin = toPlatformAdmin({
 			id: "staff-1",
 			role: "CINEMA_ADMIN",
@@ -83,15 +81,16 @@ describe("platform list mapping", () => {
 				invoices: [],
 			},
 		});
-		assert.equal(admin.name, null);
-		assert.equal(admin.email, null);
-		assert.equal(admin.login, null);
-		assert.equal(admin.firstName, null);
-		assert.equal(admin.lastName, null);
-		assert.equal(admin.city, null);
-		assert.equal(admin.profileComplete, false);
-		assert.equal(admin.billingStatus, null);
-		assert.equal(admin.cinemaStatus, "ACTIVE");
+		assert.deepEqual(admin, {
+			userId: "user-1",
+			name: null,
+			email: null,
+			cinemaId: "cinema-1",
+			cinemaName: "Magic",
+			role: "CINEMA_ADMIN",
+			profileComplete: false,
+			billingStatus: null,
+		});
 
 		const cinema = toPlatformCinema({
 			id: "cinema-1",
@@ -172,13 +171,16 @@ describe("platform list mapping", () => {
 		const result = await new PlatformService(prisma).listAdmins({ limit: 1 });
 		assert.equal(adminQuery?.take, 2);
 		assert.equal(result.nextCursor, null);
-		assert.equal(result.items[0]?.name, "Али Каримов");
-		assert.equal(result.items[0]?.email, null);
-		assert.equal(result.items[0]?.login, "kassir");
-		assert.equal(result.items[0]?.profileComplete, false);
-		assert.equal(result.items[0]?.billingStatus, "DUE");
-		assert.equal(result.items[0]?.cinemaStatus, "LOCKED");
-		assert.equal(result.items[0]?.active, false);
+		assert.deepEqual(result.items[0], {
+			userId: "user-9",
+			name: "Али Каримов",
+			email: null,
+			cinemaId: "cinema-9",
+			cinemaName: "Magic",
+			role: "STAFF",
+			profileComplete: false,
+			billingStatus: "DUE",
+		});
 	});
 });
 

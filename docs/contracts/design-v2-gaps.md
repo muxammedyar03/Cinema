@@ -156,11 +156,11 @@ Frontend (PR #4, KAN-8/KAN-9) quyidagilarni allaqachon chaqiradi; `apps/api/src`
 | KPI: Кинотеатров / "N активных" | ✅ | `GET /admin/cinemas` (uzunlik, `status`) | — |
 | KPI: Залов | ✅ | `GET /admin/cinemas` → `_count.halls` yig'indisi | — |
 | KPI: Администраторов | ✅ KAN-37 | `GET /admin/platform/summary` → `cinemaAdmins` | faqat `active` `CINEMA_ADMIN`. `STAFF` kirmaydi |
-| KPI: Подписки к оплате | ✅ KAN-37 | `GET /admin/platform/summary` → `invoicesUnpaid`, `cinemasLocked` | `DUE`+`OVERDUE` hisob-fakturalar; `LOCKED` kinoteatrlar. Billing yozuvi yo'q bo'lsa 0, yangi invoice yaratilmaydi |
+| KPI: Подписки к оплате | ✅ KAN-37 | `GET /admin/platform/summary` → `invoicesUnpaid` | `DUE`+`OVERDUE`. Hisob-faktura yo'q bo'lsa `0`. Yangi invoice yaratilmaydi. `LOCKED` — `GET /admin/cinemas` → `status` |
 | Кинотеатры: nom, zallar soni, status | ✅ | `GET /admin/cinemas` | — |
 | Кинотеатры: shahar | ✅ KAN-37 | `Cinema.city` | bo'sh bo'lsa `null` |
-| Status "Ожидает подключения" | ✅ KAN-37 | `profileComplete=false` | `summary.awaitingConnection` va ro'yxatlardagi `profileComplete`. Yangi enum yo'q |
-| Администраторы: ism, email, rol, status | ✅ KAN-37 | `GET /admin/platform/admins` | `profileComplete`, `billingStatus`, `cinemaStatus`. Email yo'q bo'lsa `null` |
+| Status "Ожидает подключения" | ✅ KAN-37 | `profileComplete=false` | `GET /admin/cinemas` va `GET /admin/platform/admins` → `profileComplete`. Yangi enum yo'q |
+| Администраторы: ism, email, rol, status | ✅ KAN-37 | `GET /admin/platform/admins` | `userId`, `name`, `email`, `cinemaId`, `cinemaName`, `role`, `profileComplete`, `billingStatus`. Noma'lum bo'lsa `null` |
 | Биллинг: счёт №, kinoteatr, davr, summa, status | ✅ | `GET /admin/billing/invoices` | — |
 | Pul/GMV yashirin | ✅ | dashboard `mode: platform`, `GET /admin/orders` 403 | saqlanadi |
 | Обращения (landing arizalari) | ❌ bekor | — | **KAN-31 bekor qilingan.** `GET/PATCH /admin/leads` yo'q. Sahifa bo'sh holatda qoladi |
@@ -169,15 +169,15 @@ Faqat `SUPER_ADMIN`. `SessionGuard` + `RolesGuard` + `BillingLockGuard`. Mavjud 
 
 `GET /admin/platform/summary`
 
+Javob admin frontend (`apps/admin/lib/platform/parse.ts`) bilan bir xil. Qo'shimcha maydon yo'q.
+
 ```json
 {
   "cinemas": 0,
   "cinemasActive": 0,
   "halls": 0,
   "cinemaAdmins": 0,
-  "invoicesUnpaid": 0,
-  "awaitingConnection": 0,
-  "cinemasLocked": 0
+  "invoicesUnpaid": 0
 }
 ```
 
@@ -188,18 +188,32 @@ Faqat `SUPER_ADMIN`. `SessionGuard` + `RolesGuard` + `BillingLockGuard`. Mavjud 
 | `halls` | Barcha zallar |
 | `cinemaAdmins` | `CinemaStaff.role = CINEMA_ADMIN` va `active = true` |
 | `invoicesUnpaid` | `SubscriptionInvoice.status` `DUE` yoki `OVERDUE`. Yo'q bo'lsa `0` |
-| `awaitingConnection` | `profileComplete = false` |
-| `cinemasLocked` | `status = LOCKED` |
 
-`GET /admin/platform/admins?cursor=&limit=` va `GET /admin/platform/cinemas?cursor=&limit=`
+`GET /admin/platform/admins?cursor=&limit=`
 
-`limit` 1–100, default 50. `cursor` — oldingi sahifaning oxirgi `id` (adminlarda `staffId`). Keyingi sahifa yo'q bo'lsa `nextCursor: null`.
+```json
+{
+  "items": [
+    {
+      "userId": "…",
+      "name": null,
+      "email": null,
+      "cinemaId": "…",
+      "cinemaName": "…",
+      "role": "CINEMA_ADMIN",
+      "profileComplete": false,
+      "billingStatus": null
+    }
+  ],
+  "nextCursor": null
+}
+```
 
-Admin elementi: `staffId`, `userId`, `firstName`, `lastName`, `name`, `email`, `login`, `role`, `active`, `cinemaId`, `cinemaName`, `city`, `profileComplete`, `cinemaStatus`, `billingStatus`.
+`limit` 1–100, default 50. `cursor` — oldingi sahifaning oxirgi `CinemaStaff.id`. `nextCursor` yo'q bo'lsa `null`.
 
-Kinoteatr elementi: `id`, `name`, `city`, `status`, `profileComplete`, `halls`, `cinemaAdmins`, `billingStatus`.
+`name` — ism va familiya; ikkalasi ham bo'sh bo'lsa `null` (frontend «—» qo'yadi). `email` bo'sh bo'lsa `null`. `billingStatus` — eng so'nggi hisob-faktura (`periodYear`, `periodMonth`): `DUE` | `PAID` | `OVERDUE` | `VOID`, yo'q bo'lsa `null`. `profileComplete` kinoteatrniki.
 
-`billingStatus` — shu kinoteatrning eng so'nggi hisob-fakturasi (`periodYear`, `periodMonth`) statusi: `DUE` | `PAID` | `OVERDUE` | `VOID`. Hisob-faktura yo'q bo'lsa `null`. `email`, `login`, `firstName`, `lastName`, `name`, `city` bo'sh bo'lsa `null`. `name` — ism va familiya; ikkalasi ham bo'sh bo'lsa `null`.
+`GET /admin/platform/cinemas` (frontend `GET /admin/cinemas` ni chaqiradi; bu qo'shimcha): `id`, `name`, `city`, `status`, `profileComplete`, `halls`, `cinemaAdmins`, `billingStatus`. `city` va `billingStatus` bo'sh bo'lsa `null`. «Ожидает подключения» = `profileComplete=false`. Qulflangan obuna = `GET /admin/cinemas` dagi `status: "LOCKED"`.
 
 ---
 

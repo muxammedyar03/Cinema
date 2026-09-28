@@ -16,19 +16,11 @@ export class PlatformService {
 	constructor(private readonly prisma: PrismaService) {}
 
 	/**
-	 * Read-only counts. Does not create billing rows.
-	 * Unpaid and locked are 0 when no invoice or LOCKED cinema exists.
+	 * Read-only counts for apps/admin `parsePlatformSummary`.
+	 * Does not create billing rows. `invoicesUnpaid` is 0 when none exist.
 	 */
 	async summary() {
-		const [
-			cinemas,
-			cinemasActive,
-			halls,
-			cinemaAdmins,
-			invoicesUnpaid,
-			awaitingConnection,
-			cinemasLocked,
-		] = await Promise.all([
+		const [cinemas, cinemasActive, halls, cinemaAdmins, invoicesUnpaid] = await Promise.all([
 			this.prisma.cinema.count(),
 			this.prisma.cinema.count({ where: { status: "ACTIVE" } }),
 			this.prisma.hall.count(),
@@ -36,8 +28,6 @@ export class PlatformService {
 			this.prisma.subscriptionInvoice.count({
 				where: { status: { in: ["DUE", "OVERDUE"] } },
 			}),
-			this.prisma.cinema.count({ where: { profileComplete: false } }),
-			this.prisma.cinema.count({ where: { status: "LOCKED" } }),
 		]);
 		return {
 			cinemas,
@@ -45,8 +35,6 @@ export class PlatformService {
 			halls,
 			cinemaAdmins,
 			invoicesUnpaid,
-			awaitingConnection,
-			cinemasLocked,
 		};
 	}
 
