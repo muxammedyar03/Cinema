@@ -1,12 +1,14 @@
 "use client";
 
 import type { SessionUser } from "@cinema/types";
-import Link from "next/link";
+import { Button, Card, CardHeader, PageHeader } from "@cinema/ui";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { ButtonLink } from "../../../../components/platform/button-link";
+import fields from "../../../../components/platform/fields.module.css";
 import { Shell } from "../../../../components/shell";
 import { clientApi } from "../../../../lib/api";
-import { cx, ui } from "../../../../lib/ui";
+import { errorText } from "../../../../lib/api-error";
 
 type Initial = {
 	id: string;
@@ -40,7 +42,7 @@ export function EditClientForm({ user, initial }: { user: SessionUser; initial: 
 	});
 
 	function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
-		setForm((f) => ({ ...f, [key]: value }));
+		setForm((current) => ({ ...current, [key]: value }));
 	}
 
 	async function onSubmit(e: React.FormEvent) {
@@ -66,7 +68,7 @@ export function EditClientForm({ user, initial }: { user: SessionUser; initial: 
 			router.push(`/clients/${initial.id}`);
 			router.refresh();
 		} catch (err) {
-			setError(err instanceof Error ? err.message : "Ошибка сохранения");
+			setError(errorText(err, "Не удалось сохранить"));
 		} finally {
 			setBusy(false);
 		}
@@ -74,117 +76,103 @@ export function EditClientForm({ user, initial }: { user: SessionUser; initial: 
 
 	return (
 		<Shell user={user}>
-			<div className={ui.row}>
-				<div>
-					<h1 className={ui.pageTitle}>Редактировать · {initial.name}</h1>
-					<p className={ui.sub}>Профиль и биллинг-настройки клиента</p>
-				</div>
-				<Link className={cx(ui.btn, ui.btnGhost)} href={`/clients/${initial.id}`}>
-					Назад
-				</Link>
-			</div>
+			<PageHeader
+				title={`Редактировать · ${initial.name}`}
+				description="Профиль и настройки подписки"
+				actions={
+					<ButtonLink href={`/clients/${initial.id}`} variant="secondary">
+						Назад
+					</ButtonLink>
+				}
+			/>
 
-			<form onSubmit={(e) => void onSubmit(e)} className="grid max-w-3xl gap-4">
-				{error ? <p className={ui.err}>{error}</p> : null}
-				{msg ? <p className={ui.okMsg}>{msg}</p> : null}
+			<form onSubmit={(e) => void onSubmit(e)} className={fields.form}>
+				{error ? <p className={fields.error}>{error}</p> : null}
+				{msg ? <p className={fields.ok}>{msg}</p> : null}
 
-				<section className={ui.card}>
-					<div className={ui.cardH}>Профиль</div>
-					<div className="grid gap-3.5 p-[18px] sm:grid-cols-2">
-						<div className={cx(ui.field, "sm:col-span-2")}>
-							<label className={ui.label} htmlFor="edit-client-name">
-								Название *
-							</label>
+				<Card>
+					<CardHeader title="Профиль" />
+					<div className={fields.sectionGrid}>
+						<label className={`${fields.field} ${fields.span2}`} htmlFor="edit-client-name">
+							<span className={fields.label}>Название *</span>
 							<input
 								id="edit-client-name"
-								className={ui.input}
+								className={fields.input}
 								required
 								value={form.name}
 								onChange={(e) => set("name", e.target.value)}
 							/>
-						</div>
-						<div className={ui.field}>
-							<label className={ui.label} htmlFor="edit-client-address">
-								Адрес
-							</label>
+						</label>
+						<label className={fields.field} htmlFor="edit-client-address">
+							<span className={fields.label}>Адрес</span>
 							<input
 								id="edit-client-address"
-								className={ui.input}
+								className={fields.input}
 								value={form.address}
 								onChange={(e) => set("address", e.target.value)}
 							/>
-						</div>
-						<div className={ui.field}>
-							<label className={ui.label} htmlFor="edit-client-phone">
-								Телефон
-							</label>
+						</label>
+						<label className={fields.field} htmlFor="edit-client-phone">
+							<span className={fields.label}>Телефон</span>
 							<input
 								id="edit-client-phone"
-								className={ui.input}
+								className={fields.input}
 								value={form.phone}
 								onChange={(e) => set("phone", e.target.value)}
 							/>
-						</div>
-						<div className={ui.field}>
-							<label className={ui.label} htmlFor="edit-client-tz">
-								Часовой пояс
-							</label>
+						</label>
+						<label className={fields.field} htmlFor="edit-client-tz">
+							<span className={fields.label}>Часовой пояс</span>
 							<input
 								id="edit-client-tz"
-								className={ui.input}
+								className={fields.input}
 								value={form.timezone}
 								onChange={(e) => set("timezone", e.target.value)}
 							/>
-						</div>
-						<div className={cx(ui.field, "sm:col-span-2")}>
-							<label className={ui.label} htmlFor="edit-client-desc">
-								Описание
-							</label>
+						</label>
+						<label className={`${fields.field} ${fields.span2}`} htmlFor="edit-client-desc">
+							<span className={fields.label}>Описание</span>
 							<textarea
 								id="edit-client-desc"
-								className={cx(ui.input, "min-h-[80px]")}
+								className={fields.textarea}
 								value={form.description}
 								onChange={(e) => set("description", e.target.value)}
 							/>
-						</div>
+						</label>
 					</div>
-				</section>
+				</Card>
 
-				<section className={ui.card}>
-					<div className={ui.cardH}>Биллинг</div>
-					<div className="grid gap-3.5 p-[18px] sm:grid-cols-2">
-						<div className={ui.field}>
-							<label className={ui.label} htmlFor="edit-client-plan">
-								План / месяц (сум)
-							</label>
+				<Card>
+					<CardHeader title="Подписка" />
+					<div className={fields.sectionGrid}>
+						<label className={fields.field} htmlFor="edit-client-plan">
+							<span className={fields.label}>План / месяц (сум)</span>
 							<input
 								id="edit-client-plan"
 								type="number"
 								min={1}
-								className={ui.input}
+								className={fields.input}
 								value={form.monthlyPlanUzs}
 								onChange={(e) => set("monthlyPlanUzs", Number(e.target.value))}
 							/>
-						</div>
-						<div className={ui.field}>
-							<label className={ui.label} htmlFor="edit-client-commission">
-								Комиссия / билет (пусто = default)
-							</label>
+						</label>
+						<label className={fields.field} htmlFor="edit-client-commission">
+							<span className={fields.label}>Комиссия / билет (пусто — по умолчанию)</span>
 							<input
 								id="edit-client-commission"
 								type="number"
 								min={0}
-								className={ui.input}
+								className={fields.input}
 								value={form.commissionPerTicketUzs}
 								onChange={(e) => set("commissionPerTicketUzs", e.target.value)}
 							/>
-						</div>
+						</label>
 					</div>
-				</section>
+				</Card>
 
-				<button className={cx(ui.btn, ui.btnPri)} type="submit" disabled={busy}>
-					{busy ? "…" : "Сохранить"}
-				</button>
+				<Button type="submit" disabled={busy}>
+					{busy ? "Сохранение…" : "Сохранить"}
+				</Button>
 			</form>
 		</Shell>
 	);
