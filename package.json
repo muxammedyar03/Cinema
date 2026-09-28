@@ -6,7 +6,7 @@
 		"dev": "turbo run dev --parallel",
 		"build": "turbo run build",
 		"typecheck": "turbo run typecheck",
-		"test:unit": "turbo run test:unit --filter=@cinema/api --filter=@cinema/worker --filter=@cinema/bot --filter=@cinema/queue-contracts --filter=@cinema/admin",
+		"test:unit": "turbo run test:unit --filter=@cinema/api --filter=@cinema/worker --filter=@cinema/bot --filter=@cinema/queue-contracts --filter=@cinema/admin --filter=@cinema/mini-app",
 		"lint": "biome check .",
 		"format": "biome check --write .",
 		"check": "biome check ."
