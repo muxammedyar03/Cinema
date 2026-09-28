@@ -12,6 +12,7 @@
 	},
 	"scripts": {
 		"build": "tsc -p tsconfig.json",
+		"typecheck": "tsc -p tsconfig.json --noEmit",
 		"dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
 		"postinstall": "tsc -p tsconfig.json",
 		"test:unit": "tsx --test test/follow-digest.test.ts"
