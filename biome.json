@@ -18,7 +18,8 @@
 			"!**/generated",
 			"!**/prisma/migrations",
 			"!**/.next",
-			"!**/node_modules"
+			"!**/node_modules",
+			"!design"
 		]
 	},
 	"formatter": {

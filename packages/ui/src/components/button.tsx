@@ -10,6 +10,23 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 	size?: ButtonSize;
 };
 
+export function buttonClassName({
+	variant = "primary",
+	size = "medium",
+	className,
+}: {
+	variant?: ButtonVariant;
+	size?: ButtonSize;
+	className?: string;
+} = {}) {
+	return cx(
+		styles.button,
+		variant === "secondary" && styles.secondary,
+		size === "small" && styles.small,
+		className,
+	);
+}
+
 export function Button({
 	variant = "primary",
 	size = "medium",
@@ -18,15 +35,6 @@ export function Button({
 	...props
 }: ButtonProps) {
 	return (
-		<button
-			type={type}
-			className={cx(
-				styles.button,
-				variant === "secondary" && styles.secondary,
-				size === "small" && styles.small,
-				className,
-			)}
-			{...props}
-		/>
+		<button type={type} className={buttonClassName({ variant, size, className })} {...props} />
 	);
 }

@@ -1,12 +1,12 @@
 "use client";
 
+import { Button } from "@cinema/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { clientApi } from "../lib/api";
 import { errorText } from "../lib/api-error";
 import { formatCountdown, formatPrice } from "../lib/format";
 import { openExternalUrl } from "../lib/telegram";
 import type { RahmatPayment } from "../lib/types";
-import { cx, ui } from "../lib/ui";
 
 const HOLD_TTL_MS = 10 * 60 * 1000;
 const POLL_MS = 4000;
@@ -189,36 +189,27 @@ export function RahmatCheckout({
 	if (expired) return null;
 
 	return (
-		<div className="mt-5">
-			<div className="rounded-2xl border border-orange/35 bg-orange/10 px-4 py-3.5 text-center">
-				<p className="text-[11px] tracking-wide text-muted uppercase">Места удерживаются 10 мин</p>
-				<p className="mt-1 font-mono text-[32px] font-bold text-orange tabular-nums">
-					{formatCountdown(holdLeft)}
-				</p>
-				<div className="mt-2 h-1.5 overflow-hidden rounded-full bg-line">
-					<div
-						className="h-full rounded-full bg-orange transition-[width] duration-1000"
-						style={{ width: `${holdPct}%` }}
-					/>
+		<div>
+			<div className="pay-card">
+				<p className="meta-line">Места удерживаются</p>
+				<p className="clock">{formatCountdown(holdLeft)}</p>
+				<div className="pay-track" aria-hidden="true">
+					<i style={{ width: `${holdPct}%` }} />
 				</div>
 			</div>
 
 			{awaiting ? (
-				<p className="mt-4 text-center text-[13px] text-muted">
-					Ожидаем оплату в Rahmat… не закрывайте бронь.
-				</p>
+				<p className="note">Ожидаем оплату в Rahmat… не закрывайте бронь.</p>
 			) : (
-				<p className="mt-4 text-center text-[13px] text-muted">
-					Оплата через <b className="text-ink">Rahmat</b> · {formatPrice(amountUzs)}
-				</p>
+				<p className="note">Оплата через Rahmat · {formatPrice(amountUzs)}</p>
 			)}
 
-			{error ? <p className="mt-2 text-center text-xs text-bad">{error}</p> : null}
+			{error ? <p className="note bad">{error}</p> : null}
 
-			<div className="mt-4 flex flex-col gap-2">
-				<button
-					className={cx(ui.cta, ui.ctaBlock)}
+			<div className="stack">
+				<Button
 					type="button"
+					className="v2-full"
 					disabled={busy}
 					onClick={() =>
 						void (payment?.payUrl || payment?.deeplinkUrl ? reopen() : createAndOpen())
@@ -229,15 +220,16 @@ export function RahmatCheckout({
 						: payment?.payUrl || payment?.deeplinkUrl
 							? "Открыть Rahmat"
 							: "Оплатить Rahmat"}
-				</button>
+				</Button>
 				{awaiting ? (
-					<button
-						className={cx(ui.cta, ui.ctaBlock, ui.ctaGhost, "border border-line")}
+					<Button
 						type="button"
+						className="v2-full"
+						variant="secondary"
 						onClick={() => void syncPayment()}
 					>
 						Проверить оплату
-					</button>
+					</Button>
 				) : null}
 			</div>
 		</div>

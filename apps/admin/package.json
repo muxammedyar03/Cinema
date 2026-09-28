@@ -5,6 +5,8 @@
 	"scripts": {
 		"dev": "next dev --port 3000",
 		"build": "next build",
+		"typecheck": "tsc -p tsconfig.json --noEmit",
+		"test:unit": "tsx --test lib/platform/__tests__/format.test.ts lib/platform/__tests__/parse.test.ts lib/platform/__tests__/state.test.ts",
 		"start": "next start --port 3000"
 	},
 	"dependencies": {
@@ -23,6 +25,7 @@
 		"@types/react-dom": "^19.1.7",
 		"postcss": "^8.5.28",
 		"tailwindcss": "^4.3.3",
+		"tsx": "^4.20.3",
 		"typescript": "^5.8.3"
 	}
 }

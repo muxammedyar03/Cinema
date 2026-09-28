@@ -1,0 +1,119 @@
+name: CI
+
+# pnpm version comes from package.json "packageManager" (pnpm@9.15.0) via pnpm/action-setup.
+# Node 22: the repo has no .nvmrc or engines field; @types/node is 22.
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Dummy CI-only values. Prisma generate (api postinstall) reads DATABASE_URL
+  # from the schema and does not connect. No repository secrets are used.
+  DATABASE_URL: postgresql://cinema:cinema@127.0.0.1:5432/cinema
+
+jobs:
+  lint-typecheck-build:
+    name: lint-typecheck-build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Build
+        run: pnpm build
+
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Unit tests
+        run: pnpm test:unit
+
+  prisma:
+    name: prisma
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: cinema
+          POSTGRES_PASSWORD: cinema
+          POSTGRES_DB: cinema
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U cinema -d cinema"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://cinema:cinema@127.0.0.1:5432/cinema
+      SHADOW_DATABASE_URL: postgresql://cinema:cinema@127.0.0.1:5432/cinema
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Prisma validate
+        run: pnpm --filter @cinema/api exec prisma validate
+
+      - name: Prisma migration drift
+        run: >-
+          pnpm --filter @cinema/api exec prisma migrate diff
+          --from-migrations prisma/migrations
+          --to-schema-datamodel prisma/schema.prisma
+          --shadow-database-url "$SHADOW_DATABASE_URL"
+          --exit-code

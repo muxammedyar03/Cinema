@@ -1,34 +1,36 @@
-import Link from "next/link";
+import { Badge } from "@cinema/ui";
+import { audioBadge } from "../lib/afisha";
 import { formatPrice, formatTime } from "../lib/format";
 import type { CatalogSession } from "../lib/types";
-import { cx, ui } from "../lib/ui";
+import { cx } from "../lib/ui";
 
 export function SessionChip({
 	session,
-	href,
 	active,
+	onSelect,
 }: {
 	session: CatalogSession;
-	href?: string;
 	active?: boolean;
+	onSelect: () => void;
 }) {
-	const className = cx(ui.sess, active && ui.sessPick);
-	const body = (
-		<>
+	const language = audioBadge(session.audioLanguage);
+	return (
+		<button
+			type="button"
+			className={cx("time", active && "active")}
+			aria-pressed={Boolean(active)}
+			onClick={onSelect}
+		>
 			{formatTime(session.startsAt)}
-			<small className={ui.sessMeta}>
-				{session.cinemaName} · {session.hallName}
-				<br />
-				{formatPrice(session.basePriceUzs)} · {session.remaining} мест
-			</small>
-		</>
+			<small>{formatPrice(session.basePriceUzs)}</small>
+			<span className={cx("seats-left", session.remaining <= 5 && "few")}>
+				{session.remaining} мест
+			</span>
+			{language ? (
+				<span className="lang-badge">
+					<Badge tone="blue">{language}</Badge>
+				</span>
+			) : null}
+		</button>
 	);
-	if (href) {
-		return (
-			<Link href={href} className={className}>
-				{body}
-			</Link>
-		);
-	}
-	return <div className={className}>{body}</div>;
 }

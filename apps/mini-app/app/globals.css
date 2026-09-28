@@ -2,6 +2,8 @@
 @import "@cinema/ui/tokens.css";
 @import "@cinema/ui/theme.css";
 
+@import "./v2.css";
+
 @layer base {
 	* {
 		box-sizing: border-box;
@@ -11,11 +13,19 @@
 	html,
 	body {
 		min-height: 100%;
-		background:
-			radial-gradient(ellipse 80% 45% at 50% -8%, var(--wash) 0%, transparent 55%),
-			var(--color-bg);
-		color: var(--color-ink);
+		background: var(--bg);
+		color: var(--ink);
 		font-family: var(--font-ui);
+		font-size: var(--text-body);
+		line-height: var(--leading-body);
+	}
+
+	html {
+		color-scheme: dark;
+	}
+
+	html[data-theme="light"] {
+		color-scheme: light;
 	}
 
 	a {

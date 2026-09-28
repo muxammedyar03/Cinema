@@ -7,7 +7,7 @@
 		"build": "next build",
 		"start": "next start --port 3002",
 		"typecheck": "tsc -p tsconfig.json --noEmit",
-		"test:unit": "tsx --test lib/__tests__/deep-link.test.ts"
+		"test:unit": "tsx --test lib/__tests__/*.test.ts"
 	},
 	"dependencies": {
 		"@cinema/ui": "workspace:*",

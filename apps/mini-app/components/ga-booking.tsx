@@ -1,11 +1,11 @@
 "use client";
 
+import { Button, Card, Toast } from "@cinema/ui";
 import { Minus, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { clientApi, ensureTelegramSession } from "../lib/api";
-import { formatPrice } from "../lib/format";
-import { cx, ui } from "../lib/ui";
+import { formatCountdown, formatPrice } from "../lib/format";
 
 type HoldResult = {
 	orderId: string;
@@ -30,8 +30,17 @@ export function GaBooking({
 	const [qty, setQty] = useState(Math.min(2, maxQty || 1));
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState("");
+	const [hold, setHold] = useState<HoldResult | null>(null);
+	const [now, setNow] = useState(() => Date.now());
+
+	useEffect(() => {
+		if (!hold) return;
+		const timer = setInterval(() => setNow(Date.now()), 1000);
+		return () => clearInterval(timer);
+	}, [hold]);
 
 	const total = basePriceUzs * qty;
+	const holdLeft = hold ? new Date(hold.holdExpiresAt).getTime() - now : 0;
 
 	async function book() {
 		if (qty < 1 || qty > maxQty) return;
@@ -43,7 +52,7 @@ export function GaBooking({
 				method: "POST",
 				body: JSON.stringify({ sessionId, quantity: qty }),
 			});
-			router.push(`/orders/${result.orderId}`);
+			setHold(result);
 		} catch {
 			setError("Не хватает мест или ошибка брони. Обновите страницу.");
 			router.refresh();
@@ -53,63 +62,65 @@ export function GaBooking({
 	}
 
 	if (remaining <= 0) {
-		return <p className={ui.empty}>Мест не осталось</p>;
+		return <p className="note">Мест не осталось</p>;
 	}
 
 	return (
-		<div className="px-4 pb-28 pt-4">
-			<div className={cx("rounded-2xl border border-line bg-elev/50 p-5")}>
-				<p className="text-[11px] uppercase tracking-wide text-faint">General admission</p>
-				<h2 className="mt-1 font-brand text-xl font-bold">Без назначения мест</h2>
-				<p className="mt-2 text-[13px] leading-relaxed text-muted">
-					Выберите количество билетов. Места в зале не закрепляются — вход по QR после оплаты.
-				</p>
-
-				<div className="mt-6 flex items-center justify-between gap-3">
-					<span className="text-sm text-muted">Билеты</span>
-					<div className="flex items-center gap-2 rounded-full border border-line bg-surface p-1">
-						<button
-							type="button"
-							className="grid size-9 place-items-center rounded-full text-ink disabled:opacity-35"
-							disabled={qty <= 1}
-							aria-label="Меньше"
-							onClick={() => setQty((q) => Math.max(1, q - 1))}
-						>
-							<Minus className="size-4" strokeWidth={2} />
-						</button>
-						<span className="min-w-[2rem] text-center font-mono text-lg font-bold tabular-nums">
-							{qty}
-						</span>
-						<button
-							type="button"
-							className="grid size-9 place-items-center rounded-full text-ink disabled:opacity-35"
-							disabled={qty >= maxQty}
-							aria-label="Больше"
-							onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
-						>
-							<Plus className="size-4" strokeWidth={2} />
-						</button>
+		<>
+			<Card>
+				<div className="ga-card">
+					<h2>Без назначения мест</h2>
+					<p className="description">
+						Выберите количество билетов. Места в зале не закрепляются — вход по QR после оплаты.
+					</p>
+					<div className="qty-row">
+						<span>Билеты</span>
+						<div className="qty-controls">
+							<button
+								type="button"
+								disabled={qty <= 1 || Boolean(hold)}
+								aria-label="Меньше"
+								onClick={() => setQty((value) => Math.max(1, value - 1))}
+							>
+								<Minus size={16} strokeWidth={2} />
+							</button>
+							<span>{qty}</span>
+							<button
+								type="button"
+								disabled={qty >= maxQty || Boolean(hold)}
+								aria-label="Больше"
+								onClick={() => setQty((value) => Math.min(maxQty, value + 1))}
+							>
+								<Plus size={16} strokeWidth={2} />
+							</button>
+						</div>
 					</div>
+					<p className="price-note">
+						Доступно {remaining} · по {formatPrice(basePriceUzs)}
+					</p>
 				</div>
-
-				<p className="mt-3 text-[12px] text-faint">
-					Доступно {remaining} · по {formatPrice(basePriceUzs)}
+			</Card>
+			{hold ? (
+				<p className="hold-line" aria-live="polite">
+					Бронь удерживается {formatCountdown(holdLeft)}
 				</p>
-			</div>
-
-			{error ? <p className="mt-3 text-center text-xs text-bad">{error}</p> : null}
-
-			<div className="fixed bottom-4 left-1/2 z-30 flex w-[min(448px,calc(100%-24px))] -translate-x-1/2 items-center justify-between gap-3 rounded-[20px] border border-line bg-elev/92 px-4 py-3.5 backdrop-blur-[16px]">
-				<div className="min-w-0 text-xs text-muted">
-					{qty} × {formatPrice(basePriceUzs)}
-					<b className="mt-0.5 block truncate text-[17px] font-bold text-ink">
-						{formatPrice(total)}
-					</b>
+			) : null}
+			<Toast message={error} open={Boolean(error)} />
+			<div className="checkout-bar">
+				<div>
+					<small>{hold ? "Осталось времени" : `${qty} × ${formatPrice(basePriceUzs)}`}</small>
+					<b>{hold ? formatCountdown(holdLeft) : formatPrice(total)}</b>
 				</div>
-				<button className={ui.cta} type="button" disabled={busy || qty < 1} onClick={book}>
-					{busy ? "…" : "Забронировать"}
-				</button>
+				{hold ? (
+					<Button type="button" onClick={() => router.push(`/orders/${hold.orderId}`)}>
+						Оплатить
+					</Button>
+				) : (
+					<Button type="button" disabled={busy || qty < 1} onClick={() => void book()}>
+						{busy ? "…" : "Продолжить"}
+					</Button>
+				)}
 			</div>
-		</div>
+		</>
 	);
 }

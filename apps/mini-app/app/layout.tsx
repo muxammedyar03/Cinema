@@ -3,12 +3,13 @@ import "../lib/ui-kit";
 import "./globals.css";
 import type { Metadata } from "next";
 import Script from "next/script";
+import { AppShell } from "../components/app-shell";
 import { BottomDock } from "../components/bottom-dock";
 import { TelegramBoot } from "../components/telegram-boot";
 import { ThemeProvider } from "../components/theme-provider";
 
 export const metadata: Metadata = {
-	title: "Cinema",
+	title: "Cinema — билеты в кино",
 	description: "Telegram Mini App — каталог кинотеатра",
 };
 
@@ -24,7 +25,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 				<Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
 				<ThemeProvider>
 					<TelegramBoot />
-					<div className="mx-auto min-h-screen max-w-[480px] pb-24">{children}</div>
+					<AppShell>{children}</AppShell>
 					<BottomDock />
 				</ThemeProvider>
 			</body>
