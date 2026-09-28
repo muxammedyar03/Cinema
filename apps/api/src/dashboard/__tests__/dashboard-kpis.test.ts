@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
 	buildKpis,
 	buildTrend,
+	deltaPct,
 	emptyKpis,
 	maskMoneyKpis,
 	ratio,
@@ -11,6 +12,13 @@ import {
 } from "../dashboard-kpis";
 
 describe("dashboard-kpis", () => {
+	it("returns null percent change when the previous week is zero", () => {
+		assert.equal(deltaPct(10, 0), null);
+		assert.equal(deltaPct(0, 0), null);
+		assert.equal(deltaPct(1182, 1000), 18.2);
+		assert.equal(deltaPct(80, 100), -20);
+	});
+
 	it("returns null ratio when the denominator is empty", () => {
 		assert.equal(ratio(1, 0), null);
 		assert.equal(ratio(0, 0), null);

@@ -9,6 +9,12 @@ import { PublicService } from "./public.service";
 export class PublicController {
 	constructor(private readonly pub: PublicService) {}
 
+	@Get("featured")
+	featured(@Query("cinemaId") cinemaId?: string) {
+		const id = cinemaId?.trim();
+		return this.pub.featured(id ? id : undefined);
+	}
+
 	@Get("catalog")
 	catalog(
 		@Query("from") from?: string,

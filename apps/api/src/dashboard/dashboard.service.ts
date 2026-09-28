@@ -2,7 +2,7 @@ import type { SessionUser } from "@cinema/types";
 import { Injectable } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
-import { buildKpis, buildTrend, maskMoneyKpis, sessionOccupancy } from "./dashboard-kpis";
+import { buildKpis, buildTrend, deltaPct, maskMoneyKpis, sessionOccupancy } from "./dashboard-kpis";
 import { addDays, type ChartRange, dayKey, rangeWindow, startOfToday } from "./dashboard-time";
 
 const CHUNK = 500;
@@ -40,7 +40,10 @@ export class DashboardService {
 
 		const today = startOfToday();
 		const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+		const prevWeekStart = addDays(today, -7);
+		const prevWeekEnd = addDays(tomorrow, -7);
 		const weekStart = daysAgo(6);
+		const ticketScope = cinemaIds ? { session: { cinemaId: { in: cinemaIds } } } : {};
 		const window = rangeWindow(range);
 
 		const [
@@ -65,6 +68,9 @@ export class DashboardService {
 			kpiSessions,
 			kpiOrders,
 			kpiRefunds,
+			revenuePrevAgg,
+			ticketsSoldToday,
+			ticketsSoldPrev,
 		] = await Promise.all([
 			this.prisma.session.count({
 				where: {
@@ -121,7 +127,7 @@ export class DashboardService {
 				orderBy: { startsAt: "asc" },
 				take: 8,
 				include: {
-					movie: { select: { title: true } },
+					movie: { select: { title: true, posterUrl: true } },
 					hall: { select: { name: true, capacity: true } },
 					cinema: { select: { name: true } },
 					sessionSeats: { select: { status: true } },
@@ -194,6 +200,28 @@ export class DashboardService {
 				},
 				select: { amountUzs: true, createdAt: true, orderId: true },
 			}),
+			this.prisma.payment.aggregate({
+				where: {
+					status: "PAID",
+					createdAt: { gte: prevWeekStart, lt: prevWeekEnd },
+					...paymentWhere,
+				},
+				_sum: { amountUzs: true },
+			}),
+			this.prisma.ticket.count({
+				where: {
+					createdAt: { gte: today, lt: tomorrow },
+					status: { in: ["ACTIVE", "USED"] },
+					...ticketScope,
+				},
+			}),
+			this.prisma.ticket.count({
+				where: {
+					createdAt: { gte: prevWeekStart, lt: prevWeekEnd },
+					status: { in: ["ACTIVE", "USED"] },
+					...ticketScope,
+				},
+			}),
 		]);
 
 		const occupancy = await this.occupancyBySession(kpiSessions);
@@ -232,6 +260,7 @@ export class DashboardService {
 				startsAt: s.startsAt,
 				status: s.status,
 				movieTitle: s.movie.title,
+				posterUrl: s.movie.posterUrl,
 				hallName: s.hall.name,
 				cinemaName: s.cinema.name,
 				capacity: s.hall.capacity,
@@ -254,6 +283,21 @@ export class DashboardService {
 		}
 
 		const incomeUzs = paymentsPaidAgg._sum.amountUzs ?? 0;
+		const revenueTodayUzs = paymentsTodayAgg._sum.amountUzs ?? 0;
+		const revenueTodayPrevUzs = revenuePrevAgg._sum.amountUzs ?? 0;
+		const comparison = hideMoney
+			? {
+					revenueTodayPrevUzs: 0,
+					ticketsSoldTodayPrev: 0,
+					deltaPct: null,
+					ticketsDeltaPct: null,
+				}
+			: {
+					revenueTodayPrevUzs,
+					ticketsSoldTodayPrev: ticketsSoldPrev,
+					deltaPct: deltaPct(revenueTodayUzs, revenueTodayPrevUzs),
+					ticketsDeltaPct: deltaPct(ticketsSoldToday, ticketsSoldPrev),
+				};
 		const expenseUzs = refundsSucceededAgg._sum.amountUzs ?? 0;
 		const period = {
 			range,
@@ -268,11 +312,13 @@ export class DashboardService {
 				period,
 				kpis,
 				kpiTrend,
+				comparison,
 				stats: {
 					sessionsToday,
 					sessionsPublished,
 					sessionsTotal,
 					ticketsActive: 0,
+					ticketsSoldToday: 0,
 					ordersPending,
 					ordersPaid,
 					paymentsCount: 0,
@@ -301,11 +347,13 @@ export class DashboardService {
 			period,
 			kpis,
 			kpiTrend,
+			comparison,
 			stats: {
 				sessionsToday,
 				sessionsPublished,
 				sessionsTotal,
 				ticketsActive,
+				ticketsSoldToday,
 				ordersPending,
 				ordersPaid,
 				paymentsCount: paymentsPaidAgg._count,

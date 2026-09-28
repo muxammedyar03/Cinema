@@ -1,6 +1,8 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
+import { APP_GUARD } from "@nestjs/core";
 import { AuthModule } from "./auth/auth.module";
+import { PasswordChangeGuard } from "./auth/password-change.guard";
 import { BillingModule } from "./billing/billing.module";
 import { BookingModule } from "./booking/booking.module";
 import { CinemaModule } from "./cinema/cinema.module";
@@ -16,6 +18,7 @@ import { PublicModule } from "./public/public.module";
 import { QueueModule } from "./queue/queue.module";
 import { RedisModule } from "./redis/redis.module";
 import { SessionModule } from "./session/session.module";
+import { StaffModule } from "./staff/staff.module";
 
 @Module({
 	imports: [
@@ -31,6 +34,7 @@ import { SessionModule } from "./session/session.module";
 		HallModule,
 		MovieModule,
 		SessionModule,
+		StaffModule,
 		PublicModule,
 		FollowModule,
 		NotifyModule,
@@ -40,5 +44,6 @@ import { SessionModule } from "./session/session.module";
 		BillingModule,
 	],
 	controllers: [HealthController],
+	providers: [{ provide: APP_GUARD, useClass: PasswordChangeGuard }],
 })
 export class AppModule {}

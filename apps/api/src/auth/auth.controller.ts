@@ -1,9 +1,11 @@
 import type { SessionUser } from "@cinema/types";
-import { loginSchema } from "@cinema/validation";
+import { changePasswordSchema, loginSchema } from "@cinema/validation";
 import { Body, Controller, Get, Headers, Post, Req, Res, UseGuards } from "@nestjs/common";
 import type { Request, Response } from "express";
+import { parseBody } from "../common/parse-body";
 import { AuthService } from "./auth.service";
 import { CurrentUser } from "./current-user.decorator";
+import { AllowDuringPasswordChange } from "./password-change.guard";
 import { SESSION_COOKIE, SessionGuard } from "./session.guard";
 
 @Controller("auth")
@@ -11,17 +13,31 @@ export class AuthController {
 	constructor(private readonly auth: AuthService) {}
 
 	@Post("login")
+	@AllowDuringPasswordChange()
 	async login(
 		@Body() body: unknown,
 		@Res({ passthrough: true }) res: Response,
 	): Promise<{ user: SessionUser }> {
 		const parsed = loginSchema.parse(body);
-		const { sid, user } = await this.auth.login(parsed.email, parsed.password);
+		const { sid, user } = await this.auth.login({
+			email: parsed.email,
+			login: parsed.login,
+			password: parsed.password,
+		});
 		this.setSessionCookie(res, sid);
 		return { user };
 	}
 
+	@Post("change-password")
+	@AllowDuringPasswordChange()
+	@UseGuards(SessionGuard)
+	async changePassword(@CurrentUser() user: SessionUser, @Body() body: unknown) {
+		const parsed = parseBody(changePasswordSchema, body);
+		return this.auth.changePassword(user.id, parsed);
+	}
+
 	@Post("logout")
+	@AllowDuringPasswordChange()
 	async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
 		const sid = req.cookies?.[SESSION_COOKIE] as string | undefined;
 		await this.auth.logout(sid);
@@ -30,6 +46,7 @@ export class AuthController {
 	}
 
 	@Get("me")
+	@AllowDuringPasswordChange()
 	@UseGuards(SessionGuard)
 	me(@CurrentUser() user: SessionUser) {
 		return { user };

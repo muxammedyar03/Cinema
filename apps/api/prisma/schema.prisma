@@ -101,11 +101,21 @@ enum MapProvider {
   yandex
 }
 
+/// KAN-37: session audio track. Nullable, no default — unset stays null.
+enum AudioLanguage {
+  ru
+  uz
+}
+
 model User {
   id               String    @id @default(cuid())
   email            String?   @unique
+  /// KAN-37: staff sign-in name (not an email). Null for accounts that log in with email.
+  login            String?   @unique
   emailVerifiedAt  DateTime?
-  passwordHash     String?
+  passwordHash       String?
+  /// KAN-37: true until POST /auth/change-password. Default false for existing accounts.
+  mustChangePassword Boolean   @default(false)
   telegramId       String?   @unique
   telegramUsername String?
   firstName        String?
@@ -128,6 +138,10 @@ model Cinema {
   phone       String?
   logoUrl     String?
   description String?
+  /// KAN-37: display city. Null when unset — never inferred from address.
+  city        String?
+  /// KAN-37: short public line. Null when unset.
+  tagline     String?
   timezone    String       @default("Asia/Tashkent")
   status      CinemaStatus @default(ACTIVE)
   createdAt   DateTime     @default(now())
@@ -163,6 +177,8 @@ model CinemaPhoto {
   cinemaId  String
   url       String
   sortOrder Int      @default(0)
+  /// KAN-37: optional gallery caption. Null when unset.
+  caption   String?  @db.VarChar(160)
   createdAt DateTime @default(now())
 
   cinema Cinema @relation(fields: [cinemaId], references: [id], onDelete: Cascade)
@@ -175,6 +191,8 @@ model CinemaStaff {
   cinemaId  String
   userId    String
   role      StaffRole
+  /// KAN-37: false hides the membership from login and admin access.
+  active    Boolean   @default(true)
   createdAt DateTime  @default(now())
 
   cinema Cinema @relation(fields: [cinemaId], references: [id])
@@ -230,6 +248,8 @@ model Hall {
   cinemaId  String
   name      String
   capacity  Int
+  /// KAN-37: badge text such as "3D · Dolby". Null hides the badge.
+  format    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -288,6 +308,8 @@ model Movie {
   audioLanguages String[]    @default([])
   releasedAt     DateTime?
   status         MovieStatus @default(ACTIVE)
+  /// KAN-37: at most one true per cinema (enforced in the movie write transaction).
+  isFeatured     Boolean     @default(false)
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
@@ -306,6 +328,8 @@ model Session {
   status          SessionStatus @default(DRAFT)
   basePriceUzs    Int
   discountPercent Int           @default(0)
+  /// KAN-37: spoken language of this showing. Null when the cinema has not set it.
+  audioLanguage   AudioLanguage?
   cancelledAt     DateTime?
   /// KAN-35: set when the session was included in a follow digest (never sent twice)
   notifiedAt      DateTime?

@@ -18,6 +18,7 @@ import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { compare, hash } from "bcryptjs";
 import { canAccessCinema, canManageCinema } from "../auth/roles.guard";
+import { blankToNull } from "../common/blank";
 import { PrismaService } from "../prisma/prisma.service";
 import { RedisService } from "../redis/redis.service";
 import {
@@ -90,6 +91,8 @@ export class CinemaProfileService {
 			address: input.address !== undefined ? input.address : cinema.address,
 			description: input.description !== undefined ? input.description : cinema.description,
 			logoUrl: input.logoUrl !== undefined ? input.logoUrl : cinema.logoUrl,
+			city: input.city !== undefined ? blankToNull(input.city) : cinema.city,
+			tagline: input.tagline !== undefined ? blankToNull(input.tagline) : cinema.tagline,
 			phones: phones ?? cinema.phones,
 			phone: phones?.[0] ?? cinema.phone,
 			instagramUrl,
@@ -168,6 +171,8 @@ export class CinemaProfileService {
 				address: next.address,
 				description: next.description,
 				logoUrl: next.logoUrl,
+				city: next.city,
+				tagline: next.tagline,
 				phones: next.phones,
 				phone: next.phone,
 				instagramUrl: next.instagramUrl,
@@ -271,7 +276,12 @@ export class CinemaProfileService {
 		}
 		const sortOrder = input.sortOrder ?? (cinema.photos.at(-1)?.sortOrder ?? -1) + 1;
 		await this.prisma.cinemaPhoto.create({
-			data: { cinemaId, url: input.url, sortOrder },
+			data: {
+				cinemaId,
+				url: input.url,
+				sortOrder,
+				caption: blankToNull(input.caption) ?? null,
+			},
 		});
 		await this.prisma.cinema.update({
 			where: { id: cinemaId },
@@ -357,7 +367,10 @@ export class CinemaProfileService {
 		}
 		await this.prisma.user.update({
 			where: { id: user.id },
-			data: { passwordHash: await hash(input.newPassword, 10) },
+			data: {
+				passwordHash: await hash(input.newPassword, 10),
+				mustChangePassword: false,
+			},
 		});
 		return { ok: true as const };
 	}
@@ -510,6 +523,7 @@ export class CinemaProfileService {
 			id: p.id,
 			url: p.url,
 			sortOrder: p.sortOrder,
+			caption: p.caption,
 		}));
 		return {
 			id: cinema.id,
@@ -519,6 +533,8 @@ export class CinemaProfileService {
 			phones: cinema.phones,
 			logoUrl: cinema.logoUrl,
 			description: cinema.description,
+			city: cinema.city,
+			tagline: cinema.tagline,
 			timezone: cinema.timezone,
 			status: cinema.status,
 			lat: coordNumber(cinema.lat),

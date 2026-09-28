@@ -14,6 +14,7 @@ import {
 } from "@nestjs/common";
 import { hash } from "bcryptjs";
 import { canAccessCinema } from "../auth/roles.guard";
+import { blankToNull } from "../common/blank";
 import { PrismaService } from "../prisma/prisma.service";
 
 const TZ = "Asia/Tashkent";
@@ -188,6 +189,8 @@ export class CinemaService {
 		return this.prisma.cinema.create({
 			data: {
 				...data,
+				city: blankToNull(data.city),
+				tagline: blankToNull(data.tagline),
 				phones: data.phone ? [data.phone] : [],
 				billing: {
 					create: { monthlyPlanUzs: 2_500_000 },
@@ -222,6 +225,8 @@ export class CinemaService {
 					phone: data.phone,
 					phones: data.phone ? [data.phone] : [],
 					description: data.description,
+					city: blankToNull(data.city),
+					tagline: blankToNull(data.tagline),
 					timezone: data.timezone,
 					billing: {
 						create: {
@@ -268,13 +273,29 @@ export class CinemaService {
 
 	async update(id: string, data: UpdateCinemaInput) {
 		await this.ensureExists(id);
-		return this.prisma.cinema.update({ where: { id }, data });
+		return this.prisma.cinema.update({
+			where: { id },
+			data: {
+				...data,
+				...(data.city !== undefined ? { city: blankToNull(data.city) } : {}),
+				...(data.tagline !== undefined ? { tagline: blankToNull(data.tagline) } : {}),
+			},
+		});
 	}
 
 	async updateClient(id: string, data: UpdateClientInput) {
 		await this.ensureExists(id);
-		const { monthlyPlanUzs, commissionPerTicketUzs, name, address, phone, description, timezone } =
-			data;
+		const {
+			monthlyPlanUzs,
+			commissionPerTicketUzs,
+			name,
+			address,
+			phone,
+			description,
+			city,
+			tagline,
+			timezone,
+		} = data;
 
 		return this.prisma.$transaction(async (tx) => {
 			const cinema = await tx.cinema.update({
@@ -284,6 +305,8 @@ export class CinemaService {
 					...(address !== undefined ? { address } : {}),
 					...(phone !== undefined ? { phone } : {}),
 					...(description !== undefined ? { description } : {}),
+					...(city !== undefined ? { city: blankToNull(city) } : {}),
+					...(tagline !== undefined ? { tagline: blankToNull(tagline) } : {}),
 					...(timezone !== undefined ? { timezone } : {}),
 				},
 			});

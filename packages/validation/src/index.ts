@@ -1,9 +1,26 @@
 import { z } from "zod";
 
-export const loginSchema = z.object({
-	email: z.string().email(),
-	password: z.string().min(8),
-});
+/** Staff sign-in name. Stored lowercased; not an email address. */
+export function normalizeLogin(login: string): string {
+	return login.trim().toLowerCase();
+}
+
+const loginNameSchema = z
+	.string()
+	.trim()
+	.min(3, "Логин должен быть не короче 3 символов")
+	.max(64)
+	.regex(/^[A-Za-z0-9._-]+$/, "Логин: латиница, цифры, точка, дефис или подчёркивание");
+
+export const loginSchema = z
+	.object({
+		email: z.string().email().optional(),
+		login: loginNameSchema.optional(),
+		password: z.string().min(8, "Пароль должен быть не короче 8 символов"),
+	})
+	.refine((value) => Boolean(value.email || value.login), {
+		message: "Укажите email или логин",
+	});
 
 export const createCinemaSchema = z.object({
 	name: z.string().min(2).max(120),
@@ -11,6 +28,8 @@ export const createCinemaSchema = z.object({
 	phone: z.string().max(40).optional(),
 	description: z.string().max(2000).optional(),
 	timezone: z.string().default("Asia/Tashkent"),
+	city: z.string().max(80).optional(),
+	tagline: z.string().max(160).optional(),
 });
 
 export const updateCinemaSchema = createCinemaSchema.partial();
@@ -22,6 +41,8 @@ export const createClientSchema = z.object({
 	phone: z.string().max(40).optional(),
 	description: z.string().max(2000).optional(),
 	timezone: z.string().default("Asia/Tashkent"),
+	city: z.string().max(80).optional(),
+	tagline: z.string().max(160).optional(),
 	monthlyPlanUzs: z.number().int().positive().default(2_500_000),
 	commissionPerTicketUzs: z.number().int().nonnegative().nullable().optional(),
 	admin: z.object({
@@ -37,6 +58,8 @@ export const updateClientSchema = z.object({
 	address: z.string().max(255).nullable().optional(),
 	phone: z.string().max(40).nullable().optional(),
 	description: z.string().max(2000).nullable().optional(),
+	city: z.string().max(80).nullable().optional(),
+	tagline: z.string().max(160).nullable().optional(),
 	timezone: z.string().min(1).optional(),
 	monthlyPlanUzs: z.number().int().positive().optional(),
 	commissionPerTicketUzs: z.number().int().nonnegative().nullable().optional(),
@@ -70,6 +93,7 @@ export type CinemaBillingInput = z.infer<typeof cinemaBillingSchema>;
 export const createHallSchema = z.object({
 	name: z.string().min(1).max(80),
 	capacity: z.number().int().positive(),
+	format: z.string().max(80).nullable().optional(),
 });
 
 export const updateHallSchema = createHallSchema.partial();
@@ -127,6 +151,8 @@ export const createMovieSchema = z.object({
 	releasedAt: z.coerce.date().optional().nullable(),
 	/** Super Admin only — otherwise taken from staff cinema */
 	cinemaId: z.string().min(1).optional(),
+	/** At most one featured movie per cinema; enforced in the write transaction. */
+	isFeatured: z.boolean().optional(),
 });
 
 export const updateMovieSchema = createMovieSchema.partial().extend({
@@ -143,6 +169,8 @@ export const createSessionSchema = z.object({
 	vipPriceUzs: z.number().int().positive().optional(),
 	/** Capacity-only tickets — no seat map on the session */
 	generalAdmission: z.boolean().optional().default(false),
+	/** Spoken language of this showing. Omitted or null stays unset. */
+	audioLanguage: z.enum(["ru", "uz"]).nullable().optional(),
 });
 
 export const updateSessionSchema = z.object({
@@ -150,6 +178,7 @@ export const updateSessionSchema = z.object({
 	basePriceUzs: z.number().int().positive().optional(),
 	discountPercent: z.number().int().min(0).max(100).optional(),
 	vipPriceUzs: z.number().int().positive().optional(),
+	audioLanguage: z.enum(["ru", "uz"]).nullable().optional(),
 });
 
 export const catalogQuerySchema = z.object({
@@ -210,6 +239,7 @@ export const photoUploadUrlSchema = z.object({
 export const createCinemaPhotoSchema = z.object({
 	url: z.string().url().max(1000),
 	sortOrder: z.number().int().min(0).max(99).optional(),
+	caption: z.string().max(160).nullable().optional(),
 });
 
 export const reorderCinemaPhotosSchema = z.object({
@@ -234,6 +264,8 @@ export const patchCinemaProfileSchema = z.object({
 	lat: z.number().gte(-90).lte(90).nullable().optional(),
 	lng: z.number().gte(-180).lte(180).nullable().optional(),
 	mapProvider: z.enum(MAP_PROVIDERS).nullable().optional(),
+	city: z.string().max(80).nullable().optional(),
+	tagline: z.string().max(160).nullable().optional(),
 	markSteps: z
 		.object({
 			photos: z.boolean().optional(),
@@ -248,8 +280,33 @@ export const patchCinemaProfileSchema = z.object({
 
 export const changePasswordSchema = z.object({
 	currentPassword: z.string().min(1).max(128),
-	newPassword: z.string().min(8).max(128),
+	newPassword: z
+		.string()
+		.min(8, "Пароль должен быть не короче 8 символов")
+		.max(128, "Пароль должен быть не длиннее 128 символов"),
 });
+
+export const createStaffSchema = z.object({
+	login: loginNameSchema,
+	password: z
+		.string()
+		.min(8, "Пароль должен быть не короче 8 символов")
+		.max(128, "Пароль должен быть не длиннее 128 символов"),
+	role: z.enum(["CINEMA_ADMIN", "STAFF"]),
+	firstName: z.string().trim().max(80).optional(),
+	lastName: z.string().trim().max(80).optional(),
+	/** Required for SUPER_ADMIN. Cinema admin is scoped to their own cinema. */
+	cinemaId: z.string().min(1).optional(),
+});
+
+export const updateStaffSchema = z
+	.object({
+		role: z.enum(["CINEMA_ADMIN", "STAFF"]).optional(),
+		active: z.boolean().optional(),
+	})
+	.refine((value) => value.role !== undefined || value.active !== undefined, {
+		message: "Укажите роль или статус",
+	});
 
 export const linkEmailSchema = z.object({
 	email: z.string().email().max(160),
@@ -265,5 +322,7 @@ export type ReorderCinemaPhotosInput = z.infer<typeof reorderCinemaPhotosSchema>
 export type CinemaLocationInput = z.infer<typeof cinemaLocationSchema>;
 export type PatchCinemaProfileInput = z.infer<typeof patchCinemaProfileSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type CreateStaffInput = z.infer<typeof createStaffSchema>;
+export type UpdateStaffInput = z.infer<typeof updateStaffSchema>;
 export type LinkEmailInput = z.infer<typeof linkEmailSchema>;
 export type ConfirmEmailInput = z.infer<typeof confirmEmailSchema>;

@@ -8,6 +8,7 @@ import {
 	NotFoundException,
 } from "@nestjs/common";
 import { canAccessCinema, canManageCinema } from "../auth/roles.guard";
+import { blankToNull } from "../common/blank";
 import { PrismaService } from "../prisma/prisma.service";
 
 @Injectable()
@@ -30,7 +31,14 @@ export class HallService {
 			throw new ForbiddenException("Only cinema admin can manage halls");
 		}
 		await this.ensureCinema(cinemaId);
-		return this.prisma.hall.create({ data: { ...data, cinemaId } });
+		return this.prisma.hall.create({
+			data: {
+				name: data.name,
+				capacity: data.capacity,
+				cinemaId,
+				...(data.format !== undefined ? { format: blankToNull(data.format) } : {}),
+			},
+		});
 	}
 
 	async get(user: SessionUser, cinemaId: string, hallId: string) {
@@ -51,7 +59,14 @@ export class HallService {
 			throw new ForbiddenException("Only cinema admin can manage halls");
 		}
 		await this.get(user, cinemaId, hallId);
-		return this.prisma.hall.update({ where: { id: hallId }, data });
+		return this.prisma.hall.update({
+			where: { id: hallId },
+			data: {
+				...(data.name !== undefined ? { name: data.name } : {}),
+				...(data.capacity !== undefined ? { capacity: data.capacity } : {}),
+				...(data.format !== undefined ? { format: blankToNull(data.format) } : {}),
+			},
+		});
 	}
 
 	async remove(user: SessionUser, cinemaId: string, hallId: string) {

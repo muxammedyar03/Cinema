@@ -1,13 +1,24 @@
 import { randomBytes } from "node:crypto";
 import type { SessionUser } from "@cinema/types";
-import { Injectable, ServiceUnavailableException, UnauthorizedException } from "@nestjs/common";
+import { normalizeLogin } from "@cinema/validation";
+import {
+	BadRequestException,
+	Injectable,
+	ServiceUnavailableException,
+	UnauthorizedException,
+} from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { compare } from "bcryptjs";
+import { compare, hash } from "bcryptjs";
 import { PrismaService } from "../prisma/prisma.service";
 import { RedisService } from "../redis/redis.service";
 import { TelegramInitDataError, verifyTelegramInitData } from "./telegram-init-data";
 
 const SESSION_TTL_SEC = 60 * 60 * 24 * 7;
+
+const staffInclude = {
+	where: { active: true },
+	include: { cinema: { select: { name: true, status: true } } },
+} as const;
 
 @Injectable()
 export class AuthService {
@@ -17,13 +28,21 @@ export class AuthService {
 		private readonly config: ConfigService,
 	) {}
 
-	async login(email: string, password: string): Promise<{ sid: string; user: SessionUser }> {
-		const user = await this.prisma.user.findUnique({
-			where: { email: email.toLowerCase() },
-			include: {
-				staffOf: { include: { cinema: { select: { name: true, status: true } } } },
-			},
-		});
+	async login(input: {
+		email?: string;
+		login?: string;
+		password: string;
+	}): Promise<{ sid: string; user: SessionUser }> {
+		const user = input.email
+			? await this.prisma.user.findUnique({
+					where: { email: input.email.toLowerCase() },
+					include: { staffOf: staffInclude },
+				})
+			: await this.prisma.user.findUnique({
+					where: { login: normalizeLogin(input.login ?? "") },
+					include: { staffOf: staffInclude },
+				});
+		const password = input.password;
 		if (!user?.passwordHash) {
 			throw new UnauthorizedException("Invalid credentials");
 		}
@@ -37,6 +56,36 @@ export class AuthService {
 		const sessionUser = toSessionUser(user);
 		const sid = await this.createSession(user.id);
 		return { sid, user: sessionUser };
+	}
+
+	async changePassword(
+		userId: string,
+		input: { currentPassword: string; newPassword: string },
+	): Promise<{ ok: true; mustChangePassword: false }> {
+		const dbUser = await this.prisma.user.findUnique({ where: { id: userId } });
+		if (!dbUser?.passwordHash) {
+			throw new BadRequestException({
+				statusCode: 400,
+				code: "NO_PASSWORD",
+				message: "У аккаунта нет пароля",
+			});
+		}
+		const ok = await compare(input.currentPassword, dbUser.passwordHash);
+		if (!ok) {
+			throw new BadRequestException({
+				statusCode: 400,
+				code: "INVALID_CURRENT_PASSWORD",
+				message: "Текущий пароль неверен",
+			});
+		}
+		await this.prisma.user.update({
+			where: { id: userId },
+			data: {
+				passwordHash: await hash(input.newPassword, 10),
+				mustChangePassword: false,
+			},
+		});
+		return { ok: true, mustChangePassword: false };
 	}
 
 	async logout(sid: string | undefined) {
@@ -53,9 +102,7 @@ export class AuthService {
 		const { userId } = JSON.parse(raw) as { userId: string };
 		const user = await this.prisma.user.findUnique({
 			where: { id: userId },
-			include: {
-				staffOf: { include: { cinema: { select: { name: true, status: true } } } },
-			},
+			include: { staffOf: staffInclude },
 		});
 		if (!user) {
 			return null;
@@ -120,9 +167,7 @@ export class AuthService {
 				lastName: tgUser.last_name ?? null,
 				role: "CUSTOMER",
 			},
-			include: {
-				staffOf: { include: { cinema: { select: { name: true, status: true } } } },
-			},
+			include: { staffOf: staffInclude },
 		});
 		const sessionUser = toSessionUser(user);
 		const sid = await this.createSession(user.id);
@@ -144,9 +189,7 @@ export class AuthService {
 				telegramUsername: "dev",
 				role: "CUSTOMER",
 			},
-			include: {
-				staffOf: { include: { cinema: { select: { name: true, status: true } } } },
-			},
+			include: { staffOf: staffInclude },
 		});
 		const sid = await this.createSession(user.id);
 		return { sid, user: toSessionUser(user), stub: true };
@@ -167,6 +210,9 @@ export class AuthService {
 function toSessionUser(user: {
 	id: string;
 	email: string | null;
+	firstName: string | null;
+	lastName: string | null;
+	mustChangePassword: boolean;
 	role: "CUSTOMER" | "SUPER_ADMIN";
 	staffOf: Array<{
 		cinemaId: string;
@@ -177,6 +223,9 @@ function toSessionUser(user: {
 	return {
 		id: user.id,
 		email: user.email,
+		firstName: user.firstName,
+		lastName: user.lastName,
+		mustChangePassword: user.mustChangePassword,
 		role: user.role,
 		staff: user.staffOf.map((s) => ({
 			cinemaId: s.cinemaId,

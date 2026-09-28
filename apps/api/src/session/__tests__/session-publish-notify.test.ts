@@ -7,7 +7,15 @@ import type { PrismaService } from "../../prisma/prisma.service";
 import type { RedisService } from "../../redis/redis.service";
 import { SessionService } from "../session.service";
 
-const ADMIN: SessionUser = { id: "u1", email: null, role: "SUPER_ADMIN", staff: [] };
+const ADMIN: SessionUser = {
+	id: "u1",
+	email: null,
+	firstName: null,
+	lastName: null,
+	mustChangePassword: false,
+	role: "SUPER_ADMIN",
+	staff: [],
+};
 
 function build(onSessionPublished: () => Promise<unknown>) {
 	let status = "DRAFT";

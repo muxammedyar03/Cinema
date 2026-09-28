@@ -5,6 +5,10 @@ export type CinemaAccessStatus = "ACTIVE" | "DISABLED" | "LOCKED";
 export type SessionUser = {
 	id: string;
 	email: string | null;
+	firstName: string | null;
+	lastName: string | null;
+	/** True until the admin changes the temporary password. */
+	mustChangePassword: boolean;
 	role: "CUSTOMER" | "SUPER_ADMIN";
 	staff: Array<{
 		cinemaId: string;
@@ -35,6 +39,7 @@ export type CinemaPhotoDto = {
 	id: string;
 	url: string;
 	sortOrder: number;
+	caption: string | null;
 };
 
 export type CinemaMapPayload = {
@@ -59,6 +64,8 @@ export type CinemaAdminProfile = {
 	phones: string[];
 	logoUrl: string | null;
 	description: string | null;
+	city: string | null;
+	tagline: string | null;
 	timezone: string;
 	status: CinemaAccessStatus;
 	lat: number | null;
@@ -84,6 +91,8 @@ export type PublicCinemaProfile = {
 	name: string;
 	address: string | null;
 	description: string | null;
+	city: string | null;
+	tagline: string | null;
 	logoUrl: string | null;
 	phones: string[];
 	instagramUrl: string | null;

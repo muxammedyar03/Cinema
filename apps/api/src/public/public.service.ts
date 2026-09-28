@@ -5,6 +5,7 @@ import { countSessionOccupied, gaQtyBySessionIds } from "../booking/capacity";
 import { mapPayload } from "../cinema/profile.util";
 import { PrismaService } from "../prisma/prisma.service";
 import { RedisService } from "../redis/redis.service";
+import { resolveFeaturedSource, sessionMinPriceUzs } from "./featured";
 
 const TZ = "Asia/Tashkent";
 const CATALOG_TTL = 45;
@@ -37,6 +38,8 @@ export class PublicService {
 					id: true,
 					name: true,
 					address: true,
+					city: true,
+					tagline: true,
 					logoUrl: true,
 					lat: true,
 					lng: true,
@@ -48,6 +51,8 @@ export class PublicService {
 					id: c.id,
 					name: c.name,
 					address: c.address,
+					city: c.city,
+					tagline: c.tagline,
 					logoUrl: c.logoUrl,
 					hasMap: c.lat != null && c.lng != null,
 					profileComplete: c.profileComplete,
@@ -77,11 +82,18 @@ export class PublicService {
 			name: cinema.name,
 			address: cinema.address,
 			description: cinema.description,
+			city: cinema.city,
+			tagline: cinema.tagline,
 			logoUrl: cinema.logoUrl,
 			phones,
 			instagramUrl: cinema.instagramUrl,
 			telegramContact: cinema.telegramContact,
-			photos: cinema.photos.map((p) => ({ id: p.id, url: p.url, sortOrder: p.sortOrder })),
+			photos: cinema.photos.map((p) => ({
+				id: p.id,
+				url: p.url,
+				sortOrder: p.sortOrder,
+				caption: p.caption,
+			})),
 			map: mapPayload({
 				mapProvider: cinema.mapProvider,
 				lat: cinema.lat,
@@ -119,21 +131,25 @@ export class PublicService {
 		const cached = await this.redis.client.get(cacheKey);
 		if (cached) return JSON.parse(cached) as unknown;
 
-		const sessions = await this.prisma.session.findMany({
-			where: {
-				status: "PUBLISHED",
-				startsAt: { gte: from, lt: to },
-				cinema: { status: "ACTIVE", ...(cinemaId ? { id: cinemaId } : {}) },
-				movie: { status: "ACTIVE" },
-			},
-			orderBy: { startsAt: "asc" },
-			include: {
-				movie: true,
-				cinema: { select: { id: true, name: true } },
-				hall: { select: { id: true, name: true, capacity: true } },
-				sessionSeats: { select: { status: true } },
-			},
-		});
+		const [sessions, featured] = await Promise.all([
+			this.prisma.session.findMany({
+				where: {
+					status: "PUBLISHED",
+					startsAt: { gte: from, lt: to },
+					cinema: { status: "ACTIVE", ...(cinemaId ? { id: cinemaId } : {}) },
+					movie: { status: "ACTIVE" },
+				},
+				orderBy: { startsAt: "asc" },
+				include: {
+					movie: true,
+					cinema: { select: { id: true, name: true } },
+					hall: { select: { id: true, name: true, capacity: true, format: true } },
+					pricing: { select: { seatType: true, priceUzs: true } },
+					sessionSeats: { select: { status: true } },
+				},
+			}),
+			this.featured(cinemaId),
+		]);
 
 		const gaMap = await gaQtyBySessionIds(
 			this.prisma,
@@ -150,6 +166,9 @@ export class PublicService {
 					posterUrl: string | null;
 					durationMin: number;
 					ageRating: string | null;
+					rating: number | null;
+					genres: string[];
+					minPriceUzs: number | null;
 					sessions: Array<Record<string, unknown>>;
 				}
 			>
@@ -167,8 +186,20 @@ export class PublicService {
 					posterUrl: session.movie.posterUrl,
 					durationMin: session.movie.durationMin,
 					ageRating: session.movie.ageRating,
+					rating: session.movie.rating === null ? null : Number(session.movie.rating),
+					genres: session.movie.genres,
+					minPriceUzs: null,
 					sessions: [],
 				});
+			}
+			const card = movies.get(session.movieId);
+			const price = sessionMinPriceUzs({
+				basePriceUzs: session.basePriceUzs,
+				discountPercent: session.discountPercent,
+				pricing: session.pricing,
+			});
+			if (card && price !== null) {
+				card.minPriceUzs = card.minPriceUzs === null ? price : Math.min(card.minPriceUzs, price);
 			}
 			const seatOccupied = session.sessionSeats.filter((s) =>
 				["HELD", "SOLD", "BLOCKED"].includes(s.status),
@@ -181,6 +212,8 @@ export class PublicService {
 				cinemaId: session.cinema.id,
 				cinemaName: session.cinema.name,
 				hallName: session.hall.name,
+				hallFormat: session.hall.format,
+				audioLanguage: session.audioLanguage,
 				basePriceUzs: session.basePriceUzs,
 				capacity: session.hall.capacity,
 				remaining: Math.max(0, session.hall.capacity - occupied),
@@ -191,6 +224,7 @@ export class PublicService {
 		const payload = {
 			from,
 			to,
+			featured: featured.featured,
 			days: [...days.entries()].map(([date, movies]) => ({
 				date,
 				movies: [...movies.values()],
@@ -198,6 +232,60 @@ export class PublicService {
 		};
 		await this.redis.client.set(cacheKey, JSON.stringify(payload), "EX", CATALOG_TTL);
 		return payload;
+	}
+
+	/** Mini App home card. `featured` is null when nothing upcoming is published. */
+	async featured(cinemaId?: string) {
+		const now = new Date();
+		const sessions = await this.prisma.session.findMany({
+			where: {
+				status: "PUBLISHED",
+				startsAt: { gte: now },
+				cinema: { status: "ACTIVE", ...(cinemaId ? { id: cinemaId } : {}) },
+				movie: { status: "ACTIVE" },
+			},
+			orderBy: { startsAt: "asc" },
+			include: {
+				movie: true,
+				pricing: { select: { seatType: true, priceUzs: true } },
+			},
+		});
+		const pick = resolveFeaturedSource(
+			sessions.map((session) => ({
+				movieId: session.movieId,
+				isFeatured: session.movie.isFeatured,
+				startsAt: session.startsAt,
+			})),
+		);
+		if (!pick) return { featured: null };
+		const movieSessions = sessions.filter((session) => session.movieId === pick.movieId);
+		const first = movieSessions[0];
+		if (!first) return { featured: null };
+		const prices = movieSessions
+			.map((session) =>
+				sessionMinPriceUzs({
+					basePriceUzs: session.basePriceUzs,
+					discountPercent: session.discountPercent,
+					pricing: session.pricing,
+				}),
+			)
+			.filter((price): price is number => price !== null);
+		return {
+			featured: {
+				featuredSource: pick.featuredSource,
+				id: first.movie.id,
+				cinemaId: first.movie.cinemaId,
+				title: first.movie.title,
+				posterUrl: first.movie.posterUrl,
+				description: first.movie.description,
+				durationMin: first.movie.durationMin,
+				ageRating: first.movie.ageRating,
+				rating: first.movie.rating === null ? null : Number(first.movie.rating),
+				genres: first.movie.genres,
+				minPriceUzs: prices.length > 0 ? Math.min(...prices) : null,
+				nextStartsAt: first.startsAt,
+			},
+		};
 	}
 
 	async movie(id: string) {
@@ -211,7 +299,7 @@ export class PublicService {
 			orderBy: { startsAt: "asc" },
 			include: {
 				cinema: { select: { id: true, name: true } },
-				hall: { select: { id: true, name: true, capacity: true } },
+				hall: { select: { id: true, name: true, capacity: true, format: true } },
 				sessionSeats: { select: { status: true } },
 			},
 		});
@@ -235,6 +323,8 @@ export class PublicService {
 					cinemaId: session.cinema.id,
 					cinemaName: session.cinema.name,
 					hallName: session.hall.name,
+					hallFormat: session.hall.format,
+					audioLanguage: session.audioLanguage,
 					basePriceUzs: session.basePriceUzs,
 					capacity: session.hall.capacity,
 					remaining: Math.max(0, session.hall.capacity - occupied),
@@ -250,7 +340,7 @@ export class PublicService {
 			include: {
 				movie: true,
 				cinema: { select: { id: true, name: true, status: true } },
-				hall: { select: { id: true, name: true, capacity: true } },
+				hall: { select: { id: true, name: true, capacity: true, format: true } },
 				pricing: true,
 				sessionSeats: {
 					include: {
@@ -279,6 +369,7 @@ export class PublicService {
 			startsAt: session.startsAt,
 			basePriceUzs: session.basePriceUzs,
 			discountPercent: session.discountPercent,
+			audioLanguage: session.audioLanguage,
 			pricing: session.pricing,
 			bookingMode: isGa ? ("GENERAL_ADMISSION" as const) : ("SEATED" as const),
 			movie: session.movie,

@@ -7,13 +7,19 @@ import {
 	Injectable,
 	NotFoundException,
 } from "@nestjs/common";
-import type { Movie } from "@prisma/client";
+import { type Movie, Prisma } from "@prisma/client";
 import { canAccessCinema, canManageCinema } from "../auth/roles.guard";
 import { PrismaService } from "../prisma/prisma.service";
+import { RedisService } from "../redis/redis.service";
+
+const CATALOG_PREFIX = "catalog:";
 
 @Injectable()
 export class MovieService {
-	constructor(private readonly prisma: PrismaService) {}
+	constructor(
+		private readonly prisma: PrismaService,
+		private readonly redis: RedisService,
+	) {}
 
 	private serialize(movie: Movie) {
 		return {
@@ -63,8 +69,11 @@ export class MovieService {
 		if (!canManageCinema(user, cinemaId)) {
 			throw new ForbiddenException("Cannot create movie for this cinema");
 		}
-		return this.prisma.movie
-			.create({
+		const movie = await this.prisma.$transaction(async (tx) => {
+			if (data.isFeatured === true) {
+				await this.clearOtherFeatured(tx, cinemaId);
+			}
+			return tx.movie.create({
 				data: {
 					cinemaId,
 					title: data.title,
@@ -76,9 +85,12 @@ export class MovieService {
 					genres: data.genres ?? [],
 					audioLanguages: data.audioLanguages ?? [],
 					releasedAt: data.releasedAt ?? null,
+					isFeatured: data.isFeatured ?? false,
 				},
-			})
-			.then((m) => this.serialize(m));
+			});
+		});
+		if (data.isFeatured === true) await this.invalidateCatalog();
+		return this.serialize(movie);
 	}
 
 	async update(user: SessionUser, id: string, data: UpdateMovieInput) {
@@ -86,8 +98,11 @@ export class MovieService {
 		if (!canManageCinema(user, movie.cinemaId)) {
 			throw new ForbiddenException("Cannot update this movie");
 		}
-		return this.prisma.movie
-			.update({
+		const updated = await this.prisma.$transaction(async (tx) => {
+			if (data.isFeatured === true) {
+				await this.clearOtherFeatured(tx, movie.cinemaId, id);
+			}
+			return tx.movie.update({
 				where: { id },
 				data: {
 					...(data.title !== undefined ? { title: data.title } : {}),
@@ -102,9 +117,34 @@ export class MovieService {
 					...(data.audioLanguages !== undefined ? { audioLanguages: data.audioLanguages } : {}),
 					...(data.releasedAt !== undefined ? { releasedAt: data.releasedAt } : {}),
 					...(data.status !== undefined ? { status: data.status } : {}),
+					...(data.isFeatured !== undefined ? { isFeatured: data.isFeatured } : {}),
 				},
-			})
-			.then((m) => this.serialize(m));
+			});
+		});
+		if (data.isFeatured !== undefined) await this.invalidateCatalog();
+		return this.serialize(updated);
+	}
+
+	/** One featured movie per cinema. Caller must already be inside a transaction. */
+	private async clearOtherFeatured(
+		tx: Prisma.TransactionClient,
+		cinemaId: string,
+		exceptMovieId?: string,
+	) {
+		await tx.$queryRaw`SELECT id FROM "Cinema" WHERE id = ${cinemaId} FOR UPDATE`;
+		await tx.movie.updateMany({
+			where: {
+				cinemaId,
+				isFeatured: true,
+				...(exceptMovieId ? { id: { not: exceptMovieId } } : {}),
+			},
+			data: { isFeatured: false },
+		});
+	}
+
+	private async invalidateCatalog() {
+		const keys = await this.redis.client.keys(`${CATALOG_PREFIX}*`);
+		if (keys.length > 0) await this.redis.client.del(...keys);
 	}
 
 	async archive(user: SessionUser, id: string) {

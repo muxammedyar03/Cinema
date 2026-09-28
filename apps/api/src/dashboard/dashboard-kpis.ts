@@ -15,6 +15,12 @@ export function ratio(numerator: number, denominator: number): number | null {
 	return numerator / denominator;
 }
 
+/** Percent change vs a previous period. Null when the previous value is 0. */
+export function deltaPct(current: number, previous: number): number | null {
+	if (previous === 0) return null;
+	return Math.round(((current - previous) / previous) * 1000) / 10;
+}
+
 /** Seated: SOLD / (seats − BLOCKED). GA: paid GA qty / hall capacity. */
 export function sessionOccupancy(input: {
 	capacity: number;

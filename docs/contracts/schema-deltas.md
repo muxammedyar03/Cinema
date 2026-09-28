@@ -280,3 +280,50 @@ model Session {
 - Backfill: existing `PUBLISHED` rows get `notifiedAt = updatedAt` (already-live afisha is not re-announced).
 - `CINEMA_AFISHA_DIGEST` is now the active follow notification type (one row per follower per digest window).
 - Semantics: [follow-notify.md § KAN-35](./follow-notify.md#kan-35--per-cinema-digest-debounce).
+
+## KAN-37 — Design v2 backend (applied)
+
+Migration `20260928120000_design_v2_kan37`. Additive only. Details: [design-v2-gaps.md](./design-v2-gaps.md) §9, [staff-accounts.md](./staff-accounts.md).
+
+```prisma
+enum AudioLanguage {
+  ru
+  uz
+}
+
+model User {
+  login              String?  @unique
+  mustChangePassword Boolean  @default(false)
+}
+
+model CinemaStaff {
+  active Boolean @default(true)
+}
+
+model Cinema {
+  city    String?
+  tagline String?
+}
+
+model Hall {
+  format String?
+}
+
+model CinemaPhoto {
+  caption String? @db.VarChar(160)
+}
+
+model Movie {
+  isFeatured Boolean @default(false)
+}
+
+model Session {
+  audioLanguage AudioLanguage?
+}
+```
+
+- `mustChangePassword` defaults to `false` for existing rows. `POST /admin/staff` sets `true`.
+- `audioLanguage` has no default. Unset stays `null` (not `ru`).
+- `isFeatured` defaults to `false`. At most one `true` per cinema is enforced in the movie write transaction, not by a partial unique index.
+- Empty `city` / `tagline` / `format` / `caption` are stored and returned as `null`.
+- Not in this migration: `Lead`, `PaymentProvider.RAHMAT`, refund initiator (KAN-31 / KAN-36).

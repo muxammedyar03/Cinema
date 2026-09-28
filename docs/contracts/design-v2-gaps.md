@@ -4,7 +4,20 @@ Epic: **KAN-27** · Task: **KAN-32** · Iste'molchilar: **KAN-29** (Admin), **KA
 
 Manba: `design/v2/*.html` (main), skrinshotlar `design/v2/screenshots/*.png` (main, PR #7). Solishtirilgan kod: `apps/api` (main `c47c994`), `apps/api/prisma/schema.prisma`, `docs/contracts/*`.
 
-> Bu hujjat **faqat taklif (additive)**. Hech bir mavjud endpoint, maydon yoki Mini App route o'chirilmaydi yoki nomi o'zgarmaydi. Kod o'zgarishi bu PR da yo'q.
+> Bu hujjat **faqat taklif (additive)**. Hech bir mavjud endpoint, maydon yoki Mini App route o'chirilmaydi yoki nomi o'zgarmaydi. Dastlabki gap-review PR da kod o'zgarishi yo'q edi. **KAN-37** quyidagi qatorlarni qo'lladi (qolganlari ochiq).
+
+## KAN-37 — qo'llangan qatorlar
+
+| Qator | Holat |
+| --- | --- |
+| `POST/GET/PATCH /admin/staff`, `mustChangePassword`, `POST /auth/change-password`, guard `PASSWORD_CHANGE_REQUIRED` | ✅ [staff-accounts.md](./staff-accounts.md) |
+| `Movie.isFeatured` + `GET /public/featured` va `GET /public/catalog` → `featured` / `featuredSource` | ✅ |
+| `Session.audioLanguage` `ru \| uz \| null` | ✅ |
+| Katalog: `rating`, `genres`, `minPriceUzs`; admin seanslar: `sold`, `remaining` | ✅ |
+| Dashboard: `comparison` (o'tgan haftaning shu kuni), `stats.ticketsSoldToday`, `todaySessions[].posterUrl` | ✅ |
+| `GET /auth/me` va login: `firstName`, `lastName`, `mustChangePassword` | ✅ |
+| `Cinema.city`, `Cinema.tagline`, `Hall.format`, `CinemaPhoto.caption` | ✅ |
+| To'lov / refund / QR (KAN-36), landing leads (KAN-31), CSV, jonli zal xaritasi, platform summary | ❌ shu taskda yo'q |
 
 ---
 
@@ -44,9 +57,9 @@ Frontend (PR #4, KAN-8/KAN-9) quyidagilarni allaqachon chaqiradi; `apps/api/src`
 | v2 da ko'rinadigan maydon | Holat | Hozirgi manba | Taklif (additive) |
 | --- | --- | --- | --- |
 | Kinoteatr nomi | ✅ | `GET /auth/me` → `staff[].cinemaName` | — |
-| Shahar ("Ташкент") | ❌ | `Cinema.address` (erkin matn) | `Cinema.city String?` + `GET /admin/cinemas/:id`, `GET /public/cinemas*` da `city` |
+| Shahar ("Ташкент") | ✅ KAN-37 | `Cinema.city` | `GET /admin/cinemas*`, profil va `GET /public/cinemas*` da `city` (bo'sh bo'lsa `null`) |
 | Zallar soni ("2 зала") | ✅ | `GET /admin/cinemas` → `_count.halls` | — |
-| Foydalanuvchi ismi ("Мухаммедияр") | 🟡 | `User.firstName/lastName` bazada bor, `GET /auth/me` qaytarmaydi | `SessionUser` ga `firstName?`, `lastName?` qo'shish |
+| Foydalanuvchi ismi ("Мухаммедияр") | ✅ KAN-37 | `GET /auth/me` va login → `firstName`, `lastName` | bo'sh bo'lsa `null` |
 | Rol nomi | ✅ | `/auth/me` → `role`, `staff[].role` | "Режим просмотра" select production'ga kirmaydi (KAN-29) |
 | Login sahifasi | ✅ | `POST /auth/login`, `POST /auth/logout` | — |
 
@@ -55,14 +68,14 @@ Frontend (PR #4, KAN-8/KAN-9) quyidagilarni allaqachon chaqiradi; `apps/api/src`
 | Maydon | Holat | Hozirgi manba | Taklif |
 | --- | --- | --- | --- |
 | Выручка сегодня | ✅ | `GET /admin/dashboard` → `stats.revenueTodayUzs` | — |
-| "↗ 18,2% к прошлому понедельнику" | ❌ | — | `comparison: { revenueTodayPrevUzs, ticketsSoldTodayPrev, deltaPct }` (o'tgan hafta shu kun) |
-| Продано билетов (bugun) + "+24" | 🟡 | `stats.ticketsActive` (jami aktiv), `kpis.soldSeats` (davr bo'yicha) | `stats.ticketsSoldToday` + `comparison` |
+| "↗ 18,2% к прошлому понедельнику" | ✅ KAN-37 | `GET /admin/dashboard` → `comparison` | `revenueTodayPrevUzs`, `ticketsSoldTodayPrev`, `deltaPct` (tushum), `ticketsDeltaPct`. Oldingi qiymat 0 bo'lsa foiz `null` |
+| Продано билетов (bugun) + "+24" | ✅ KAN-37 | `stats.ticketsSoldToday` + `comparison.ticketsDeltaPct` | `ticketsActive` saqlanadi |
 | Заполняемость | ✅ | `kpis.occupancyRate` | — |
 | Сеансы сегодня | ✅ | `stats.sessionsToday` | — |
 | Динамика выручки (Неделя/Месяц) | 🟡 | `revenueTrend` (7 kun), `kpiTrend` (`?range=daily|weekly`) | `?range=month` + `revenueTrendPrev[]` (oldingi davr seriyasi) |
 | "+12,8% за период" | ❌ | — | `revenueTrendSummary: { totalUzs, prevTotalUzs, deltaPct }` |
 | Сегодня на экране: film, zal, sotilgan/sig'im, vaqt | ✅ | `todaySessions[]` → `movieTitle, hallName, occupied, capacity, startsAt` | — |
-| Сегодня на экране: poster | ❌ | — | `todaySessions[].posterUrl` (Movie.posterUrl) |
+| Сегодня на экране: poster | ✅ KAN-37 | `todaySessions[].posterUrl` | yo'q bo'lsa `null` |
 | Последние заказы: №, film, xaridor, summa, status | ✅ | `recentOrders[]` | — |
 | Super Admin'da pul yashirin | ✅ | `mode: "platform"` → pul 0 | saqlanadi |
 
@@ -72,7 +85,7 @@ Frontend (PR #4, KAN-8/KAN-9) quyidagilarni allaqachon chaqiradi; `apps/api/src`
 | --- | --- | --- | --- |
 | Film, poster, davomiylik, yosh | ✅ | `GET /admin/sessions` → `movie.*` | — |
 | Vaqt, zal, narx, status | ✅ | `startsAt, hall.name, basePriceUzs, status` | — |
-| Заполняемость "20 / 48" | 🟡 | faqat `hall.capacity`, `_count.sessionSeats` | `GET /admin/sessions` elementiga `occupied`, `remaining` (dashboard'dagi `sessionOccupancy` qayta ishlatiladi) |
+| Заполняемость "20 / 48" | ✅ KAN-37 | `GET /admin/sessions` → `sold`, `remaining` | o'tiradigan zal: `sold` = SOLD, `remaining` = AVAILABLE; GA: sotilgan va sig'im minus band |
 | Filtr (status), qidiruv | 🟡 | client-side | ixtiyoriy `?status=&q=` |
 
 ### 1.4 Фильмы / Залы / Редактор зала
@@ -81,7 +94,7 @@ Frontend (PR #4, KAN-8/KAN-9) quyidagilarni allaqachon chaqiradi; `apps/api/src`
 | --- | --- | --- | --- |
 | Film: nom, janr, davomiylik, yosh, poster | ✅ | `GET /admin/movies` | — |
 | Zal: nom, sig'im | ✅ | `GET /admin/cinemas/:id/halls` | — |
-| Zal formati "3D · Dolby" | ❌ | — | `Hall.format String?` (masalan `"3D · Dolby"`), yo'q bo'lsa badge yashiriladi |
+| Zal formati "3D · Dolby" | ✅ KAN-37 | `Hall.format` | create/update qabul qiladi; `null` bo'lsa badge yashiriladi |
 | "N сеанса сегодня" (zal bo'yicha) | 🟡 | `GET /admin/sessions` dan client hisoblaydi | ixtiyoriy `halls[].sessionsToday` |
 | Редактор: joylarni bloklash | ✅ | `PUT .../halls/:hallId/layout` (`SeatType.BLOCKED`) | — |
 
@@ -92,7 +105,7 @@ Frontend (PR #4, KAN-8/KAN-9) quyidagilarni allaqachon chaqiradi; `apps/api/src`
 | Seans tanlash | ✅ | `GET /admin/sessions` | — |
 | Joy holati: sotilgan / band (hold) / bloklangan / bo'sh | ❌ (admin uchun) | `GET /public/sessions/:id` faqat `PUBLISHED` seans uchun, auth'siz | `GET /admin/sessions/:id/seats` → `[{ seatId, rowLabel, number, type, x, y, status: AVAILABLE|HELD|SOLD|BLOCKED, orderPublicNumber? }]`, cinema-scoped |
 | Seans darajasida joy bloklash | ❌ | `SessionSeatStatus.BLOCKED` bor, endpoint yo'q | `POST /admin/sessions/:id/seats/block`, `.../unblock` `{ seatIds[] }` (faqat AVAILABLE ↔ BLOCKED) |
-| "Забронировать" (kassa sotuvi) | ❌ | — | **Ochiq savol** — MVP da yo'q; frontend tugmani ko'rsatmaydi |
+| "Забронировать" (kassa sotuvi) | ❌ MVP | — | **Qaror 2026-09-25:** kassa bron tugmasi MVP da yo'q; frontend ko'rsatmaydi |
 
 ### 1.6 Заказы (`admin-orders.png`)
 
@@ -128,10 +141,10 @@ Frontend (PR #4, KAN-8/KAN-9) quyidagilarni allaqachon chaqiradi; `apps/api/src`
 
 | Maydon | Holat | Hozirgi manba | Taklif |
 | --- | --- | --- | --- |
-| Ism, email, rol, status | ❌ | `CinemaStaff` + `User` bor, endpoint yo'q | `GET /admin/cinemas/:id/staff` → `[{ userId, name, email, role: CINEMA_ADMIN|STAFF, createdAt }]` |
+| Ism, login, rol, status | ✅ KAN-37 | `GET /admin/staff` | `login`, `firstName`, `lastName`, `role`, `active`. Email bo'lsa qaytadi, bo'lmasa `null` |
 | Rol nomlari | — | `STAFF` = "Контроль входа", `CINEMA_ADMIN` = "Администратор" | faqat UI mapping |
-| "+ Пригласить" | ❌ | — | `POST /admin/cinemas/:id/staff` `{ email, name?, role }` (faqat CINEMA_ADMIN) + `PATCH/DELETE .../staff/:userId`. Taklif oqimi — **ochiq savol** |
-| Status "Активен" | ❌ | — | yo'q bo'lsa badge yashiriladi |
+| "+ Добавить сотрудника" | ✅ KAN-37 | `POST /admin/staff` | login + vaqtinchalik parol + rol. Email yuborilmaydi. Batafsil: [staff-accounts.md](./staff-accounts.md) |
+| Status "Активен" | ✅ KAN-37 | `active: boolean` | `PATCH /admin/staff/:id`. `false` bo'lsa login va admin kirishdan chiqadi |
 
 ---
 
@@ -144,8 +157,8 @@ Frontend (PR #4, KAN-8/KAN-9) quyidagilarni allaqachon chaqiradi; `apps/api/src`
 | KPI: Администраторов | 🟡 | `_count.staff` (STAFF ham kiradi), `billing/overview` → `admins` (max 3 email) | `GET /admin/platform/summary` → `{ cinemas, cinemasActive, halls, cinemaAdmins, invoicesUnpaid }` (bitta so'rov) |
 | KPI: Подписки к оплате | ✅ | `GET /admin/billing/invoices` (`DUE`/`OVERDUE`) | summary'da ham |
 | Кинотеатры: nom, zallar soni, status | ✅ | `GET /admin/cinemas` | — |
-| Кинотеатры: shahar | ❌ | — | `Cinema.city` (§1.1) |
-| Status "Ожидает подключения" | ❌ | `CinemaStatus = ACTIVE | DISABLED | LOCKED` | enum o'zgarmaydi; UI `profileComplete=false` ni "Ожидает подключения" deb ko'rsatadi (`GET /admin/cinemas` ga `profileComplete` bor) |
+| Кинотеатры: shahar | ✅ KAN-37 | `Cinema.city` | bo'sh bo'lsa `null` |
+| Status "Ожидает подключения" | ✅ qaror | `profileComplete=false` | **Qaror 2026-09-25:** yangi enum yo'q. UI `profileComplete=false` ni shu status deb ko'rsatadi |
 | Администраторы: ism, email, rol, status | 🟡 | `GET /admin/cinemas/:id/dossier`, `billing/overview.admins` | `GET /admin/platform/admins?cursor=` → `[{ userId, name, email, cinemaId, cinemaName, role }]` |
 | Биллинг: счёт №, kinoteatr, davr, summa, status | ✅ | `GET /admin/billing/invoices` | — |
 | Pul/GMV yashirin | ✅ | dashboard `mode: platform`, `GET /admin/orders` 403 | saqlanadi |
@@ -161,13 +174,13 @@ Route URL'lar o'zgarmaydi: `/`, `/movies/[id]`, `/sessions/[id]`, `/cinemas/[id]
 
 | Maydon | Holat | Hozirgi manba | Taklif |
 | --- | --- | --- | --- |
-| Kinoteatr + shahar ("Magic Cinema · Ташкент") | 🟡 | `GET /public/cinemas` (nom, address) | `city` (§1.1) |
+| Kinoteatr + shahar ("Magic Cinema · Ташкент") | ✅ KAN-37 | `GET /public/cinemas` → `city` | `null` bo'lsa shahar yashiriladi |
 | Sana chiplari (6 kun) | ✅ | `GET /public/catalog?from&to` → `days[]` | — |
 | Poster, nom, yosh, davomiylik | ✅ | `catalog.days[].movies[]` → `posterUrl, title, ageRating, durationMin` | — |
-| Reyting "★ 8.5" | 🟡 | `Movie.rating` bazada, `GET /public/movies/:id` qaytaradi; catalog qaytarmaydi | catalog movie'ga `rating: number \| null` |
-| Janr + janr chiplari | 🟡 | `Movie.genres[]` bazada, `/public/movies/:id` da bor; catalog'da yo'q | catalog movie'ga `genres: string[]` |
-| "от 75 000 сум" | 🟡 | `sessions[].basePriceUzs` (client min hisoblaydi) | catalog movie'ga `minPriceUzs` (VIP/discount hisobga olingan) |
-| "В центре внимания" (featured) | ❌ | — | birinchi bosqich: frontend eng yaqin seansli / eng ko'p seansli filmni oladi (qoida hujjatlanadi). Keyin: `Movie.isFeatured Boolean @default(false)` |
+| Reyting "★ 8.5" | ✅ KAN-37 | `GET /public/catalog` movie → `rating` | `null` bo'lsa yashiriladi |
+| Janr + janr chiplari | ✅ KAN-37 | catalog movie → `genres` | bo'sh massiv bo'lishi mumkin |
+| "от 75 000 сум" | ✅ KAN-37 | catalog movie → `minPriceUzs` | VIP va chegirma hisobga olinadi; narx yo'q bo'lsa `null` |
+| "В центре внимания" (featured) | ✅ KAN-37 | `featured` + `featuredSource` | `manual` yoki `nearest`, aks holda `null` |
 | "N фильма" soni | ✅ | `movies.length` | — |
 
 ### 3.2 Film sahifasi (`mini-detail.png`)
@@ -176,9 +189,9 @@ Route URL'lar o'zgarmaydi: `/`, `/movies/[id]`, `/sessions/[id]`, `/cinemas/[id]
 | --- | --- | --- | --- |
 | Reyting, janr, davomiylik, yosh, tavsif | ✅ | `GET /public/movies/:id` | — |
 | Kinoteatr kartasi (nom, rasm, manzil, xarita) | ✅ | `GET /public/cinemas/:id` | — |
-| Kinoteatr qisqa tavsifi ("Кинотеатр в парке Magic City") | 🟡 | `description` (uzun matn) | ixtiyoriy `Cinema.tagline String?` yoki `description` birinchi qatori |
+| Kinoteatr qisqa tavsifi ("Кинотеатр в парке Magic City") | ✅ KAN-37 | `Cinema.tagline` | `null` bo'lsa yashiriladi; `description` saqlanadi |
 | Seans vaqti, narx, "N мест" qoldi | ✅ | `movie.sessions[]` → `startsAt, basePriceUzs, remaining, capacity` | — |
-| "Зал 01 · Русский" (til) | 🟡 | `hallName` ✅, til `Movie.audioLanguages` (film bo'yicha, seans bo'yicha emas) | ixtiyoriy `Session.audioLanguage String?`; hozircha film tili ko'rsatiladi |
+| "Зал 01 · Русский" (til) | ✅ KAN-37 | `sessions[].audioLanguage` | `ru` \| `uz` \| `null`. Film `audioLanguages` o'chirilmaydi |
 
 ### 3.3 Места (`mini-seats.png`)
 
@@ -194,7 +207,7 @@ Route URL'lar o'zgarmaydi: `/`, `/movies/[id]`, `/sessions/[id]`, `/cinemas/[id]
 | Maydon | Holat | Hozirgi manba | Taklif |
 | --- | --- | --- | --- |
 | Rasmlar galereyasi | ✅ | `photos[]` → `url, sortOrder` | — |
-| Rasm izohi (caption) | ❌ | `CinemaPhoto` da yo'q | `CinemaPhoto.caption String? @db.VarChar(160)`; `POST/PATCH photos` va `photos[]` javobida `caption` |
+| Rasm izohi (caption) | ✅ KAN-37 | `CinemaPhoto.caption` | `POST .../photos` qabul qiladi; javobda `caption`, bo'sh bo'lsa `null` |
 | Manzil, xarita (Yandex/Google) | ✅ | `map` payload | — |
 | Follow tugmasi | ✅ | `/public/cinemas/:id/follow` | — |
 
@@ -205,7 +218,7 @@ Route URL'lar o'zgarmaydi: `/`, `/movies/[id]`, `/sessions/[id]`, `/cinemas/[id]
 | Film, kinoteatr, sana, vaqt, zal, joylar, soni, summa | ✅ | `GET /bookings/orders/:id` | — |
 | QR kod | ✅ | `tickets[].code` | — |
 | O'zi qaytarish (qisman ham) | ❌ | §0 `POST /orders/:id/refunds` | §0 |
-| Profil ismi | 🟡 | Telegram `initDataUnsafe` (client); `/auth/me` ism qaytarmaydi | E: `/auth/me` ga `firstName`, `lastName` |
+| Profil ismi | ✅ KAN-37 | `GET /auth/me` → `firstName`, `lastName` | `null` bo'lsa klient Telegram ismini o'zi ko'rsatishi mumkin |
 | Biletlar soni | ✅ | `GET /bookings/orders` | — |
 
 Bo'sh / yuklanish / xato holatlari (seans yo'q, to'lov xatosi, hold tugadi) API javoblariga bog'liq emas — saqlanadi.
@@ -261,15 +274,15 @@ model Session {
 | # | O'zgarish | Turi | Iste'molchi | Muhimlik |
 | --- | --- | --- | --- | --- |
 | A | Rahmat to'lov, ticket verify, refund (self + staff, qisman), `GET /admin/orders/:id` — mavjud kontrakt bo'yicha implementatsiya | yangi endpointlar (kontrakt bor) | KAN-29, KAN-30 | **P0** |
-| B | `GET /public/catalog` movie: `rating`, `genres`, `minPriceUzs` | javobga maydon | KAN-30 | P1 (arzon) |
-| C | `GET /admin/sessions`: `occupied`, `remaining` | javobga maydon | KAN-29 | P1 (arzon) |
-| D | `GET /admin/dashboard`: `todaySessions[].posterUrl`, `stats.ticketsSoldToday`, `comparison`, `revenueTrendPrev`, `range=month` | javobga maydon | KAN-29 | P1 |
-| E | `GET /auth/me`: `firstName`, `lastName` | javobga maydon | KAN-29, KAN-30 | P1 (arzon) |
+| B | `GET /public/catalog` movie: `rating`, `genres`, `minPriceUzs` | javobga maydon | KAN-30 | ✅ KAN-37 |
+| C | `GET /admin/sessions`: `sold`, `remaining` | javobga maydon | KAN-29 | ✅ KAN-37 |
+| D | `GET /admin/dashboard`: `todaySessions[].posterUrl`, `stats.ticketsSoldToday`, `comparison` (o'tgan haftaning shu kuni). `revenueTrendPrev` va `range=month` hali yo'q | javobga maydon | KAN-29 | 🟡 KAN-37 |
+| E | `GET /auth/me`: `firstName`, `lastName`, `mustChangePassword` | javobga maydon | KAN-29, KAN-30 | ✅ KAN-37 |
 | F | `GET /admin/sessions/:id/seats` (+ block/unblock) | yangi endpoint | KAN-29 (Карта зала) | P1 |
 | G | `GET /admin/tickets`, `GET /admin/refunds` | yangi endpoint | KAN-29 | P1 (A dan keyin) |
-| H | `GET/POST/PATCH/DELETE /admin/cinemas/:id/staff` | yangi endpoint | KAN-29 (Команда) | P2 |
+| H | `GET/POST/PATCH /admin/staff` (login + vaqtinchalik parol, email yo'q) | yangi endpoint | KAN-29 (Команда) | ✅ KAN-37 |
 | I | `GET /admin/platform/summary`, `GET /admin/platform/admins` | yangi endpoint | KAN-33 | P2 |
-| J | `Cinema.city`, `Hall.format`, `CinemaPhoto.caption` (+ javoblarda) | schema + maydon | KAN-29, KAN-30, KAN-33 | P2 |
+| J | `Cinema.city`, `Cinema.tagline`, `Hall.format`, `CinemaPhoto.caption` (+ javoblarda) | schema + maydon | KAN-29, KAN-30, KAN-33 | ✅ KAN-37 |
 | K | `GET /admin/reports/revenue.csv` | yangi endpoint | KAN-29 (Отчёты) | P3 |
 | L | Landing lead + `GET/PATCH /admin/leads` | yangi endpoint | KAN-33, KAN-34 | **KAN-31** |
 
@@ -299,3 +312,13 @@ Umumiy qoidalar (hamma yangi endpointlar uchun): mavjud `SessionGuard` + `RolesG
 6. **Обращения:** jadval ustunlari va statuslar dizaynda yo'q (faqat bo'sh holat). KAN-31 da `new / in_progress / done` — dizayner tasdiqlasinmi?
 7. **Landing rozilik checkbox:** serverga yuborilishi kerak (`name="consent"`) — KAN-34 ga qo'shish.
 8. **Til (Русский)** seans bo'yichami yoki film bo'yicha yetarlimi?
+
+## 9. Decisions 2026-09-25
+
+PM qarorlari. KAN-37 shu bo'yicha yozilgan.
+
+1. **Xodim akkauntlari.** Email infratuzilmasi yo'q. Kinoteatr administratori o'z kinoteatri uchun hisob yaratadi: login, vaqtinchalik parol, mavjud rol (`CINEMA_ADMIN` | `STAFF`). Parol hozirgi admin parollari kabi bcrypt. Javobda hash yo'q. Yaratilgan hisobda `mustChangePassword=true` (ustun defaulti `false`). Admin login javobi flagni qaytaradi. Flag `true` bo'lsa `POST /auth/change-password` flagni `false` qiladi. Shu vaqtgacha login, change-password, `GET /auth/me` va logout dan boshqa so'rovlar `403` `PASSWORD_CHANGE_REQUIRED`.
+2. **Kassa «Забронировать».** MVP da yo'q. Backend endpoint yozilmaydi, frontend tugmani ko'rsatmaydi.
+3. **Featured film.** Qo'lda: `Movie.isFeatured`. Bir kinoteatrda bittadan — `true` qilish shu tranzaksiyada qolgan filmlarni `false` qiladi. Public karta: featured filmda yaqinlashayotgan `PUBLISHED` seans bo'lsa `featuredSource: "manual"`, aks holda eng yaqin `PUBLISHED` seansli film `featuredSource: "nearest"`, aks holda `null` (karta yashiriladi).
+4. **Super Admin «Ожидает подключения».** Yangi `CinemaStatus` yo'q. Bu holat `profileComplete=false` degani. `GET /admin/cinemas` allaqachon `profileComplete` qaytaradi.
+5. **Audio til.** Seans bo'yicha, film bo'yicha emas: `Session.audioLanguage` nullable enum `ru | uz`, default yo'q. Belgilanmagan bo'lsa `null`.

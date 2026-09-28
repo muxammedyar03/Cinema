@@ -8,9 +8,11 @@ import {
 	NotFoundException,
 } from "@nestjs/common";
 import { canAccessCinema, canManageCinema } from "../auth/roles.guard";
+import { gaQtyBySessionIds } from "../booking/capacity";
 import { SessionPublishedNotifyService } from "../notify/session-published.notify";
 import { PrismaService } from "../prisma/prisma.service";
 import { RedisService } from "../redis/redis.service";
+import { type SeatStatusCount, sessionSeatCounts } from "./session-counts";
 
 const CATALOG_PREFIX = "catalog:";
 
@@ -29,7 +31,7 @@ export class SessionService {
 			throw new ForbiddenException("Cinema out of scope");
 		}
 		const cinemaIds = user.role === "SUPER_ADMIN" ? undefined : user.staff.map((s) => s.cinemaId);
-		return this.prisma.session.findMany({
+		const rows = await this.prisma.session.findMany({
 			where: {
 				...(cinemaId ? { cinemaId } : cinemaIds ? { cinemaId: { in: cinemaIds } } : {}),
 			},
@@ -37,10 +39,11 @@ export class SessionService {
 			include: {
 				movie: true,
 				cinema: { select: { id: true, name: true } },
-				hall: { select: { id: true, name: true, capacity: true } },
+				hall: { select: { id: true, name: true, capacity: true, format: true } },
 				_count: { select: { sessionSeats: true } },
 			},
 		});
+		return this.withSeatCounts(rows);
 	}
 
 	async get(user: SessionUser, id: string) {
@@ -97,6 +100,7 @@ export class SessionService {
 					startsAt: data.startsAt,
 					basePriceUzs: data.basePriceUzs,
 					discountPercent: data.discountPercent,
+					audioLanguage: data.audioLanguage ?? null,
 					pricing: {
 						create: [
 							{ seatType: "STANDARD", priceUzs: data.basePriceUzs },
@@ -127,15 +131,21 @@ export class SessionService {
 		if (!canManageCinema(user, session.cinemaId)) {
 			throw new ForbiddenException("Only cinema admin can update sessions");
 		}
-		if (session.status !== "DRAFT") {
+		const scheduling =
+			data.startsAt !== undefined ||
+			data.basePriceUzs !== undefined ||
+			data.discountPercent !== undefined ||
+			data.vipPriceUzs !== undefined;
+		if (scheduling && session.status !== "DRAFT") {
 			throw new BadRequestException("Only DRAFT sessions can be edited");
 		}
 		await this.prisma.session.update({
 			where: { id },
 			data: {
-				startsAt: data.startsAt,
-				basePriceUzs: data.basePriceUzs,
-				discountPercent: data.discountPercent,
+				...(data.startsAt !== undefined ? { startsAt: data.startsAt } : {}),
+				...(data.basePriceUzs !== undefined ? { basePriceUzs: data.basePriceUzs } : {}),
+				...(data.discountPercent !== undefined ? { discountPercent: data.discountPercent } : {}),
+				...(data.audioLanguage !== undefined ? { audioLanguage: data.audioLanguage } : {}),
 			},
 		});
 		if (data.basePriceUzs || data.vipPriceUzs) {
@@ -198,6 +208,60 @@ export class SessionService {
 		});
 		await this.invalidateCatalog();
 		return this.get(user, id);
+	}
+
+	private async withSeatCounts<T extends { id: string; hall: { capacity: number } }>(rows: T[]) {
+		const counts = await this.countsBySession(rows.map((row) => row.id));
+		return rows.map((row) => {
+			const count = counts.get(row.id);
+			const seats = sessionSeatCounts({
+				capacity: row.hall.capacity,
+				byStatus: count?.byStatus ?? {},
+				gaSold: count?.gaSold ?? 0,
+				gaOccupied: count?.gaOccupied ?? 0,
+			});
+			return { ...row, sold: seats.sold, remaining: seats.remaining };
+		});
+	}
+
+	private async countsBySession(ids: string[]) {
+		const map = new Map<
+			string,
+			{ byStatus: SeatStatusCount; gaSold: number; gaOccupied: number }
+		>();
+		if (ids.length === 0) return map;
+		const [groups, gaSoldRows, gaOccupied] = await Promise.all([
+			this.prisma.sessionSeat.groupBy({
+				by: ["sessionId", "status"],
+				where: { sessionId: { in: ids } },
+				_count: { _all: true },
+			}),
+			this.prisma.orderItem.findMany({
+				where: {
+					type: "GENERAL_ADMISSION",
+					order: { sessionId: { in: ids }, status: "PAID" },
+				},
+				select: { quantity: true, order: { select: { sessionId: true } } },
+			}),
+			gaQtyBySessionIds(this.prisma, ids),
+		]);
+		for (const row of groups) {
+			const current = map.get(row.sessionId) ?? { byStatus: {}, gaSold: 0, gaOccupied: 0 };
+			current.byStatus[row.status] = row._count._all;
+			map.set(row.sessionId, current);
+		}
+		for (const row of gaSoldRows) {
+			const id = row.order.sessionId;
+			const current = map.get(id) ?? { byStatus: {}, gaSold: 0, gaOccupied: 0 };
+			current.gaSold += row.quantity;
+			map.set(id, current);
+		}
+		for (const [id, qty] of gaOccupied) {
+			const current = map.get(id) ?? { byStatus: {}, gaSold: 0, gaOccupied: 0 };
+			current.gaOccupied = qty;
+			map.set(id, current);
+		}
+		return map;
 	}
 
 	async invalidateCatalog() {
