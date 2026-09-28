@@ -1,24 +1,33 @@
+import Image from "next/image";
 import Link from "next/link";
-import { formatDuration, posterGradient } from "../lib/format";
+import { formatMinutes } from "../lib/format";
 import type { CatalogMovie } from "../lib/types";
 
 export function MovieCard({ movie }: { movie: CatalogMovie }) {
-	const bg = movie.posterUrl ? `url(${movie.posterUrl})` : posterGradient(movie.id + movie.title);
+	const genre = movie.genres?.find((item) => item.trim());
+	const meta = [genre, movie.ageRating, !genre ? formatMinutes(movie.durationMin) : null]
+		.filter(Boolean)
+		.join(" · ");
+
 	return (
-		<Link href={`/movies/${movie.id}`} className="block">
-			<div
-				className="relative mb-2 h-44 overflow-hidden rounded-2xl border border-line bg-cover bg-center"
-				style={{ backgroundImage: bg }}
-			>
-				<span className="absolute bottom-2 left-2 rounded-full bg-black/55 px-[7px] py-[3px] text-[10px] font-bold text-white">
-					{movie.sessions.length} сеансов
-				</span>
+		<Link href={`/movies/${movie.id}`} className="poster-button">
+			<div className="poster">
+				{movie.posterUrl ? (
+					<Image
+						className="poster-img"
+						src={movie.posterUrl}
+						alt=""
+						fill
+						unoptimized
+						sizes="220px"
+					/>
+				) : (
+					<div className="poster-fallback" />
+				)}
+				{movie.ageRating ? <span className="poster-age">{movie.ageRating}</span> : null}
 			</div>
-			<p className="text-[13px] font-semibold leading-tight">{movie.title}</p>
-			<small className="text-[11px] text-muted">
-				{formatDuration(movie.durationMin)}
-				{movie.ageRating ? ` · ${movie.ageRating}` : ""}
-			</small>
+			<b>{movie.title}</b>
+			{meta ? <small>{meta}</small> : null}
 		</Link>
 	);
 }

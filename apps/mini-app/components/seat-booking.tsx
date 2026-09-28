@@ -1,12 +1,13 @@
 "use client";
 
+import { Button, Toast } from "@cinema/ui";
 import { Minus, Plus, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { clientApi, ensureTelegramSession } from "../lib/api";
-import { formatPrice } from "../lib/format";
+import { formatCountdown, formatPrice } from "../lib/format";
 import type { SessionSeat } from "../lib/types";
-import { cx, ui } from "../lib/ui";
+import { cx } from "../lib/ui";
 
 const SEAT = 30;
 const SCALE_MIN = 0.35;
@@ -23,14 +24,6 @@ type HoldResult = {
 };
 
 type View = { x: number; y: number; scale: number };
-
-function formatCountdown(ms: number) {
-	if (ms <= 0) return "00:00";
-	const total = Math.floor(ms / 1000);
-	const m = Math.floor(total / 60);
-	const s = total % 60;
-	return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-}
 
 function seatStatusLabel(seat: SessionSeat) {
 	if (seat.type === "BLOCKED") return "Закрыто";
@@ -139,11 +132,18 @@ export function SeatBooking({
 	}, [initialSeats]);
 
 	useEffect(() => {
-		resetFit();
-		const onResize = () => resetFit();
-		window.addEventListener("resize", onResize);
-		return () => window.removeEventListener("resize", onResize);
-	}, [resetFit]);
+		const el = viewportRef.current;
+		if (!el) return;
+		const fit = () => {
+			if (el.clientWidth < 40 || el.clientHeight < 40) return;
+			applyView(fitView(el.clientWidth, el.clientHeight, contentW, contentH));
+			setFitted(true);
+		};
+		fit();
+		const observer = new ResizeObserver(fit);
+		observer.observe(el);
+		return () => observer.disconnect();
+	}, [applyView, contentH, contentW]);
 
 	useEffect(() => {
 		const el = viewportRef.current;
@@ -168,7 +168,6 @@ export function SeatBooking({
 	}, [hold]);
 
 	const byId = useMemo(() => new Map(seats.map((s) => [s.id, s])), [seats]);
-	const tipSeat = tipId ? byId.get(tipId) : null;
 	const total = selected.reduce((sum, id) => sum + (byId.get(id)?.priceUzs ?? 0), 0);
 	const selectedLabels = selected
 		.map((id) => {
@@ -344,7 +343,6 @@ export function SeatBooking({
 				body: JSON.stringify({ sessionId, seatIds: selected }),
 			});
 			setHold(result);
-			router.push(`/orders/${result.orderId}`);
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : "Не удалось забронировать";
 			setError(
@@ -360,50 +358,30 @@ export function SeatBooking({
 	}
 
 	if (seats.length === 0) {
-		return <p className={ui.empty}>Для этого сеанса нет карты мест.</p>;
+		return <p className="note">Для этого сеанса нет карты мест.</p>;
 	}
 
 	return (
 		<>
-			<div className="mb-1.5 flex items-center justify-between gap-2 px-4">
-				<div className="flex items-center gap-1 rounded-full border border-line bg-elev/80 p-1">
-					<button
-						type="button"
-						className="grid size-8 place-items-center rounded-full text-ink"
-						aria-label="Уменьшить"
-						onClick={() => bumpZoom(1 / 1.25)}
-					>
-						<Minus className="size-4" strokeWidth={2} />
+			<div className="zoom-bar">
+				<div className="zoom-controls">
+					<button type="button" aria-label="Уменьшить" onClick={() => bumpZoom(1 / 1.25)}>
+						<Minus size={16} strokeWidth={2} />
 					</button>
-					<span className="min-w-[2.75rem] text-center font-mono text-[11px] text-muted tabular-nums">
-						{Math.round(view.scale * 100)}%
-					</span>
-					<button
-						type="button"
-						className="grid size-8 place-items-center rounded-full text-ink"
-						aria-label="Увеличить"
-						onClick={() => bumpZoom(1.25)}
-					>
-						<Plus className="size-4" strokeWidth={2} />
+					<span>{Math.round(view.scale * 100)}%</span>
+					<button type="button" aria-label="Увеличить" onClick={() => bumpZoom(1.25)}>
+						<Plus size={16} strokeWidth={2} />
 					</button>
-					<button
-						type="button"
-						className="grid size-8 place-items-center rounded-full text-muted"
-						aria-label="Вписать карту"
-						onClick={resetFit}
-					>
-						<RotateCcw className="size-3.5" strokeWidth={2} />
+					<button type="button" aria-label="Вписать карту" onClick={resetFit}>
+						<RotateCcw size={14} strokeWidth={2} />
 					</button>
 				</div>
-				<p className="text-[11px] text-faint">Два пальца — zoom · тяните карту</p>
+				<p className="zoom-hint">Два пальца — масштаб</p>
 			</div>
 
 			<div
 				ref={viewportRef}
-				className={cx(
-					"relative mx-3 h-[min(52vh,420px)] touch-none select-none overflow-hidden rounded-2xl border border-line bg-[#0c0c0c]",
-					fitted ? "cursor-grab active:cursor-grabbing" : "",
-				)}
+				className={cx("seat-viewport", fitted && "is-ready")}
 				onPointerDown={onPointerDown}
 				onPointerMove={onPointerMove}
 				onPointerUp={onPointerUp}
@@ -434,14 +412,12 @@ export function SeatBooking({
 								data-seat-id={seat.id}
 								disabled={Boolean(hold)}
 								className={cx(
-									"absolute grid place-items-center rounded-[8px] border-[1.5px] font-ui text-[9px] font-bold",
-									isFree && !isSelected && "border-[#8a857c] bg-[#1a1916] text-[#e8e2d6]",
-									isFree && type === "vip" && !isSelected && "border-orange/70 text-orange",
-									isTaken &&
-										"border-[#4a4a4a] bg-[#3a3a3a] text-[#9a9a9a] line-through decoration-[#6a6a6a]",
-									isBlocked && "border-[#2a2a2a] bg-[#151515] text-[#4a4a4a] opacity-70",
-									isSelected &&
-										"z-[2] border-orange bg-orange text-[#171310] shadow-[0_0_14px_rgba(227,166,60,0.55)]",
+									"seat",
+									isFree && !isSelected && "seat-free",
+									isFree && type === "vip" && !isSelected && "seat-vip",
+									isTaken && "seat-taken",
+									isBlocked && "seat-blocked",
+									isSelected && "seat-selected",
 								)}
 								style={{
 									left: seat.x,
@@ -453,26 +429,19 @@ export function SeatBooking({
 								}}
 								aria-label={`${seat.rowLabel}${seat.number}, ${seatStatusLabel(seat)}, ${formatPrice(seat.priceUzs)}`}
 							>
-								{seat.rowLabel}
 								{seat.number}
 								{showTip ? (
 									<span
-										className="pointer-events-none absolute -top-12 left-1/2 z-20 w-max max-w-[148px] rounded-lg border border-line bg-[#1e1c18] px-2.5 py-1.5 text-center text-[10px] font-semibold leading-snug text-ink shadow-lg normal-case no-underline"
-										style={{
-											transform: `translateX(-50%) rotate(${-seat.rotation}deg)`,
-										}}
+										className="seat-tip"
+										style={{ transform: `translateX(-50%) rotate(${-seat.rotation}deg)` }}
 									>
 										<span className="block">
 											{seat.rowLabel}
 											{seat.number}
 											{type === "vip" ? " · VIP" : ""}
 										</span>
-										<span className={cx("block", isFree ? "text-orange" : "text-muted")}>
-											{formatPrice(seat.priceUzs)}
-										</span>
-										<span className="block text-[9px] font-medium text-faint">
-											{seatStatusLabel(seat)}
-										</span>
+										<span className="block">{formatPrice(seat.priceUzs)}</span>
+										<span className="block">{seatStatusLabel(seat)}</span>
 									</span>
 								) : null}
 							</button>
@@ -481,62 +450,59 @@ export function SeatBooking({
 				</div>
 			</div>
 
-			<div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-4 pt-3 pb-1 text-[11px] text-muted">
-				<span className="inline-flex items-center gap-1.5">
-					<i className="inline-block size-3 rounded-[3px] border-[1.5px] border-[#8a857c] bg-[#1a1916]" />
+			<div className="legend">
+				<span>
+					<i />
 					Свободно ({availableCount})
 				</span>
-				<span className="inline-flex items-center gap-1.5">
-					<i className="inline-block size-3 rounded-[3px] border border-[#4a4a4a] bg-[#3a3a3a]" />
-					Занято ({takenCount})
-				</span>
-				<span className="inline-flex items-center gap-1.5">
-					<i className="inline-block size-3 rounded-[3px] border border-orange bg-orange" />
+				<span>
+					<i className="swatch-selected" />
 					Выбрано ({selected.length})
+				</span>
+				<span>
+					<i className="swatch-taken" />
+					Занято ({takenCount})
 				</span>
 			</div>
 
-			{tipSeat ? (
-				<p className="px-4 pt-1 text-center text-[12px] text-muted">
-					<b className="text-ink">
-						{tipSeat.rowLabel}
-						{tipSeat.number}
-					</b>
-					{" · "}
-					{seatStatusLabel(tipSeat)}
-					{" · "}
-					<span className="text-orange">{formatPrice(tipSeat.priceUzs)}</span>
-				</p>
-			) : null}
+			<div className="selection" aria-live="polite">
+				<p>Ваши места</p>
+				<strong>{selectedLabels || "Нажмите на свободное место"}</strong>
+			</div>
 
-			{error ? <p className="px-4 pb-1 text-center text-xs text-bad">{error}</p> : null}
 			{hold ? (
-				<p className="px-4 py-2 text-center font-mono text-xs text-orange tabular-nums">
-					Hold {formatCountdown(holdLeft)}
+				<p className="hold-line" aria-live="polite">
+					Бронь удерживается {formatCountdown(holdLeft)}
 				</p>
 			) : null}
+			<Toast message={error} open={Boolean(error)} />
 
-			<div className="fixed bottom-4 left-1/2 z-30 flex w-[min(448px,calc(100%-24px))] -translate-x-1/2 items-center justify-between gap-3 rounded-[20px] border border-line bg-elev/92 px-4 py-3.5 backdrop-blur-[16px]">
-				<div className="min-w-0 text-xs text-muted">
-					{selected.length > 0
-						? selectedLabels || `${selected.length} мест`
-						: `от ${formatPrice(basePriceUzs)}`}
-					<b className="mt-0.5 block truncate text-[17px] font-bold text-ink">
+			<div className="checkout-bar">
+				<div>
+					<small>
 						{hold
-							? formatPrice(hold.totalUzs)
+							? "Осталось времени"
+							: selected.length > 0
+								? `${selected.length} билетов · Итого`
+								: `от ${formatPrice(basePriceUzs)}`}
+					</small>
+					<b>
+						{hold
+							? formatCountdown(holdLeft)
 							: selected.length > 0
 								? formatPrice(total)
-								: `${remaining} мест осталось`}
+								: `${remaining} мест`}
 					</b>
 				</div>
-				<button
-					className={ui.cta}
-					type="button"
-					disabled={busy || selected.length === 0 || Boolean(hold)}
-					onClick={book}
-				>
-					{hold ? "Забронировано" : busy ? "…" : "Забронировать"}
-				</button>
+				{hold ? (
+					<Button type="button" onClick={() => router.push(`/orders/${hold.orderId}`)}>
+						Оплатить
+					</Button>
+				) : (
+					<Button type="button" disabled={busy || selected.length === 0} onClick={book}>
+						{busy ? "…" : "Продолжить"}
+					</Button>
+				)}
 			</div>
 		</>
 	);
