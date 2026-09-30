@@ -3,8 +3,8 @@ import Link from "next/link";
 import { Availability } from "../../../components/availability";
 import { GaBooking } from "../../../components/ga-booking";
 import { SeatBooking } from "../../../components/seat-booking";
-import { publicApi } from "../../../lib/api";
 import { formatSessionDate, formatTime } from "../../../lib/format";
+import { publicApi } from "../../../lib/server-api";
 import type { SessionDetail } from "../../../lib/types";
 
 export default async function SessionPage({ params }: { params: Promise<{ id: string }> }) {

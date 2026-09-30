@@ -1,5 +1,5 @@
 import { MovieScreen } from "../../../components/movie-screen";
-import { publicApi } from "../../../lib/api";
+import { publicApi } from "../../../lib/server-api";
 import type { MovieDetail, PublicCinemaProfile } from "../../../lib/types";
 
 export default async function MoviePage({ params }: { params: Promise<{ id: string }> }) {
