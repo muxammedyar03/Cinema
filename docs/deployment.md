@@ -13,11 +13,10 @@ API, PostgreSQL, Redis, worker, ixtiyoriy Telegram bot — VPS Docker Compose.
 - Telegram bot: `https://t.me/cinemago_nukus_bot`; polling VPS'da.
   Menyu tugmasi yangi Mini App'ga yo‘naltirilgan.
 - SSH: `root@109.199.98.232`, port 22; lokal kalit `~/.ssh/cinema_vps_ed25519`.
-- VPS katalog: `/opt/cinema`; production env: `/opt/cinema/deploy/.env.production` (600).
+- VPS Git checkout: `/var/www/cinema`; production env: `/var/www/cinema/deploy/.env.production` (600).
 - Admin: `admin@cinema.local`; parol lokal `~/.ssh/cinema-admin-credentials.env` (600),
   serverda `/root/cinema-admin.env` (600). Parol repository yoki chatda saqlanmaydi.
-- Vercel project ID'lari: `deploy/vercel-projects.json`. Deploy CLI orqali;
-  Git push avtomatik redeploy bilan hali bog‘lanmagan.
+- Vercel project ID'lari: `deploy/vercel-projects.json`. Frontend deploy hozircha CLI orqali.
 - Production baza yangi; mahalliy demo ma’lumotlar ko‘chirilmagan.
 
 API vaqtinchalik `sslip.io` DNS xizmatiga tayanadi; keyin shaxsiy API domeniga
@@ -71,6 +70,30 @@ unset ADMIN_EMAIL ADMIN_PASSWORD
 ```
 
 Bu script mavjud userni o‘zgartirmaydi. Parolni chat yoki shell command argument'iga yozmang.
+
+Mavjud superadmin parolini o‘zgartirish uchun VPSda `ssh cinemavps` orqali kiring va quyidagini bajaring. `read -s` parolni ekranda ko‘rsatmaydi; kamida 16 belgi ishlating:
+
+```bash
+cd /var/www/cinema
+export ADMIN_EMAIL=admin@cinema.local
+read -r -s -p 'Yangi superadmin paroli (16+ belgi): ' ADMIN_PASSWORD; printf '\n'
+export ADMIN_PASSWORD
+./deploy/compose.sh exec -T -e ADMIN_EMAIL -e ADMIN_PASSWORD api node scripts/reset-admin-password.cjs
+unset ADMIN_EMAIL ADMIN_PASSWORD
+```
+
+Script faqat `SUPER_ADMIN` rolidagi shu emailga tegishli hisobning parolini yangilaydi.
+
+## GitHub Actions: CI va VPS auto deploy
+
+`main` branchiga har push va pull requestda lint, typecheck, build, unit testlar hamda Prisma schema/migration tekshiruvlari ishlaydi. Faqat `main`ga push bo‘lganda barcha tekshiruvlar muvaffaqiyatli tugasa, `deploy-vps` job ishga tushadi. U aynan tekshirilgan commitni `/var/www/cinema`ga olib keladi, bazadan backup oladi, Docker image'ni quradi, migration va konteynerlarni yangilaydi, HTTPS healthni tekshiradi. Bir vaqtda ikkita VPS deploy ishlamaydi.
+
+GitHub repository **Settings → Secrets and variables → Actions** sahifasiga ikkita repository secret qo‘shing:
+
+- `CINEMA_VPS_SSH_KEY`: faqat CI uchun yaratilgan `~/.ssh/cinema_actions` private key faylining to‘liq mazmuni. Uni chatga, commitga yoki issue'ga qo‘ymang.
+- `CINEMA_VPS_KNOWN_HOSTS`: `~/.ssh/cinema_actions_known_hosts` faylining to‘liq mazmuni. Host fingerprintini VPS provayder konsolidagi fingerprint bilan solishtiring.
+
+CI public key serverdagi `/root/.ssh/authorized_keys`da majburiy `cinema-deploy-ssh` komandasi bilan cheklangan; shell login bera olmaydi. Production branchdagi commit GitHubga yuborilib `main`ga qo‘shilgandan so‘ng birinchi avtomatik deploy ishlaydi. Vercel loyihalari hali Git pushga ulanmagan: frontend o‘zgarishlari uchun CLI orqali deploy yoki Vercel Git integrationni alohida ulang.
 
 ## Vercel
 
