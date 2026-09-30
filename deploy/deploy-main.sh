@@ -12,10 +12,10 @@ test -f deploy/.env.production || { echo "Production env file is missing" >&2; e
 test -z "$(git status --porcelain)" || { echo "Checkout has uncommitted changes" >&2; exit 1; }
 
 git fetch origin main
-git merge-base --is-ancestor "$target_sha" origin/main || {
-	echo "Commit is not on origin/main" >&2
-	exit 1
-}
+if [[ "$(git rev-parse origin/main)" != "$target_sha" ]]; then
+	echo "A newer main commit exists; skipping superseded deployment $target_sha"
+	exit 0
+fi
 git switch -C main "$target_sha"
 git branch --set-upstream-to=origin/main main
 

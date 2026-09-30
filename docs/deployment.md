@@ -82,7 +82,7 @@ export ADMIN_PASSWORD
 unset ADMIN_EMAIL ADMIN_PASSWORD
 ```
 
-Script faqat `SUPER_ADMIN` rolidagi shu emailga tegishli hisobning parolini yangilaydi.
+Script faqat `SUPER_ADMIN` rolidagi shu emailga tegishli hisobning parolini yangilaydi va uning Redis'dagi eski sessiyalarini bekor qiladi.
 
 ## GitHub Actions: CI va VPS auto deploy
 
