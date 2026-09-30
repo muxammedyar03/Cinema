@@ -1,6 +1,6 @@
 import { AfishaBoard } from "../components/afisha-board";
 import { catalogRange } from "../lib/afisha";
-import { publicApi } from "../lib/api";
+import { publicApi } from "../lib/server-api";
 import type { CatalogResponse, PublicCinema } from "../lib/types";
 
 export default async function HomePage({

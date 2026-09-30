@@ -5,8 +5,8 @@ import { CinemaMapWidget } from "../../../components/cinema-map";
 import { FollowButton } from "../../../components/follow-button";
 import { InstagramCard } from "../../../components/instagram-card";
 import { PhotoGallery } from "../../../components/photo-gallery";
-import { publicApi } from "../../../lib/api";
 import { instagramHandle, telegramHref } from "../../../lib/maps";
+import { publicApi } from "../../../lib/server-api";
 import type { PublicCinemaProfile } from "../../../lib/types";
 
 export default async function CinemaPage({ params }: { params: Promise<{ id: string }> }) {

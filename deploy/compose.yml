@@ -1,0 +1,118 @@
+name: cinema
+
+x-runtime: &runtime
+  image: cinema-backend:${IMAGE_TAG:-local}
+  build:
+    context: ..
+    dockerfile: deploy/Dockerfile
+  env_file: .env.production
+  environment: &environment
+    NODE_ENV: production
+    API_PORT: 3001
+    DATABASE_URL: postgresql://cinema:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@postgres:5432/cinema
+    REDIS_URL: redis://redis:6379
+  restart: unless-stopped
+  init: true
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "3"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: cinema
+      POSTGRES_DB: cinema
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U cinema -d cinema"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    command: [redis-server, --appendonly, "yes", --maxmemory-policy, noeviction]
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    <<: *runtime
+    restart: "no"
+    command: [pnpm, exec, prisma, migrate, deploy]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    <<: *runtime
+    volumes:
+      - uploads:/app/apps/api/uploads
+    # Only local host access; public HTTPS goes through Caddy.
+    ports:
+      - "127.0.0.1:3001:3001"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3001/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  worker:
+    <<: *runtime
+    working_dir: /app/apps/worker
+    command: [node, dist/index.js]
+    depends_on:
+      api:
+        condition: service_healthy
+
+  bot:
+    <<: *runtime
+    profiles: [bot]
+    working_dir: /app/apps/bot
+    environment:
+      <<: *environment
+      BOT_MODE: polling
+    command: [node, dist/index.js]
+    depends_on:
+      api:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?Set API_DOMAIN to the API HTTPS hostname}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:
+  uploads:
+  caddy_data:
+  caddy_config:
