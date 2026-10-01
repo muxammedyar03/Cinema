@@ -12,11 +12,11 @@ API, PostgreSQL, Redis, worker, ixtiyoriy Telegram bot — VPS Docker Compose.
 - Mini App: `https://cinema-mini.vercel.app`
 - Telegram bot: `https://t.me/cinemago_nukus_bot`; polling VPS'da.
   Menyu tugmasi yangi Mini App'ga yo‘naltirilgan.
-- SSH: `root@109.199.98.232`, port 22; lokal kalit `~/.ssh/cinema_vps_ed25519`.
+- SSH: `ssh cinemavps` (`root@109.199.98.232`, port 22); lokal kalit `~/.ssh/cinema`.
 - VPS Git checkout: `/var/www/cinema`; production env: `/var/www/cinema/deploy/.env.production` (600).
 - Admin: `admin@cinema.local`; parol lokal `~/.ssh/cinema-admin-credentials.env` (600),
   serverda `/root/cinema-admin.env` (600). Parol repository yoki chatda saqlanmaydi.
-- Vercel project ID'lari: `deploy/vercel-projects.json`. Frontend deploy hozircha CLI orqali.
+- Vercel project ID'lari: `deploy/vercel-projects.json`. Har ikkala project `muxammedyar03/Cinema` GitHub repository'sining `main` branchiga ulangan; push frontendlarni avtomatik deploy qiladi.
 - Production baza yangi; mahalliy demo ma’lumotlar ko‘chirilmagan.
 
 API vaqtinchalik `sslip.io` DNS xizmatiga tayanadi; keyin shaxsiy API domeniga
@@ -82,7 +82,7 @@ export ADMIN_PASSWORD
 unset ADMIN_EMAIL ADMIN_PASSWORD
 ```
 
-Script faqat `SUPER_ADMIN` rolidagi shu emailga tegishli hisobning parolini yangilaydi va uning Redis'dagi eski sessiyalarini bekor qiladi.
+Script faqat `SUPER_ADMIN` rolidagi shu emailga tegishli hisobning parolini yangilaydi va uning Redis'dagi eski sessiyalarini bekor qiladi. Login sahifasida `admin@cinema.local` va `read -s` bosqichida kiritilgan oddiy paroldan foydalaning: bcrypt xeshini login maydoniga kiritmang. Script parolni o‘zi xeshlaydi.
 
 ## GitHub Actions: CI va VPS auto deploy
 
@@ -93,7 +93,7 @@ GitHub repository **Settings → Secrets and variables → Actions** sahifasiga 
 - `CINEMA_VPS_SSH_KEY`: faqat CI uchun yaratilgan `~/.ssh/cinema_actions` private key faylining to‘liq mazmuni. Uni chatga, commitga yoki issue'ga qo‘ymang.
 - `CINEMA_VPS_KNOWN_HOSTS`: `~/.ssh/cinema_actions_known_hosts` faylining to‘liq mazmuni. Host fingerprintini VPS provayder konsolidagi fingerprint bilan solishtiring.
 
-CI public key serverdagi `/root/.ssh/authorized_keys`da majburiy `cinema-deploy-ssh` komandasi bilan cheklangan; shell login bera olmaydi. Production branchdagi commit GitHubga yuborilib `main`ga qo‘shilgandan so‘ng birinchi avtomatik deploy ishlaydi. Vercel loyihalari hali Git pushga ulanmagan: frontend o‘zgarishlari uchun CLI orqali deploy yoki Vercel Git integrationni alohida ulang.
+CI public key serverdagi `/root/.ssh/authorized_keys`da majburiy `cinema-deploy-ssh` komandasi bilan cheklangan; shell login bera olmaydi. `main`ga har push CI muvaffaqiyatli tugagach VPSga deploy bo‘ladi. Admin va Mini App Vercel projectlari ham shu GitHub repository'siga ulangan; ular `main` pushlarida o‘z build va deploylarini bajaradi.
 
 ## Vercel
 
