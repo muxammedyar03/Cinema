@@ -9,8 +9,8 @@ import { cx, ui } from "../../lib/ui";
 function LoginForm() {
 	const router = useRouter();
 	const params = useSearchParams();
-	const [email, setEmail] = useState("super@cinema.local");
-	const [password, setPassword] = useState("ChangeMe123!");
+	const [email, setEmail] = useState("");
+	const [password, setPassword] = useState("");
 	const [error, setError] = useState("");
 
 	async function onSubmit(e: React.FormEvent) {
@@ -49,6 +49,7 @@ function LoginForm() {
 						id="email"
 						className={ui.input}
 						type="email"
+						autoComplete="username"
 						value={email}
 						onChange={(e) => setEmail(e.target.value)}
 						required
@@ -62,6 +63,7 @@ function LoginForm() {
 						id="password"
 						className={ui.input}
 						type="password"
+						autoComplete="current-password"
 						value={password}
 						onChange={(e) => setPassword(e.target.value)}
 						required
