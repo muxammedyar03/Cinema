@@ -235,9 +235,7 @@ describe("recordSuccessfulTelegramPayment", () => {
 		const second: OrderRow = {
 			...seatedOrder(),
 			id: "ord_2",
-			items: [
-				{ id: "item_c", type: "SEAT", quantity: 1, seatId: "seat_c", unitPriceUzs: 45_000 },
-			],
+			items: [{ id: "item_c", type: "SEAT", quantity: 1, seatId: "seat_c", unitPriceUzs: 45_000 }],
 			tickets: [],
 		};
 		store.orders.set("ord_1", first);
