@@ -19,3 +19,4 @@ apps/api/uploads
 deploy/backups/
 !deploy/.env.production.example
 !docs/deployment.md
+.tsconfig.buildinfo
