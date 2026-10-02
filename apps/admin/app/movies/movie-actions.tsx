@@ -50,7 +50,7 @@ export function MovieRowActions({
 		<div className="grid grid-cols-3 items-center gap-2 w-full">
 			<EditMovieButton movieId={movie.id} />
 			<button
-				className={cx(ui.btn, ui.btnSm, ui.btnGhost) + `${archived ? " !px-1" : " "}`}
+				className={cx(ui.btn, ui.btnSm, ui.btnGhost, archived && "!px-1")}
 				type="button"
 				disabled={busy}
 				onClick={archiveOrRestore}

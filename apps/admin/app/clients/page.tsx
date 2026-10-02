@@ -20,7 +20,12 @@ export default async function ClientsPage() {
 			<PageHeader
 				title="Кинотеатры"
 				description="Клиенты платформы: профиль, залы, сотрудники и подписка"
-				actions={<NewClientAction title="Новый кинотеатр" description="Добавьте новый кинотеатр на платформу." />}
+				actions={
+					<NewClientAction
+						title="Новый кинотеатр"
+						description="Добавьте новый кинотеатр на платформу."
+					/>
+				}
 			/>
 			<PlatformMetrics state={summary} />
 			{cinemas.status === "ready" ? (

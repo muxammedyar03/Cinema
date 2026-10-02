@@ -52,7 +52,11 @@ export function CreateAction({
 		);
 	}
 	return (
-		<button type="button" className={className + " !py-3 !px-4 !rounded-lg"} onClick={onClick}>
+		<button
+			type="button"
+			className={buttonClassName({ size, className: "!py-3 !px-4 !rounded-lg" })}
+			onClick={onClick}
+		>
 			{content}
 		</button>
 	);
