@@ -4,6 +4,7 @@ import { Badge, EmptyState } from "@cinema/ui";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { ClickCheckout } from "../../../components/click-checkout";
 import { LinkButton } from "../../../components/link-button";
 import { RahmatCheckout } from "../../../components/rahmat-checkout";
 import { SelfRefundPanel } from "../../../components/self-refund";
@@ -58,6 +59,7 @@ export function OrderHoldView({ orderId }: { orderId: string }) {
 	const [order, setOrder] = useState<OrderDetail | null>(null);
 	const [error, setError] = useState("");
 	const [now, setNow] = useState(() => Date.now());
+	const [clickEnabled, setClickEnabled] = useState(false);
 
 	const load = useCallback(async () => {
 		const data = await clientApi<OrderDetail>(`/bookings/orders/${orderId}`);
@@ -70,7 +72,10 @@ export function OrderHoldView({ orderId }: { orderId: string }) {
 		void (async () => {
 			try {
 				await ensureTelegramSession();
-				if (!cancelled) await load();
+				if (cancelled) return;
+				await load();
+				const options = await clientApi<{ click?: boolean }>("/payments/options").catch(() => null);
+				if (!cancelled) setClickEnabled(options?.click === true);
 			} catch (err) {
 				if (!cancelled) setError(errorText(err, "Заказ не найден"));
 			}
@@ -171,6 +176,10 @@ export function OrderHoldView({ orderId }: { orderId: string }) {
 					)}
 				</div>
 			</article>
+
+			{pending && !expired && clickEnabled ? (
+				<ClickCheckout orderId={order.id} onPaid={load} />
+			) : null}
 
 			{pending && !expired ? (
 				<RahmatCheckout

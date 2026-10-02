@@ -31,6 +31,11 @@ export const botConfig = {
 	miniAppUrl: publicMiniAppUrl(),
 	botUsername: process.env.TELEGRAM_BOT_USERNAME ?? "",
 	miniAppShortName: process.env.TELEGRAM_MINI_APP_SHORT_NAME ?? "app",
+	/** Cinema API base URL. Inside Docker this is http://api:3001. */
+	apiUrl: () => (process.env.API_URL ?? "http://localhost:3001").replace(/\/$/, ""),
+	internalSecret: () => process.env.INTERNAL_API_SECRET?.trim() ?? "",
+	/** BotFather → Payments → Click TEST. Empty hides Click in the Mini App (API reads the same var). */
+	paymentProviderToken: () => process.env.TELEGRAM_PAYMENT_PROVIDER_TOKEN?.trim() ?? "",
 };
 
 export function miniAppDeepLink(startParam?: string): string {

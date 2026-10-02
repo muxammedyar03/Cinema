@@ -89,6 +89,7 @@ services:
     environment:
       <<: *environment
       BOT_MODE: polling
+      API_URL: http://api:3001
     command: [node, dist/index.js]
     depends_on:
       api:

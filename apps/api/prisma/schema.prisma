@@ -389,15 +389,17 @@ model OrderItem {
 }
 
 model Payment {
-  id                String          @id @default(cuid())
-  orderId           String
-  provider          PaymentProvider
-  providerPaymentId String?
-  amountUzs         Int
-  status            PaymentStatus   @default(PENDING)
-  rawPayload        Json?
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  id                       String          @id @default(cuid())
+  orderId                  String
+  provider                 PaymentProvider
+  providerPaymentId        String?
+  telegramPaymentChargeId  String?         @unique
+  providerPaymentChargeId  String?
+  amountUzs                Int
+  status                   PaymentStatus   @default(PENDING)
+  rawPayload               Json?
+  createdAt                DateTime        @default(now())
+  updatedAt                DateTime        @updatedAt
 
   order   Order    @relation(fields: [orderId], references: [id])
   refunds Refund[]

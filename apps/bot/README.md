@@ -1,7 +1,7 @@
 # `@cinema/bot` — Telegram Bot (KAN-24)
 
-Russian `/start` welcome, reply + inline menus (Mini App, afisha, tickets, help).  
-No booking/payment flows.
+Russian `/start` welcome, reply + inline menus (Mini App, afisha, tickets, help).
+Click payments: `pre_checkout_query` and `successful_payment` are confirmed through the Cinema API.
 
 ## Env
 
@@ -12,6 +12,9 @@ Copy `.env.example` → `.env` (or export vars). Required:
 | `TELEGRAM_BOT_TOKEN` | BotFather token |
 | `TELEGRAM_MINI_APP_URL` or `TELEGRAM_BOT_USERNAME` | Mini App open buttons |
 | `BOT_MODE` | `polling` (local) or `webhook` |
+| `API_URL` | Cinema API used to confirm Click payments (default `http://localhost:3001`) |
+| `INTERNAL_API_SECRET` | Same secret as the API. Required for `pre_checkout_query` / `successful_payment` |
+| `TELEGRAM_PAYMENT_PROVIDER_TOKEN` | BotFather Click TEST token. Same value as the API; empty hides Click |
 
 ## Local (long-polling)
 

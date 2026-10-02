@@ -4,6 +4,12 @@ import { createBot } from "./bot.js";
 import { botConfig } from "./config.js";
 
 async function main() {
+	if (!botConfig.paymentProviderToken()) {
+		console.warn("TELEGRAM_PAYMENT_PROVIDER_TOKEN is unset. Click payments stay hidden.");
+	}
+	if (!botConfig.internalSecret()) {
+		console.warn("INTERNAL_API_SECRET is unset. Click pre-checkout cannot be confirmed.");
+	}
 	const bot = createBot();
 
 	if (botConfig.mode === "webhook") {
