@@ -348,7 +348,7 @@ export function SeatBooking({
 			setError(
 				msg.includes("unavailable") || msg.includes("race") || msg.includes("Conflict")
 					? "Место уже занято. Выберите другое."
-					: "Не удалось забронировать",
+					: "Не удалось забронировать" + (err instanceof Error ? err.message : error),
 			);
 			setSelected([]);
 			router.refresh();
