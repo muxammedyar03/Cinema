@@ -87,6 +87,20 @@ export class AuthService {
 			return this.telegramDevStub();
 		}
 
+		const sessionUser = await this.sessionFromInitData(initData);
+		const sid = await this.createSession(sessionUser.id);
+		return { sid, user: sessionUser, stub: false };
+	}
+
+	/** Verify Mini App initData and return the matching user. Does not open a cookie session. */
+	async sessionFromInitData(initData: string | undefined): Promise<SessionUser> {
+		const botToken = this.config.get<string>("TELEGRAM_BOT_TOKEN")?.trim() ?? "";
+		if (!botToken) {
+			throw new ServiceUnavailableException({
+				code: "BOT_TOKEN_UNCONFIGURED",
+				message: "TELEGRAM_BOT_TOKEN is not configured",
+			});
+		}
 		if (!initData?.trim()) {
 			throw new UnauthorizedException({
 				code: "INIT_DATA_REQUIRED",
@@ -124,9 +138,7 @@ export class AuthService {
 				staffOf: { include: { cinema: { select: { name: true, status: true } } } },
 			},
 		});
-		const sessionUser = toSessionUser(user);
-		const sid = await this.createSession(user.id);
-		return { sid, user: sessionUser, stub: false };
+		return toSessionUser(user);
 	}
 
 	/** Local-only escape hatch when token unset and AUTH_TELEGRAM_STUB=1 / non-production. */

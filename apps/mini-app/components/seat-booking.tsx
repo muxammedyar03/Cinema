@@ -5,6 +5,7 @@ import { Minus, Plus, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { clientApi, ensureTelegramSession } from "../lib/api";
+import { errorText } from "../lib/api-error";
 import { formatCountdown, formatPrice } from "../lib/format";
 import type { SessionSeat } from "../lib/types";
 import { cx } from "../lib/ui";
@@ -344,11 +345,11 @@ export function SeatBooking({
 			});
 			setHold(result);
 		} catch (err) {
-			const msg = err instanceof Error ? err.message : "Не удалось забронировать";
+			const msg = errorText(err, "Не удалось забронировать");
 			setError(
 				msg.includes("unavailable") || msg.includes("race") || msg.includes("Conflict")
 					? "Место уже занято. Выберите другое."
-					: "Не удалось забронировать" + (err instanceof Error ? err.message : error),
+					: msg,
 			);
 			setSelected([]);
 			router.refresh();

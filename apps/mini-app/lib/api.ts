@@ -6,11 +6,13 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 export { ApiError };
 
 export async function clientApi<T>(path: string, init?: RequestInit): Promise<T> {
+	const initData = getTelegramInitData();
 	const res = await fetch(`${API}${path}`, {
 		...init,
 		credentials: "include",
 		headers: {
 			"Content-Type": "application/json",
+			...(initData ? { "X-Telegram-Init-Data": initData } : {}),
 			...init?.headers,
 		},
 	});

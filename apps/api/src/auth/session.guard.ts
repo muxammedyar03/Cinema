@@ -16,14 +16,20 @@ export class SessionGuard implements CanActivate {
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const req = context.switchToHttp().getRequest<Request & { user?: unknown }>();
 		const sid = req.cookies?.[SESSION_COOKIE] as string | undefined;
-		if (!sid) {
-			throw new UnauthorizedException("Not authenticated");
+		if (sid) {
+			const user = await this.auth.getSessionUser(sid);
+			if (user) {
+				req.user = user;
+				return true;
+			}
 		}
-		const user = await this.auth.getSessionUser(sid);
-		if (!user) {
-			throw new UnauthorizedException("Session expired");
+
+		const initData = req.header("x-telegram-init-data")?.trim();
+		if (initData) {
+			req.user = await this.auth.sessionFromInitData(initData);
+			return true;
 		}
-		req.user = user;
-		return true;
+
+		throw new UnauthorizedException("Not authenticated");
 	}
 }

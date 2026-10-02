@@ -43,8 +43,9 @@ export function verifyTelegramInitData(
 	if (!hash) {
 		throw new TelegramInitDataError("INIT_DATA_INVALID");
 	}
+	// HMAC covers every field except hash. `signature` is included;
+	// only the third-party Ed25519 check excludes it.
 	params.delete("hash");
-	params.delete("signature");
 
 	const dataCheckString = [...params.entries()]
 		.sort(([a], [b]) => a.localeCompare(b))

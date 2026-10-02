@@ -18,6 +18,17 @@ describe("verifyTelegramInitData", () => {
 		assert.equal(parsed.username, "ada");
 	});
 
+	it("accepts a payload whose hash includes the signature field", () => {
+		const now = Math.floor(Date.now() / 1000);
+		const user = JSON.stringify({ id: 7, first_name: "Bea" });
+		const initData = signTelegramInitData(
+			{ auth_date: String(now), user, signature: "ed25519-signature" },
+			TOKEN,
+		);
+		const parsed = verifyTelegramInitData(initData, TOKEN, 86_400, now);
+		assert.equal(parsed.id, 7);
+	});
+
 	it("rejects tampered hash", () => {
 		const now = Math.floor(Date.now() / 1000);
 		const user = JSON.stringify({ id: 1, first_name: "X" });
