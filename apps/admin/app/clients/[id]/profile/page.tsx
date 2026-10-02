@@ -1,6 +1,6 @@
 import type { CinemaAdminProfile } from "@cinema/types";
 import { redirect } from "next/navigation";
-import { CinemaProfileWizard } from "../../../../components/cinema-profile-wizard";
+import { CinemaProfileScreen } from "../../../../components/cinema-profile-screen";
 import { Shell } from "../../../../components/shell";
 import { roleOf } from "../../../../lib/rbac";
 import { getMe, serverApi } from "../../../../lib/server-api";
@@ -14,14 +14,7 @@ export default async function ClientProfilePage({ params }: { params: Promise<{ 
 
 	return (
 		<Shell user={user}>
-			<CinemaProfileWizard
-				user={user}
-				cinemaId={id}
-				initial={profile}
-				backHref={`/clients/${id}`}
-				backLabel="К досье"
-				doneHref={`/clients/${id}`}
-			/>
+			<CinemaProfileScreen cinemaId={id} initial={profile} />
 		</Shell>
 	);
 }

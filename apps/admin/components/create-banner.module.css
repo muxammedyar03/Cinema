@@ -1,0 +1,50 @@
+.banner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	width: 100%;
+	padding: 16px 18px;
+	border: 1px solid color-mix(in srgb, var(--primary) 10%, var(--line));
+	border-radius: 12px;
+	background: linear-gradient(
+		90deg,
+		color-mix(in srgb, var(--primary) 10%, var(--panel) 60%),
+		var(--panel)
+	);
+	box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 5%, transparent);
+}
+
+.copy {
+	min-width: 0;
+}
+
+.title {
+	margin: 0;
+	color: var(--primary-dark);
+	font-size: 16px;
+	font-weight: 700;
+	line-height: 1.25;
+}
+
+.text {
+	margin: 4px 0 0;
+	color: var(--primary-dark);
+	font-size: 13px;
+	line-height: 1.35;
+}
+
+.action {
+	flex-shrink: 0;
+}
+
+@media (max-width: 720px) {
+	.banner {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.action {
+		align-self: flex-start;
+	}
+}

@@ -5,9 +5,9 @@ import { cx, ui } from "../../lib/ui";
 
 const filters = [
 	{ id: "ALL", label: "Все" },
-	{ id: "PUBLISHED", label: "PUBLISHED" },
-	{ id: "DRAFT", label: "DRAFT" },
-	{ id: "CANCELLED", label: "CANCELLED" },
+	{ id: "PUBLISHED", label: "Опубликован" },
+	{ id: "DRAFT", label: "Черновик" },
+	{ id: "CANCELLED", label: "Отменён" },
 ] as const;
 
 export function SessionFilters({ active }: { active: string }) {

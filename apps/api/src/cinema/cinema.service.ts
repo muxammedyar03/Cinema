@@ -2,6 +2,7 @@ import type { SessionUser } from "@cinema/types";
 import type {
 	CreateCinemaInput,
 	CreateClientInput,
+	CreateStaffInput,
 	UpdateCinemaInput,
 	UpdateClientInput,
 } from "@cinema/validation";
@@ -327,6 +328,54 @@ export class CinemaService {
 			}
 
 			return cinema;
+		});
+	}
+
+	async addStaff(cinemaId: string, data: CreateStaffInput) {
+		await this.ensureExists(cinemaId);
+		const email = data.email.toLowerCase();
+		const existing = await this.prisma.user.findUnique({ where: { email } });
+		if (existing?.role === "SUPER_ADMIN") {
+			throw new ConflictException("Суперадминистратора нельзя добавить в кинотеатр");
+		}
+		if (existing) {
+			const member = await this.prisma.cinemaStaff.findUnique({
+				where: { cinemaId_userId: { cinemaId, userId: existing.id } },
+			});
+			if (member) throw new ConflictException("Этот сотрудник уже есть в кинотеатре");
+			const staff = await this.prisma.cinemaStaff.create({
+				data: { cinemaId, userId: existing.id, role: data.role },
+			});
+			return {
+				staffId: staff.id,
+				role: staff.role,
+				email,
+				firstName: existing.firstName,
+				lastName: existing.lastName,
+			};
+		}
+
+		const passwordHash = await hash(data.password, 10);
+		return this.prisma.$transaction(async (tx) => {
+			const user = await tx.user.create({
+				data: {
+					email,
+					passwordHash,
+					firstName: data.firstName,
+					lastName: data.lastName,
+					role: "CUSTOMER",
+				},
+			});
+			const staff = await tx.cinemaStaff.create({
+				data: { cinemaId, userId: user.id, role: data.role },
+			});
+			return {
+				staffId: staff.id,
+				role: staff.role,
+				email,
+				firstName: user.firstName,
+				lastName: user.lastName,
+			};
 		});
 	}
 

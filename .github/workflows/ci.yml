@@ -10,6 +10,10 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -117,3 +121,31 @@ jobs:
           --to-schema-datamodel prisma/schema.prisma
           --shadow-database-url "$SHADOW_DATABASE_URL"
           --exit-code
+
+  deploy-vps:
+    name: deploy-vps
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [lint-typecheck-build, test, prisma]
+    runs-on: ubuntu-latest
+    concurrency:
+      group: cinema-production-vps
+      cancel-in-progress: false
+    steps:
+      - name: Checkout deployment script
+        uses: actions/checkout@v4
+
+      - name: Configure pinned SSH host and deploy key
+        env:
+          VPS_SSH_KEY: ${{ secrets.CINEMA_VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.CINEMA_VPS_KNOWN_HOSTS }}
+        run: |
+          test -n "$VPS_SSH_KEY" && test -n "$VPS_KNOWN_HOSTS"
+          install -d -m 700 ~/.ssh
+          umask 077
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/cinema_deploy
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Deploy tested commit
+        run: |
+          ssh -i ~/.ssh/cinema_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            root@109.199.98.232 'deploy ${{ github.sha }}'

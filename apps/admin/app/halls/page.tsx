@@ -1,3 +1,4 @@
+import { PageHeader } from "@cinema/ui";
 import { LayoutTemplate } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -34,16 +35,11 @@ export default async function HallsPage() {
 
 	return (
 		<Shell user={user}>
-			<div className={ui.row}>
-				<div>
-					<h1 className={ui.pageTitle}>Залы</h1>
-					<p className={ui.sub}>
-						{cinemaName}
-						{cinema.address ? ` · ${cinema.address}` : ""} · {cinema.timezone}
-					</p>
-				</div>
-				{canManage ? <AddHallButton cinemaId={cinema.id} /> : null}
-			</div>
+			<PageHeader
+				title="Залы"
+				description={[cinemaName, cinema.address, cinema.timezone].filter(Boolean).join(" · ")}
+				actions={canManage ? <AddHallButton cinemaId={cinema.id} /> : null}
+			/>
 
 			{cinema.halls.length === 0 ? (
 				<div className={ui.card}>

@@ -1,6 +1,6 @@
 # KAN-37 request transcript
 
-Captured against a local API (`http://127.0.0.1:3001`) and Postgres after migration `20260928120000_design_v2_kan37`. Seeded cinema admin: `admin@magic.local`. The passwords here are local fixtures.
+Captured against a local API (`http://127.0.0.1:3001`) and Postgres after migration `20261002150000_design_v2_kan37`. Seeded cinema admin: `admin@magic.local`. The passwords here are local fixtures.
 
 ## Admin login
 

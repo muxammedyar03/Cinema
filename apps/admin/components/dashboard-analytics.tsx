@@ -30,7 +30,7 @@ export type KpiTrendPoint = {
 	holdsResolved: number;
 };
 
-const statCls = "rounded-2xl border border-line bg-white/[0.04] px-[18px] py-4";
+const statCls = "rounded-2xl border border-line bg-white px-[18px] py-4 text-[#19253d]";
 
 export function money(n: number) {
 	return `${n.toLocaleString("ru-RU")} сум`;

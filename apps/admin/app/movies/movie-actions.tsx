@@ -1,11 +1,11 @@
 "use client";
 
-import { Archive, ArchiveRestore, Pencil, Trash2 } from "lucide-react";
-import Link from "next/link";
+import { Archive, ArchiveRestore, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { clientApi } from "../../lib/api";
 import { cx, ui } from "../../lib/ui";
+import { EditMovieButton } from "./new-movie-action";
 
 export function MovieRowActions({
 	movie,
@@ -47,13 +47,10 @@ export function MovieRowActions({
 	}
 
 	return (
-		<div className="flex flex-wrap items-center justify-end gap-2">
-			<Link className={cx(ui.btn, ui.btnSm, ui.btnGhost)} href={`/movies/${movie.id}/edit`}>
-				<Pencil className="size-3.5" strokeWidth={2} />
-				Изменить
-			</Link>
+		<div className="grid grid-cols-3 items-center gap-2 w-full">
+			<EditMovieButton movieId={movie.id} />
 			<button
-				className={cx(ui.btn, ui.btnSm, ui.btnGhost)}
+				className={cx(ui.btn, ui.btnSm, ui.btnGhost, archived && "!px-1")}
 				type="button"
 				disabled={busy}
 				onClick={archiveOrRestore}
@@ -63,7 +60,7 @@ export function MovieRowActions({
 				) : (
 					<Archive className="size-3.5" strokeWidth={2} />
 				)}
-				{archived ? "Восстановить" : "Архив"}
+				<span className="min-w-0 truncate">{archived ? "Восстановить" : "Архив"}</span>
 			</button>
 			<button
 				className={cx(ui.btn, ui.btnSm, ui.btnWarn)}

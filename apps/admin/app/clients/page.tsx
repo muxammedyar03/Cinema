@@ -1,67 +1,42 @@
 import { Card, EmptyState, PageHeader } from "@cinema/ui";
 import { redirect } from "next/navigation";
-import { AdminsTable } from "../../components/platform/admins-table";
-import { ButtonLink } from "../../components/platform/button-link";
-import styles from "../../components/platform/platform.module.css";
+import { CinemaDirectory } from "../../components/platform/cinema-directory";
+import { NewClientAction } from "../../components/platform/new-client-action";
+import { PlatformMetrics } from "../../components/platform/platform-metrics";
 import { Shell } from "../../components/shell";
-import { loadPlatformAdmins } from "../../lib/platform/load";
+import { loadCinemas, loadPlatformSummary } from "../../lib/platform/load";
 import { roleOf } from "../../lib/rbac";
 import { getMe } from "../../lib/server-api";
 
-export default async function ClientsPage({
-	searchParams,
-}: {
-	searchParams: Promise<{ cursor?: string }>;
-}) {
+export default async function ClientsPage() {
 	const user = await getMe();
 	if (!user) redirect("/login");
 	if (roleOf(user) !== "super") redirect("/halls");
 
-	const { cursor } = await searchParams;
-	const admins = await loadPlatformAdmins(cursor);
+	const [summary, cinemas] = await Promise.all([loadPlatformSummary(), loadCinemas()]);
 
 	return (
 		<Shell user={user}>
 			<PageHeader
-				title="Администраторы"
-				description="Пользователи кинотеатров и их роли"
+				title="Кинотеатры"
+				description="Клиенты платформы: профиль, залы, сотрудники и подписка"
 				actions={
-					<>
-						<ButtonLink href="/cinemas" variant="secondary">
-							Кинотеатры
-						</ButtonLink>
-						<ButtonLink href="/clients/new">Кинотеатр</ButtonLink>
-					</>
+					<NewClientAction
+						title="Новый кинотеатр"
+						description="Добавьте новый кинотеатр на платформу."
+					/>
 				}
 			/>
-			{admins.status === "ready" ? (
-				<>
-					<AdminsTable rows={admins.data.items} />
-					{admins.data.nextCursor ? (
-						<div className={styles.more}>
-							<ButtonLink
-								href={`/clients?cursor=${encodeURIComponent(admins.data.nextCursor)}`}
-								variant="secondary"
-							>
-								Дальше
-							</ButtonLink>
-						</div>
-					) : null}
-				</>
+			<PlatformMetrics state={summary} />
+			{cinemas.status === "ready" ? (
+				<CinemaDirectory rows={cinemas.data} />
 			) : (
 				<Card>
 					<EmptyState
-						title={
-							admins.status === "unavailable"
-								? "Список администраторов недоступен"
-								: "Не удалось загрузить администраторов"
-						}
+						title="Не удалось загрузить кинотеатры"
 						description={
-							admins.status === "unavailable"
-								? "Команда появится после подключения списка администраторов. Пока здесь пусто — без примерных имён и чисел. Карточки кинотеатров по-прежнему открываются в разделе «Кинотеатры»."
-								: admins.message
+							cinemas.status === "error" ? cinemas.message : "Список временно недоступен."
 						}
-						action={<ButtonLink href="/cinemas">К кинотеатрам</ButtonLink>}
 					/>
 				</Card>
 			)}

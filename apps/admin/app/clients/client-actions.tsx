@@ -60,7 +60,7 @@ export function ClientActions({
 		setErr(null);
 		try {
 			await clientApi(`/admin/cinemas/${clientId}`, { method: "DELETE" });
-			router.push("/cinemas");
+			router.push("/clients");
 			router.refresh();
 		} catch (error) {
 			setErr(errorText(error, "Не удалось удалить"));

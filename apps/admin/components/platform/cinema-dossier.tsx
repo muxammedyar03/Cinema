@@ -1,13 +1,4 @@
-import {
-	Badge,
-	Card,
-	CardBody,
-	CardHeader,
-	DataTable,
-	EmptyState,
-	MetricCard,
-	PageHeader,
-} from "@cinema/ui";
+import { Badge, Card, CardBody, CardHeader, DataTable, MetricCard, PageHeader } from "@cinema/ui";
 import { ClientActions } from "../../app/clients/client-actions";
 import { MarkInvoicePaidButton } from "../../app/clients/mark-paid-button";
 import {
@@ -18,13 +9,12 @@ import {
 	formatPeriod,
 	invoiceStatusLabel,
 	invoiceStatusTone,
-	personName,
 	profileMissingLabel,
-	roleLabel,
 } from "../../lib/platform/format";
 import type { CinemaDossier, ProfileBanner } from "../../lib/platform/types";
 import { ButtonLink } from "./button-link";
 import styles from "./platform.module.css";
+import { UsersBoard } from "./users-board";
 
 export function CinemaDossierView({
 	dossier,
@@ -76,7 +66,7 @@ export function CinemaDossierView({
 				<MetricCard label="Открытые счета" value={dossier.stats.openInvoices} />
 			</div>
 
-			<div className={styles.split}>
+			<div className={styles.block}>
 				<Card>
 					<CardHeader
 						title="Подписка и комиссия"
@@ -127,30 +117,10 @@ export function CinemaDossierView({
 						</div>
 					</div>
 				</Card>
+			</div>
 
-				<Card>
-					<CardHeader title="Администраторы" />
-					{dossier.admins.length === 0 ? (
-						<EmptyState
-							title="Администраторов пока нет"
-							description="Первый администратор создаётся вместе с кинотеатром."
-						/>
-					) : (
-						<DataTable
-							columns={[
-								{ id: "email", header: "Электронная почта", cell: (row) => row.email ?? "—" },
-								{
-									id: "name",
-									header: "Имя",
-									cell: (row) => personName(row.firstName, row.lastName),
-								},
-								{ id: "role", header: "Роль", cell: (row) => roleLabel(row.role) },
-							]}
-							rows={dossier.admins}
-							getRowKey={(row) => row.staffId}
-						/>
-					)}
-				</Card>
+			<div className={styles.block}>
+				<UsersBoard cinemaId={dossier.id} people={dossier.admins} />
 			</div>
 
 			<Card>

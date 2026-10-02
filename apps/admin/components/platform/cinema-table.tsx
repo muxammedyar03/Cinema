@@ -16,7 +16,7 @@ export function CinemaTable({ rows }: { rows: CinemaListItem[] }) {
 			id: "name",
 			header: "Кинотеатр",
 			cell: (row) => (
-				<Link className={styles.nameLink} href={`/cinemas/${row.id}`}>
+				<Link className={styles.nameLink} href={`/clients/${row.id}`}>
 					{row.name}
 				</Link>
 			),

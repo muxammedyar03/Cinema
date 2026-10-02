@@ -1,0 +1,14 @@
+{
+	"admin": {
+		"projectId": "prj_RJjlE9eOp9xEJ52M7IrksXVcBrUf",
+		"orgId": "team_ZwMrZUnK0bOxJNAWGsgiV79t",
+		"projectName": "cinema-admin",
+		"rootDirectory": "apps/admin"
+	},
+	"mini-app": {
+		"projectId": "prj_3wskj8WGceGwbBEXmmyeE5azJtFu",
+		"orgId": "team_ZwMrZUnK0bOxJNAWGsgiV79t",
+		"projectName": "cinema-mini",
+		"rootDirectory": "apps/mini-app"
+	}
+}

@@ -1,6 +1,6 @@
 import type { CinemaAdminProfile } from "@cinema/types";
 import { redirect } from "next/navigation";
-import { CinemaProfileWizard } from "../../components/cinema-profile-wizard";
+import { CinemaProfileScreen } from "../../components/cinema-profile-screen";
 import { Shell } from "../../components/shell";
 import { primaryCinemaId, roleOf } from "../../lib/rbac";
 import { getMe, serverApi } from "../../lib/server-api";
@@ -15,14 +15,7 @@ export default async function CinemaAdminProfilePage() {
 
 	return (
 		<Shell user={user}>
-			<CinemaProfileWizard
-				user={user}
-				cinemaId={cinemaId}
-				initial={profile}
-				backHref="/halls"
-				backLabel="К залам"
-				doneHref="/halls"
-			/>
+			<CinemaProfileScreen cinemaId={cinemaId} initial={profile} />
 		</Shell>
 	);
 }

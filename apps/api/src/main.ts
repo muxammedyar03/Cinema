@@ -26,7 +26,12 @@ async function bootstrap() {
 		.split(",")
 		.map((s) => s.trim());
 
+	app.enableShutdownHooks();
 	app.use(cookieParser());
+	app.use((_req: Request, res: Response, next: NextFunction) => {
+		res.setHeader("Cache-Control", "private, no-store");
+		next();
+	});
 	app.use((req: Request, res: Response, next: NextFunction) => {
 		if (req.method === "PUT" && /\/photos\/put\//.test(req.originalUrl)) {
 			void readRequestBody(req)

@@ -283,7 +283,7 @@ model Session {
 
 ## KAN-37 — Design v2 backend (applied)
 
-Migration `20260928120000_design_v2_kan37`. Additive only. Details: [design-v2-gaps.md](./design-v2-gaps.md) §9, [staff-accounts.md](./staff-accounts.md).
+Migration `20261002150000_design_v2_kan37`. Additive only. Does not alter `Payment` (those columns are `20261002143000_telegram_payment_charges`). Details: [design-v2-gaps.md](./design-v2-gaps.md) §9, [staff-accounts.md](./staff-accounts.md).
 
 ```prisma
 enum AudioLanguage {
