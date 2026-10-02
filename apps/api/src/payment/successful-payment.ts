@@ -61,6 +61,16 @@ export async function recoverDuplicateCharge(
 	return null;
 }
 
+/**
+ * Click's test terminal sends provider_payment_charge_id "-1" for every payment.
+ * That value cannot be the unique provider key or only the first test payment can be stored.
+ */
+export function providerPaymentKey(providerChargeId: string, telegramChargeId: string): string {
+	const charge = providerChargeId.trim();
+	if (charge === "" || charge === "-1" || charge === "0") return telegramChargeId;
+	return charge;
+}
+
 function assertChargeIds(input: SuccessfulPaymentInput): void {
 	const charge = readInvoicePayload(input.telegramPaymentChargeId);
 	const providerCharge = readInvoicePayload(input.providerPaymentChargeId);
@@ -174,7 +184,10 @@ export async function recordSuccessfulTelegramPayment(
 		data: {
 			orderId: order.id,
 			provider: "CLICK",
-			providerPaymentId: input.providerPaymentChargeId,
+			providerPaymentId: providerPaymentKey(
+				input.providerPaymentChargeId,
+				input.telegramPaymentChargeId,
+			),
 			providerPaymentChargeId: input.providerPaymentChargeId,
 			telegramPaymentChargeId: input.telegramPaymentChargeId,
 			amountUzs: order.totalUzs,

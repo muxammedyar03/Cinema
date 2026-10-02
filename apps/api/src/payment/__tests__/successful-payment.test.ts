@@ -58,7 +58,14 @@ function memory() {
 				payments.find((row) => row.telegramPaymentChargeId === where.telegramPaymentChargeId) ??
 				null,
 			create: async ({ data }: { data: Omit<PaymentRow, "id"> }) => {
-				if (payments.some((row) => row.telegramPaymentChargeId === data.telegramPaymentChargeId)) {
+				const duplicate = payments.some(
+					(row) =>
+						row.telegramPaymentChargeId === data.telegramPaymentChargeId ||
+						(row.provider === data.provider &&
+							row.providerPaymentId !== null &&
+							row.providerPaymentId === data.providerPaymentId),
+				);
+				if (duplicate) {
 					const err = new Error("Unique constraint") as Error & { code: string };
 					err.code = "P2002";
 					throw err;
@@ -220,6 +227,51 @@ describe("recordSuccessfulTelegramPayment", () => {
 		assert.equal(store.orders.get("ord_1")?.tickets.length, 2);
 		assert.equal(store.payments.length, 1);
 		assert.equal(n, 2);
+	});
+
+	it("issues tickets for a second Click test payment that reuses provider charge id -1", async () => {
+		const store = memory();
+		const first = seatedOrder();
+		const second: OrderRow = {
+			...seatedOrder(),
+			id: "ord_2",
+			items: [
+				{ id: "item_c", type: "SEAT", quantity: 1, seatId: "seat_c", unitPriceUzs: 45_000 },
+			],
+			tickets: [],
+		};
+		store.orders.set("ord_1", first);
+		store.orders.set("ord_2", second);
+		store.seats.push(
+			{ id: "ss_a", orderItemId: "item_a", status: "HELD", holdExpiresAt: new Date() },
+			{ id: "ss_b", orderItemId: "item_b", status: "HELD", holdExpiresAt: new Date() },
+			{ id: "ss_c", orderItemId: "item_c", status: "HELD", holdExpiresAt: new Date() },
+		);
+		let n = 0;
+		const codes = () => `CODE${++n}`;
+		const testCharge = {
+			...paidInput,
+			providerPaymentChargeId: "-1",
+		};
+
+		await recordSuccessfulTelegramPayment(store.db, testCharge, NOW, codes);
+		const secondResult = await recordSuccessfulTelegramPayment(
+			store.db,
+			{
+				...testCharge,
+				orderId: "ord_2",
+				telegramPaymentChargeId: "tg_charge_2",
+			},
+			NOW,
+			codes,
+		);
+
+		assert.equal(secondResult.alreadyProcessed, false);
+		assert.equal(store.orders.get("ord_2")?.status, "PAID");
+		assert.equal(store.orders.get("ord_2")?.tickets.length, 1);
+		assert.equal(store.payments[0]?.providerPaymentId, "tg_charge_1");
+		assert.equal(store.payments[0]?.providerPaymentChargeId, "-1");
+		assert.equal(store.payments[1]?.providerPaymentId, "tg_charge_2");
 	});
 
 	it("recovers a unique-constraint race as the same paid order", async () => {
