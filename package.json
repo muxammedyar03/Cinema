@@ -4,6 +4,12 @@
 	"packageManager": "pnpm@9.15.0",
 	"scripts": {
 		"dev": "turbo run dev --parallel",
+		"dev:admin": "turbo run dev --parallel --filter=@cinema/admin --filter=@cinema/api",
+		"dev:web": "turbo run dev --parallel --filter=@cinema/mini-app",
+		"dev:web2": "turbo run dev --parallel --filter=@cinema/mini-app --filter=@cinema/api",
+		"prisma:generate": "pnpm --filter @cinema/api prisma:generate",
+		"prisma:migrate": "pnpm --filter @cinema/api prisma:migrate",
+		"prisma:studio": "pnpm --filter @cinema/api prisma:studio",
 		"build": "turbo run build",
 		"typecheck": "turbo run typecheck",
 		"test:unit": "turbo run test:unit --filter=@cinema/api --filter=@cinema/worker --filter=@cinema/bot --filter=@cinema/queue-contracts --filter=@cinema/admin --filter=@cinema/mini-app",

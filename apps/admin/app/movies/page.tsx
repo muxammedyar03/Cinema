@@ -31,11 +31,11 @@ export default async function MoviesPage() {
 					Фильмов пока нет
 				</div>
 			) : (
-				<div className="grid grid-cols-2 gap-5 sm:grid-cols-3 xl:grid-cols-4">
+				<div className="grid grid-cols-2 gap-5 lg:grid-cols-3 xl:grid-cols-4">
 					{movies.map((movie) => (
 						<article
 							key={movie.id}
-							className={`overflow-hidden rounded-xl border border-line bg-white ${movie.status === "ARCHIVED" ? "opacity-60" : ""}`}
+							className={`overflow-hidden min-w-72 rounded-xl border border-line bg-white ${movie.status === "ARCHIVED" ? "opacity-60" : ""}`}
 						>
 							{movie.posterUrl ? (
 								<Image

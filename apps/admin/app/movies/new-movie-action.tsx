@@ -407,7 +407,7 @@ export function EditMovieButton({ movieId }: { movieId: string }) {
 	return (
 		<>
 			<button
-				className={cx(ui.btn, ui.btnSm, ui.btnGhost, "!px-3")}
+				className={cx(ui.btn, ui.btnSm, ui.btnGhost)}
 				type="button"
 				onClick={() => setOpen(true)}
 			>

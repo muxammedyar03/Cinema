@@ -47,10 +47,10 @@ export function MovieRowActions({
 	}
 
 	return (
-		<div className="grid grid-cols-3 items-center gap-2 w-full">
+		<div className="flex justify-between flex-wrap items-center gap-2 w-full">
 			<EditMovieButton movieId={movie.id} />
 			<button
-				className={cx(ui.btn, ui.btnSm, ui.btnGhost, archived && "!px-1")}
+				className={cx(ui.btn, ui.btnSm, ui.btnGhost)}
 				type="button"
 				disabled={busy}
 				onClick={archiveOrRestore}
