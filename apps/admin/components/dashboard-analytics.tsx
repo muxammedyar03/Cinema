@@ -30,7 +30,7 @@ export type KpiTrendPoint = {
 	holdsResolved: number;
 };
 
-const statCls = "rounded-2xl border border-line bg-white px-[18px] py-4 text-[#19253d]";
+const statCls = "rounded-2xl border border-line bg-card dark:text-foreground px-[18px] py-4";
 
 export function money(n: number) {
 	return `${n.toLocaleString("ru-RU")} сум`;
@@ -62,8 +62,8 @@ function KpiCard({ value, label, hint }: { value: string; label: string; hint: s
 	return (
 		<div className={statCls}>
 			<b className="mb-1 block text-[26px] font-bold">{value}</b>
-			<span className="block text-xs text-muted">{label}</span>
-			<span className="mt-1 block text-[11px] text-faint">{hint}</span>
+			<span className="block text-xs text-muted-foreground">{label}</span>
+			<span className="mt-1 block text-[11px] text-muted-foreground">{hint}</span>
 		</div>
 	);
 }

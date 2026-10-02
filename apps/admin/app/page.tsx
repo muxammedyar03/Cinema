@@ -106,8 +106,8 @@ function statusClass(status: string) {
 	return cx(ui.badge, ui.badgeMuted);
 }
 
-const statCls = "rounded-2xl border border-line bg-white px-[18px] py-4 text-[#19253d]";
-const cashPill = "rounded-[14px] border border-line bg-white px-3 py-2 text-[#19253d]";
+const statCls = "rounded-2xl border border-line bg-card dark:text-foreground px-[18px] py-4";
+const cashPill = "rounded-[14px] border border-line bg-card dark:text-foreground px-3 py-2";
 const quickLink =
 	"inline-flex h-8 items-center rounded-full border border-line px-3 text-xs font-semibold text-muted hover:border-orange/40 hover:text-orange";
 
