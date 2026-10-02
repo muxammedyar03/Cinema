@@ -1,8 +1,8 @@
 import type { SessionUser } from "@cinema/types";
 import type {
+	AddCinemaStaffInput,
 	CreateCinemaInput,
 	CreateClientInput,
-	CreateStaffInput,
 	UpdateCinemaInput,
 	UpdateClientInput,
 } from "@cinema/validation";
@@ -331,7 +331,7 @@ export class CinemaService {
 		});
 	}
 
-	async addStaff(cinemaId: string, data: CreateStaffInput) {
+	async addStaff(cinemaId: string, data: AddCinemaStaffInput) {
 		await this.ensureExists(cinemaId);
 		const email = data.email.toLowerCase();
 		const existing = await this.prisma.user.findUnique({ where: { email } });

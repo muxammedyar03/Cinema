@@ -1,9 +1,9 @@
 import type { SessionUser } from "@cinema/types";
 import {
+	addCinemaStaffSchema,
 	cinemaStatusSchema,
 	createCinemaSchema,
 	createClientSchema,
-	createStaffSchema,
 	updateCinemaSchema,
 	updateClientSchema,
 } from "@cinema/validation";
@@ -38,7 +38,7 @@ export class CinemaController {
 	@Post(":id/staff")
 	@Roles("SUPER_ADMIN")
 	addStaff(@Param("id") id: string, @Body() body: unknown) {
-		return this.cinemas.addStaff(id, createStaffSchema.parse(body));
+		return this.cinemas.addStaff(id, addCinemaStaffSchema.parse(body));
 	}
 
 	@Get(":id/dossier")

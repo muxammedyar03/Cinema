@@ -53,7 +53,8 @@ export const createClientSchema = z.object({
 	}),
 });
 
-export const createStaffSchema = z.object({
+/** Super Admin adds an email account on `POST /admin/cinemas/:id/staff`. */
+export const addCinemaStaffSchema = z.object({
 	email: z.string().email(),
 	password: z.string().min(8).max(128),
 	firstName: z.string().min(1).max(80).optional(),
@@ -111,7 +112,7 @@ export type CreateCinemaInput = z.infer<typeof createCinemaSchema>;
 export type UpdateCinemaInput = z.infer<typeof updateCinemaSchema>;
 export type CreateClientInput = z.infer<typeof createClientSchema>;
 export type UpdateClientInput = z.infer<typeof updateClientSchema>;
-export type CreateStaffInput = z.infer<typeof createStaffSchema>;
+export type AddCinemaStaffInput = z.infer<typeof addCinemaStaffSchema>;
 export type CreateHallInput = z.infer<typeof createHallSchema>;
 export type UpdateHallInput = z.infer<typeof updateHallSchema>;
 
