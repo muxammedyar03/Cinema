@@ -28,7 +28,8 @@ export function interpretPreCheckoutResponse(
 	status: number,
 	body: unknown,
 ): { ok: true } | { ok: false; errorMessage: string } {
-	if (status === 200 && body && typeof body === "object") {
+	// Nest POST handlers respond with 201. Any 2xx with { ok: true } is a pass.
+	if (status >= 200 && status < 300 && body && typeof body === "object") {
 		const record = body as { ok?: unknown; errorMessage?: unknown };
 		if (record.ok === true) return { ok: true };
 		if (

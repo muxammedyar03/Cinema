@@ -22,6 +22,7 @@ export function registerPaymentHandlers(
 				await ctx.answerPreCheckoutQuery(true);
 				return;
 			}
+			console.error("pre_checkout rejected", result.errorMessage);
 			await ctx.answerPreCheckoutQuery(false, {
 				error_message: result.errorMessage || CHECKOUT_FALLBACK,
 			});

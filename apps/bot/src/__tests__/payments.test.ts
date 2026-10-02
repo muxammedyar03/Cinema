@@ -5,6 +5,7 @@ import { interpretPreCheckoutResponse } from "../internal-api.js";
 describe("interpretPreCheckoutResponse", () => {
 	it("passes an ok result through", () => {
 		assert.deepEqual(interpretPreCheckoutResponse(200, { ok: true }), { ok: true });
+		assert.deepEqual(interpretPreCheckoutResponse(201, { ok: true }), { ok: true });
 	});
 
 	it("keeps the API Russian error so Telegram can show it", () => {
