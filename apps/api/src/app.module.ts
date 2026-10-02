@@ -11,6 +11,7 @@ import { HealthController } from "./health/health.controller";
 import { MovieModule } from "./movie/movie.module";
 import { NotifyModule } from "./notify/notify.module";
 import { OrderModule } from "./order/order.module";
+import { PaymentModule } from "./payment/payment.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { PublicModule } from "./public/public.module";
 import { QueueModule } from "./queue/queue.module";
@@ -37,6 +38,7 @@ import { SessionModule } from "./session/session.module";
 		DashboardModule,
 		BookingModule,
 		OrderModule,
+		PaymentModule,
 		BillingModule,
 	],
 	controllers: [HealthController],

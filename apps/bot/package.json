@@ -7,7 +7,7 @@
 		"build": "tsc -p tsconfig.json",
 		"typecheck": "tsc -p tsconfig.json --noEmit",
 		"start": "node dist/index.js",
-		"test:unit": "tsx --test src/__tests__/config.test.ts",
+		"test:unit": "tsx --test src/__tests__/*.test.ts",
 		"start:polling": "BOT_MODE=polling tsx src/index.ts",
 		"start:webhook": "BOT_MODE=webhook tsx src/index.ts"
 	},

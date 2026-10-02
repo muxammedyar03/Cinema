@@ -40,7 +40,12 @@ Serverga kodni yuborishda `.env*`, `.git`, `node_modules`, `.next`, `dist`,
 5. `CORS_ORIGINS` ga faqat ikkita haqiqiy Vercel production origin'ini vergul bilan yozing.
 6. Telegram tokenini faqat server env fayliga kiriting. Botni shu token bilan ishlayotgan
    boshqa polling process bor-yo‘qligini tekshirgach yoqing.
-7. 80/443 inbound ochiq bo‘lsin. 5432/6379 tashqi portlari kerak emas.
+7. Click test to‘lov uchun `deploy/.env.production` ga ikkita qiymat qo‘shing (repo ga yozmang):
+   `TELEGRAM_PAYMENT_PROVIDER_TOKEN` — BotFather → Payments → Click TEST tokeni.
+   `INTERNAL_API_SECRET` — `openssl rand -hex 32`. Shu fayl API va bot konteynerlariga
+   bir xil yuklanadi. Bot API ga `http://api:3001` orqali murojaat qiladi (`API_URL`).
+   Token bo‘sh bo‘lsa Mini App dagi «Оплатить через Click» tugmasi chiqmaydi. Rahmat oqimi o‘zgarmaydi.
+8. 80/443 inbound ochiq bo‘lsin. 5432/6379 tashqi portlari kerak emas.
 
 ```bash
 ./deploy/compose.sh build api
