@@ -13,7 +13,7 @@
 		"prisma:studio": "prisma studio",
 		"prisma:seed": "tsx prisma/seed.ts",
 		"test:race-hold": "tsx scripts/race-hold-test.ts",
-		"test:unit": "tsx --test src/auth/__tests__/telegram-init-data.test.ts src/auth/__tests__/password-change.guard.test.ts src/auth/__tests__/change-password.test.ts src/dashboard/__tests__/dashboard-time.test.ts src/dashboard/__tests__/dashboard-kpis.test.ts src/cinema/__tests__/profile.util.test.ts src/session/__tests__/session-publish-notify.test.ts src/movie/__tests__/featured-movie.test.ts src/public/__tests__/featured-source.test.ts src/staff/__tests__/staff-create.test.ts src/platform/__tests__/platform.test.ts"
+		"test:unit": "tsx --test src/auth/__tests__/telegram-init-data.test.ts src/auth/__tests__/password-change.guard.test.ts src/auth/__tests__/change-password.test.ts src/dashboard/__tests__/dashboard-time.test.ts src/dashboard/__tests__/dashboard-kpis.test.ts src/cinema/__tests__/profile.util.test.ts src/session/__tests__/session-publish-notify.test.ts src/movie/__tests__/featured-movie.test.ts src/public/__tests__/featured-source.test.ts src/staff/__tests__/staff-create.test.ts src/platform/__tests__/platform.test.ts src/payment/__tests__/*.test.ts"
 	},
 	"dependencies": {
 		"@cinema/queue-contracts": "workspace:*",

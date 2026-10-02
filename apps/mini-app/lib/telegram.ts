@@ -28,7 +28,10 @@ export type TelegramWebApp = {
 	setHeaderColor?: (color: string) => void;
 	setBackgroundColor?: (color: string) => void;
 	MainButton?: TelegramMainButton;
+	openInvoice?: (url: string, callback?: (status: TelegramInvoiceStatus) => void) => void;
 };
+
+export type TelegramInvoiceStatus = "paid" | "cancelled" | "failed" | "pending";
 
 export type TelegramMainButton = {
 	text: string;
@@ -89,6 +92,16 @@ export async function waitForTelegram(timeoutMs = 1200): Promise<TelegramWebApp 
 		await new Promise((r) => setTimeout(r, 40));
 	}
 	return bootTelegramWebApp();
+}
+
+export function openTelegramInvoice(
+	url: string,
+	callback: (status: TelegramInvoiceStatus) => void,
+): boolean {
+	const openInvoice = getTelegramWebApp()?.openInvoice;
+	if (!openInvoice) return false;
+	openInvoice(url, callback);
+	return true;
 }
 
 export function openExternalUrl(url: string) {

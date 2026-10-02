@@ -8,6 +8,7 @@ import {
 	ticketsInlineKeyboard,
 	WELCOME_TEXT,
 } from "./menus.js";
+import { registerPaymentHandlers } from "./payments.js";
 
 export function createBot(token = botConfig.token()): Bot {
 	const bot = new Bot(token);
@@ -60,6 +61,8 @@ export function createBot(token = botConfig.token()): Bot {
 	bot.hears("ℹ️ Помощь", async (ctx) => {
 		await ctx.reply(HELP_TEXT, { parse_mode: "HTML" });
 	});
+
+	registerPaymentHandlers(bot);
 
 	bot.catch((err) => {
 		console.error("Bot error:", err.error);
