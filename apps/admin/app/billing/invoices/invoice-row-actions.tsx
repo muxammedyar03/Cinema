@@ -54,7 +54,7 @@ export function InvoiceRowActions({
 
 	return (
 		<div className={styles.actions}>
-			<ButtonLink href={`/cinemas/${cinemaId}`} variant="secondary" size="small">
+			<ButtonLink href={`/clients/${cinemaId}`} variant="secondary" size="small">
 				Кинотеатр
 			</ButtonLink>
 			{status !== "PAID" && status !== "VOID" ? (

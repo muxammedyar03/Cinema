@@ -15,3 +15,4 @@ export { MetricCard, type MetricCardVariant } from "./components/metric-card";
 export { PageHeader } from "./components/page-header";
 export { SegmentedControl, type SegmentedOption } from "./components/segmented-control";
 export { Toast } from "./components/toast";
+export { Wizard, type WizardStep, WizardSummary } from "./components/wizard";

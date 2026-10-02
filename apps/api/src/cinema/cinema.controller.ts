@@ -3,6 +3,7 @@ import {
 	cinemaStatusSchema,
 	createCinemaSchema,
 	createClientSchema,
+	createStaffSchema,
 	updateCinemaSchema,
 	updateClientSchema,
 } from "@cinema/validation";
@@ -32,6 +33,12 @@ export class CinemaController {
 			return this.cinemas.createClient(parsed.data);
 		}
 		return this.cinemas.create(createCinemaSchema.parse(body));
+	}
+
+	@Post(":id/staff")
+	@Roles("SUPER_ADMIN")
+	addStaff(@Param("id") id: string, @Body() body: unknown) {
+		return this.cinemas.addStaff(id, createStaffSchema.parse(body));
 	}
 
 	@Get(":id/dossier")

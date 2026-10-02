@@ -13,6 +13,15 @@ import { PrismaService } from "../prisma/prisma.service";
 import { RedisService } from "../redis/redis.service";
 
 const CATALOG_PREFIX = "catalog:";
+const TASHKENT_OFFSET_MS = 5 * 60 * 60 * 1000;
+
+function tashkentStartOfToday() {
+	const shifted = new Date(Date.now() + TASHKENT_OFFSET_MS);
+	return new Date(
+		Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth(), shifted.getUTCDate()) -
+			TASHKENT_OFFSET_MS,
+	);
+}
 
 @Injectable()
 export class SessionService {
@@ -29,10 +38,17 @@ export class SessionService {
 			throw new ForbiddenException("Cinema out of scope");
 		}
 		const cinemaIds = user.role === "SUPER_ADMIN" ? undefined : user.staff.map((s) => s.cinemaId);
-		return this.prisma.session.findMany({
+		const scope = cinemaId ? { cinemaId } : cinemaIds ? { cinemaId: { in: cinemaIds } } : {};
+		await this.prisma.session.updateMany({
 			where: {
-				...(cinemaId ? { cinemaId } : cinemaIds ? { cinemaId: { in: cinemaIds } } : {}),
+				...scope,
+				startsAt: { lt: tashkentStartOfToday() },
+				status: { in: ["DRAFT", "PUBLISHED"] },
 			},
+			data: { status: "CANCELLED", cancelledAt: new Date() },
+		});
+		const rows = await this.prisma.session.findMany({
+			where: scope,
 			orderBy: { startsAt: "asc" },
 			include: {
 				movie: true,
@@ -41,6 +57,14 @@ export class SessionService {
 				_count: { select: { sessionSeats: true } },
 			},
 		});
+		if (rows.length === 0) return rows.map((row) => ({ ...row, soldSeats: 0 }));
+		const sold = await this.prisma.sessionSeat.groupBy({
+			by: ["sessionId"],
+			where: { status: "SOLD", sessionId: { in: rows.map((row) => row.id) } },
+			_count: { _all: true },
+		});
+		const soldById = new Map(sold.map((row) => [row.sessionId, row._count._all]));
+		return rows.map((row) => ({ ...row, soldSeats: soldById.get(row.id) ?? 0 }));
 	}
 
 	async get(user: SessionUser, id: string) {
@@ -127,31 +151,96 @@ export class SessionService {
 		if (!canManageCinema(user, session.cinemaId)) {
 			throw new ForbiddenException("Only cinema admin can update sessions");
 		}
-		if (session.status !== "DRAFT") {
-			throw new BadRequestException("Only DRAFT sessions can be edited");
+		if (data.startsAt && data.startsAt < tashkentStartOfToday()) {
+			throw new BadRequestException("Дата сеанса не может быть в прошлом");
 		}
-		await this.prisma.session.update({
-			where: { id },
-			data: {
-				startsAt: data.startsAt,
-				basePriceUzs: data.basePriceUzs,
-				discountPercent: data.discountPercent,
-			},
+		const hallId = data.hallId ?? session.hallId;
+		const hallChanged = hallId !== session.hallId;
+		const currentlyGa = session._count.sessionSeats === 0;
+		const nextGa = data.generalAdmission ?? currentlyGa;
+		const mapChanged = hallChanged || nextGa !== currentlyGa;
+		if (hallChanged) {
+			const hall = await this.prisma.hall.findFirst({
+				where: { id: hallId, cinemaId: session.cinemaId },
+			});
+			if (!hall) throw new BadRequestException("Hall does not belong to cinema");
+		}
+		const locked = await this.prisma.sessionSeat.count({
+			where: { sessionId: id, status: { in: ["SOLD", "HELD"] } },
 		});
-		if (data.basePriceUzs || data.vipPriceUzs) {
-			const vip = data.vipPriceUzs ?? data.basePriceUzs ?? session.basePriceUzs;
-			const std = data.basePriceUzs ?? session.basePriceUzs;
-			await this.prisma.sessionPricing.upsert({
-				where: { sessionId_seatType: { sessionId: id, seatType: "STANDARD" } },
-				update: { priceUzs: std },
-				create: { sessionId: id, seatType: "STANDARD", priceUzs: std },
-			});
-			await this.prisma.sessionPricing.upsert({
-				where: { sessionId_seatType: { sessionId: id, seatType: "VIP" } },
-				update: { priceUzs: vip },
-				create: { sessionId: id, seatType: "VIP", priceUzs: vip },
-			});
+		if (locked > 0 && mapChanged) {
+			throw new BadRequestException("Нельзя сменить зал: есть проданные или удерживаемые места");
 		}
+		const std = data.basePriceUzs ?? session.basePriceUzs;
+		const vip = data.vipPriceUzs ?? data.basePriceUzs ?? session.basePriceUzs;
+		const layout =
+			mapChanged && !nextGa
+				? await this.prisma.hallLayout.findFirst({
+						where: { hallId, isActive: true },
+						include: { seats: true },
+					})
+				: null;
+		if (mapChanged && !nextGa && (!layout || layout.seats.length === 0)) {
+			throw new BadRequestException("Hall has no active layout seats");
+		}
+
+		await this.prisma.$transaction(async (tx) => {
+			await tx.session.update({
+				where: { id },
+				data: {
+					startsAt: data.startsAt,
+					hallId: hallChanged ? hallId : undefined,
+					basePriceUzs: data.basePriceUzs,
+					discountPercent: data.discountPercent,
+				},
+			});
+			if (data.basePriceUzs || data.vipPriceUzs) {
+				await tx.sessionPricing.upsert({
+					where: { sessionId_seatType: { sessionId: id, seatType: "STANDARD" } },
+					update: { priceUzs: std },
+					create: { sessionId: id, seatType: "STANDARD", priceUzs: std },
+				});
+				await tx.sessionPricing.upsert({
+					where: { sessionId_seatType: { sessionId: id, seatType: "VIP" } },
+					update: { priceUzs: vip },
+					create: { sessionId: id, seatType: "VIP", priceUzs: vip },
+				});
+			}
+			if (mapChanged) {
+				await tx.sessionSeat.deleteMany({ where: { sessionId: id } });
+				if (layout) {
+					await tx.sessionSeat.createMany({
+						data: layout.seats.map((seat) => ({
+							sessionId: id,
+							seatId: seat.id,
+							status: seat.type === "BLOCKED" ? "BLOCKED" : "AVAILABLE",
+							priceUzs: seat.type === "VIP" ? vip : seat.type === "BLOCKED" ? 0 : std,
+						})),
+					});
+				}
+			} else if (data.basePriceUzs || data.vipPriceUzs) {
+				const seats = await tx.sessionSeat.findMany({
+					where: { sessionId: id, status: { not: "SOLD" } },
+					include: { seat: { select: { type: true } } },
+				});
+				const standardIds = seats
+					.filter((row) => row.seat.type === "STANDARD")
+					.map((row) => row.id);
+				const vipIds = seats.filter((row) => row.seat.type === "VIP").map((row) => row.id);
+				if (standardIds.length > 0) {
+					await tx.sessionSeat.updateMany({
+						where: { id: { in: standardIds } },
+						data: { priceUzs: std },
+					});
+				}
+				if (vipIds.length > 0) {
+					await tx.sessionSeat.updateMany({
+						where: { id: { in: vipIds } },
+						data: { priceUzs: vip },
+					});
+				}
+			}
+		});
 		await this.invalidateCatalog();
 		return this.get(user, id);
 	}

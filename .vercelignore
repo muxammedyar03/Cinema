@@ -1,0 +1,15 @@
+**/.env*
+**/uploads
+**/*.pem
+**/*.key
+**/*.log
+**/*.tsbuildinfo
+**/node_modules
+**/.next
+**/dist
+**/.turbo
+deploy
+design
+docs
+.codex
+.agents

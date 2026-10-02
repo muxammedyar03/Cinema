@@ -1,8 +1,15 @@
-import { Clapperboard, Plus } from "lucide-react";
-import Link from "next/link";
+import { PageHeader } from "@cinema/ui";
+import { Clapperboard } from "lucide-react";
+import Image from "next/image";
 import { getMe, serverApi } from "../../lib/server-api";
-import { cx, ui } from "../../lib/ui";
-import { type MovieListItem, MovieTableRow } from "./movie-table-row";
+import { NewSessionAction } from "../sessions/new-session-action";
+import { MovieRowActions } from "./movie-actions";
+import { type MovieListItem } from "./movie-table-row";
+import { NewMovieAction } from "./new-movie-action";
+
+function movieMeta(movie: MovieListItem) {
+	return [movie.genres[0], `${movie.durationMin} мин`, movie.ageRating].filter(Boolean).join(" · ");
+}
 
 export default async function MoviesPage() {
 	const user = await getMe();
@@ -13,45 +20,53 @@ export default async function MoviesPage() {
 
 	return (
 		<>
-			<div className={ui.row}>
-				<div>
-					<h1 className={ui.pageTitle}>Фильмы</h1>
-					<p className={ui.sub}>Каталог · жанр · озвучка · IMDb · архив</p>
+			<PageHeader
+				title="Фильмы"
+				description="Каталог вашего кинотеатра"
+				actions={canManage ? <NewMovieAction /> : null}
+			/>
+			{movies.length === 0 ? (
+				<div className="rounded-xl border border-line bg-white px-5 py-10 text-center text-sm text-[#78859c]">
+					<Clapperboard className="mx-auto mb-3 size-8" strokeWidth={1.4} />
+					Фильмов пока нет
 				</div>
-				{canManage ? (
-					<Link className={cx(ui.btn, ui.btnPri)} href="/movies/new">
-						<Plus className="size-4" strokeWidth={2} />
-						Фильм
-					</Link>
-				) : null}
-			</div>
-			<div className={ui.card}>
-				{movies.length === 0 ? (
-					<div className="px-5 py-10 text-center text-sm text-muted">
-						<Clapperboard className="mx-auto mb-3 size-8 text-faint" strokeWidth={1.4} />
-						Фильмов пока нет
-					</div>
-				) : (
-					<table>
-						<thead>
-							<tr>
-								<th>Фильм</th>
-								<th>Жанр</th>
-								<th>Озвучка</th>
-								<th>IMDb</th>
-								<th>Выход</th>
-								<th>Статус</th>
-								{canManage ? <th /> : null}
-							</tr>
-						</thead>
-						<tbody>
-							{movies.map((m) => (
-								<MovieTableRow key={m.id} movie={m} canManage={canManage} />
-							))}
-						</tbody>
-					</table>
-				)}
-			</div>
+			) : (
+				<div className="grid grid-cols-2 gap-5 sm:grid-cols-3 xl:grid-cols-4">
+					{movies.map((movie) => (
+						<article
+							key={movie.id}
+							className={`overflow-hidden rounded-xl border border-line bg-white ${movie.status === "ARCHIVED" ? "opacity-60" : ""}`}
+						>
+							{movie.posterUrl ? (
+								<Image
+									src={movie.posterUrl}
+									alt=""
+									width={640}
+									height={840}
+									unoptimized
+									className="h-[350px] w-full object-cover object-[center_25%]"
+								/>
+							) : (
+								<div className="grid h-[280px] place-items-center bg-[#eef2fa] text-[#8a97ad]">
+									<Clapperboard className="size-10" strokeWidth={1.4} />
+								</div>
+							)}
+							<div className="p-5">
+								<h2 className="text-[19px] font-semibold text-[#19253d]">{movie.title}</h2>
+								<p className="mt-1.5 mb-4 text-[13px] text-[#8794a7]">{movieMeta(movie)}</p>
+								{canManage && movie.status === "ACTIVE" ? (
+									<NewSessionAction variant="card" movieId={movie.id} />
+								) : null}
+								{canManage ? (
+									<div className="mt-3">
+										<MovieRowActions movie={movie} />
+									</div>
+								) : null}
+							</div>
+						</article>
+					))}
+				</div>
+			)}
 		</>
 	);
 }

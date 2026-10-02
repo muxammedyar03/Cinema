@@ -223,7 +223,7 @@ const groups: NavGroup[] = [
 			{ href: "/", label: "Панель", icon: LayoutDashboard, accent: "#7a6b9c", roles: ["super"] },
 			{
 				href: "/clients",
-				label: "Клиенты",
+				label: "Кинотеатры",
 				icon: Building2,
 				accent: "#7a6b9c",
 				roles: ["super"],

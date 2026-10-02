@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { CreateAction } from "../components/create-action";
 import {
 	type DashboardKpis,
 	KpiCharts,
@@ -105,8 +106,8 @@ function statusClass(status: string) {
 	return cx(ui.badge, ui.badgeMuted);
 }
 
-const statCls = "rounded-2xl border border-line bg-white/[0.04] px-[18px] py-4";
-const cashPill = "rounded-[14px] border border-line bg-white/[0.02] px-3 py-2";
+const statCls = "rounded-2xl border border-line bg-white px-[18px] py-4 text-[#19253d]";
+const cashPill = "rounded-[14px] border border-line bg-white px-3 py-2 text-[#19253d]";
 const quickLink =
 	"inline-flex h-8 items-center rounded-full border border-line px-3 text-xs font-semibold text-muted hover:border-orange/40 hover:text-orange";
 
@@ -174,7 +175,7 @@ export default async function HomePage({
 					</p>
 					<div className="flex flex-wrap gap-2 border-t border-line px-4 py-4">
 						<Link className={quickLink} href="/clients">
-							Клиенты
+							Кинотеатры
 						</Link>
 						<Link className={quickLink} href="/billing">
 							Биллинг
@@ -244,10 +245,10 @@ export default async function HomePage({
 						<RevenueChart points={revenueTrend} />
 					</div>
 					<div className="flex flex-wrap gap-2 border-t border-line px-4 py-4">
-						<Link className={quickLink} href="/sessions/new">
+						<Link className={quickLink} href="/sessions">
 							+ Сеанс
 						</Link>
-						<Link className={quickLink} href="/movies/new">
+						<Link className={quickLink} href="/movies">
 							+ Фильм
 						</Link>
 						<Link className={quickLink} href="/halls">
@@ -306,9 +307,7 @@ export default async function HomePage({
 				<aside className={cx(ui.card, "flex min-h-[360px] flex-col")}>
 					<div className={cx(ui.cardH, "flex items-center justify-between gap-3")}>
 						<span>Сеансы</span>
-						<Link className={cx(ui.btn, ui.btnSm, ui.btnPri)} href="/sessions/new">
-							+
-						</Link>
+						<CreateAction label="Сеанс" href="/sessions" size="small" />
 					</div>
 					{todaySessions.length === 0 ? (
 						<p className="px-[18px] py-6 text-[13px] leading-relaxed text-muted">

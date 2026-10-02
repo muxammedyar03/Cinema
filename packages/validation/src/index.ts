@@ -32,6 +32,14 @@ export const createClientSchema = z.object({
 	}),
 });
 
+export const createStaffSchema = z.object({
+	email: z.string().email(),
+	password: z.string().min(8).max(128),
+	firstName: z.string().min(1).max(80).optional(),
+	lastName: z.string().min(1).max(80).optional(),
+	role: z.enum(["CINEMA_ADMIN", "STAFF"]).default("STAFF"),
+});
+
 export const updateClientSchema = z.object({
 	name: z.string().min(2).max(120).optional(),
 	address: z.string().max(255).nullable().optional(),
@@ -79,6 +87,7 @@ export type CreateCinemaInput = z.infer<typeof createCinemaSchema>;
 export type UpdateCinemaInput = z.infer<typeof updateCinemaSchema>;
 export type CreateClientInput = z.infer<typeof createClientSchema>;
 export type UpdateClientInput = z.infer<typeof updateClientSchema>;
+export type CreateStaffInput = z.infer<typeof createStaffSchema>;
 export type CreateHallInput = z.infer<typeof createHallSchema>;
 export type UpdateHallInput = z.infer<typeof updateHallSchema>;
 
@@ -147,9 +156,11 @@ export const createSessionSchema = z.object({
 
 export const updateSessionSchema = z.object({
 	startsAt: z.coerce.date().optional(),
+	hallId: z.string().min(1).optional(),
 	basePriceUzs: z.number().int().positive().optional(),
 	discountPercent: z.number().int().min(0).max(100).optional(),
 	vipPriceUzs: z.number().int().positive().optional(),
+	generalAdmission: z.boolean().optional(),
 });
 
 export const catalogQuerySchema = z.object({

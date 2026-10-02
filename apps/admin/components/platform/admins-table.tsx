@@ -28,7 +28,7 @@ export function AdminsTable({ rows }: { rows: PlatformAdmin[] }) {
 						id: "cinema",
 						header: "Кинотеатр",
 						cell: (row) => (
-							<Link className={styles.nameLink} href={`/cinemas/${row.cinemaId}`}>
+							<Link className={styles.nameLink} href={`/clients/${row.cinemaId}`}>
 								{row.cinemaName}
 							</Link>
 						),
