@@ -10,6 +10,7 @@ import { HallModule } from "./hall/hall.module";
 import { HealthController } from "./health/health.controller";
 import { MovieModule } from "./movie/movie.module";
 import { NotifyModule } from "./notify/notify.module";
+import { BotTicketsModule } from "./order/bot-tickets.module";
 import { OrderModule } from "./order/order.module";
 import { PaymentModule } from "./payment/payment.module";
 import { PrismaModule } from "./prisma/prisma.module";
@@ -38,6 +39,7 @@ import { SessionModule } from "./session/session.module";
 		DashboardModule,
 		BookingModule,
 		OrderModule,
+		BotTicketsModule,
 		PaymentModule,
 		BillingModule,
 	],

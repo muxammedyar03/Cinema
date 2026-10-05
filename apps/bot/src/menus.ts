@@ -1,5 +1,5 @@
 import { InlineKeyboard, Keyboard } from "grammy";
-import { botConfig, miniAppDeepLink } from "./config.js";
+import { botConfig, miniAppDeepLink, miniAppTelegramLink } from "./config.js";
 
 export function replyMenuKeyboard(): Keyboard {
 	return new Keyboard()
@@ -11,11 +11,12 @@ export function replyMenuKeyboard(): Keyboard {
 		.persistent();
 }
 
-export function startInlineKeyboard(): InlineKeyboard {
+export function startInlineKeyboard(privateChat = true): InlineKeyboard {
 	const kb = new InlineKeyboard();
-	const url = miniAppDeepLink();
 	if (botConfig.miniAppUrl || botConfig.botUsername) {
-		kb.url("📱 Открыть Mini App", url).row();
+		if (privateChat && botConfig.miniAppUrl)
+			kb.webApp("📱 Открыть Mini App", botConfig.miniAppUrl).row();
+		else kb.url("📱 Открыть Mini App", miniAppTelegramLink()).row();
 	}
 	kb.text("🎬 Афиша", "menu:afisha")
 		.text("🎟 Мои билеты", "menu:tickets")
@@ -24,24 +25,14 @@ export function startInlineKeyboard(): InlineKeyboard {
 	return kb;
 }
 
-export function afishaInlineKeyboard(): InlineKeyboard {
+export function afishaInlineKeyboard(privateChat = true): InlineKeyboard {
 	const kb = new InlineKeyboard();
 	const url = miniAppDeepLink("afisha");
 	if (botConfig.miniAppUrl || botConfig.botUsername) {
-		kb.url("Открыть афишу", url);
+		if (privateChat && botConfig.miniAppUrl) kb.webApp("Открыть афишу", url);
+		else kb.url("Открыть афишу", miniAppTelegramLink("afisha"));
 	} else {
 		kb.text("Афиша скоро", "menu:help");
-	}
-	return kb;
-}
-
-export function ticketsInlineKeyboard(): InlineKeyboard {
-	const kb = new InlineKeyboard();
-	const url = miniAppDeepLink("tickets");
-	if (botConfig.miniAppUrl || botConfig.botUsername) {
-		kb.url("Мои билеты", url);
-	} else {
-		kb.text("Билеты скоро", "menu:help");
 	}
 	return kb;
 }

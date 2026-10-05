@@ -14,7 +14,9 @@ export type TelegramNotifyJobPayload = {
 	template: string;
 	text: string;
 	replyMarkup?: {
-		inline_keyboard: Array<Array<{ text: string; url: string }>>;
+		inline_keyboard: Array<
+			Array<{ text: string } & ({ url: string } | { web_app: { url: string } })>
+		>;
 	};
 	idempotencyKey: string;
 };

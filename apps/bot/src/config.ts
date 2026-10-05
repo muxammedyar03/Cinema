@@ -52,3 +52,11 @@ export function miniAppDeepLink(startParam?: string): string {
 		? `https://t.me/${username}/${short}?startapp=${encodeURIComponent(startParam)}`
 		: `https://t.me/${username}/${short}`;
 }
+
+/** Group/channel buttons need a Telegram Mini App link, not the hosted web URL. */
+export function miniAppTelegramLink(startParam?: string): string {
+	const username = botConfig.botUsername.replace(/^@/, "");
+	if (!username) return "https://t.me";
+	const base = `https://t.me/${username}/${botConfig.miniAppShortName}`;
+	return startParam ? `${base}?startapp=${encodeURIComponent(startParam)}` : base;
+}
