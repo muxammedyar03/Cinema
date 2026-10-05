@@ -1,6 +1,6 @@
 "use client";
 import { Button } from "@cinema/ui";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { waitForTelegram } from "../lib/telegram";
 
 export function BookingAction({
@@ -18,39 +18,21 @@ export function BookingAction({
 	busy?: boolean;
 	onClick: () => void;
 }) {
-	const action = useRef(onClick);
-	action.current = onClick;
 	useEffect(() => {
 		let disposed = false;
-		let cleanup = () => {};
 		void waitForTelegram().then((tg) => {
-			if (disposed || !tg?.initData || !tg.MainButton) return;
-			const button = tg.MainButton;
-			const click = () => {
-				if (!disabled && !busy) action.current();
-			};
+			if (disposed || !tg?.MainButton) return;
 			try {
-				button.setText(label);
-				if (disabled || busy) button.disable();
-				else button.enable();
-				if (busy) button.showProgress();
-				else button.hideProgress();
-				button.onClick(click);
-				button.show();
-				cleanup = () => {
-					button.offClick(click);
-					button.hideProgress();
-					button.hide();
-				};
+				tg.MainButton.hideProgress();
+				tg.MainButton.hide();
 			} catch {
-				/* Sticky HTML action remains available. */
+				/* Older clients may not expose this method. */
 			}
 		});
 		return () => {
 			disposed = true;
-			cleanup();
 		};
-	}, [label, disabled, busy]);
+	}, []);
 	return (
 		<div className="checkout-bar">
 			<div aria-live="polite">
