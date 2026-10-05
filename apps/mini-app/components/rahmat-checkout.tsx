@@ -40,7 +40,7 @@ export function RahmatCheckout({
 	expired: boolean;
 	payReturn: string | null;
 	onPaid: () => void;
-	onOrderRefresh: () => Promise<void>;
+	onOrderRefresh: () => Promise<unknown>;
 }) {
 	const [payment, setPayment] = useState<RahmatPayment | null>(null);
 	const [busy, setBusy] = useState(false);
@@ -190,7 +190,7 @@ export function RahmatCheckout({
 
 	return (
 		<div>
-			<div className="pay-card">
+			<div className="pay-card" hidden>
 				<p className="meta-line">Места удерживаются</p>
 				<p className="clock">{formatCountdown(holdLeft)}</p>
 				<div className="pay-track" aria-hidden="true">
@@ -206,7 +206,7 @@ export function RahmatCheckout({
 
 			{error ? <p className="note bad">{error}</p> : null}
 
-			<div className="stack">
+			<div className="stack checkout-bar">
 				<Button
 					type="button"
 					className="v2-full"
