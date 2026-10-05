@@ -1,12 +1,23 @@
 import type { CatalogDay, CatalogMovie, FeaturedSource } from "./types";
 
+export function tashkentDayKey(date: Date): string {
+	const parts = new Intl.DateTimeFormat("en-US", {
+		timeZone: "Asia/Tashkent",
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+	}).formatToParts(date);
+	const value = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
+	return `${value("year")}-${value("month")}-${value("day")}`;
+}
+
 export function sixDayKeys(now = new Date()): string[] {
-	const today = now.toLocaleDateString("en-CA", { timeZone: "Asia/Tashkent" });
+	const today = tashkentDayKey(now);
 	const start = new Date(`${today}T12:00:00+05:00`);
 	const days: string[] = [];
 	for (let i = 0; i < 6; i++) {
 		const next = new Date(start.getTime() + i * 24 * 60 * 60 * 1000);
-		days.push(next.toLocaleDateString("en-CA", { timeZone: "Asia/Tashkent" }));
+		days.push(tashkentDayKey(next));
 	}
 	return days;
 }
@@ -53,15 +64,14 @@ export function allMovies(days: CatalogDay[]): CatalogMovie[] {
 	}));
 }
 
-export function moviesOnDay(days: CatalogDay[], dateKey: string): CatalogMovie[] {
+export function moviesOnDay(days: CatalogDay[], dateKey: string, now = new Date()): CatalogMovie[] {
 	return (days.find((day) => day.date === dateKey)?.movies ?? [])
 		.map((movie) => ({
 			...movie,
 			sessions: movie.sessions.filter(
 				(session) =>
-					new Date(session.startsAt).toLocaleDateString("en-CA", {
-						timeZone: "Asia/Tashkent",
-					}) === dateKey,
+					tashkentDayKey(new Date(session.startsAt)) === dateKey &&
+					new Date(session.startsAt).getTime() > now.getTime(),
 			),
 		}))
 		.filter((movie) => movie.sessions.length > 0);
