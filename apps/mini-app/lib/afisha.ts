@@ -54,7 +54,17 @@ export function allMovies(days: CatalogDay[]): CatalogMovie[] {
 }
 
 export function moviesOnDay(days: CatalogDay[], dateKey: string): CatalogMovie[] {
-	return days.find((day) => day.date === dateKey)?.movies ?? [];
+	return (days.find((day) => day.date === dateKey)?.movies ?? [])
+		.map((movie) => ({
+			...movie,
+			sessions: movie.sessions.filter(
+				(session) =>
+					new Date(session.startsAt).toLocaleDateString("en-CA", {
+						timeZone: "Asia/Tashkent",
+					}) === dateKey,
+			),
+		}))
+		.filter((movie) => movie.sessions.length > 0);
 }
 
 function earliest(movie: CatalogMovie): number {

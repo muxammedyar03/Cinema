@@ -1488,6 +1488,11 @@ input:focus-visible {
 .app-shell-focus .times { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .app-shell-focus .time { padding: 8px 4px; }
 .movie-description { margin: 12px 0; font-size: 13px; }
+.movie-description h2 { font-size: 16px; margin: 0 0 8px; }
+.movie-description .description { white-space: pre-line; }
+.cinema-profile-link { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin: 12px 0 24px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; color: var(--muted); font-size: 12px; text-decoration: none; }
+.cinema-profile-link b { color: var(--ink); }
+.cinema-profile-link > span:last-child { flex-shrink: 0; color: var(--primary); }
 .checkout-bar { z-index: 50; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); }
 .checkout-bar > div { min-width: 0; }
 .checkout-bar small { max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

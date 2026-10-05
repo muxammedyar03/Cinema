@@ -11,7 +11,7 @@ import type { SessionSeat } from "../lib/types";
 import { cx } from "../lib/ui";
 import { BookingAction } from "./booking-action";
 
-const SEAT = 30;
+const SEAT = 32;
 const SCALE_MIN = 0.1;
 const SCALE_MAX = 4;
 const DRAG_THRESHOLD = 8;
@@ -108,14 +108,17 @@ export function SeatBooking({
 	const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });
 	const [fitted, setFitted] = useState(false);
 
-	const contentW = useMemo(
-		() => (seats.length ? Math.max(...seats.map((s) => s.x + SEAT), 280) : 280),
+	const bounds = useMemo(
+		() => ({
+			minX: Math.min(...seats.map((s) => s.x)),
+			minY: Math.min(...seats.map((s) => s.y)),
+			maxX: Math.max(...seats.map((s) => s.x + SEAT)),
+			maxY: Math.max(...seats.map((s) => s.y + SEAT)),
+		}),
 		[seats],
 	);
-	const contentH = useMemo(
-		() => (seats.length ? Math.max(...seats.map((s) => s.y + SEAT), 200) : 200),
-		[seats],
-	);
+	const contentW = bounds.maxX - bounds.minX + 32;
+	const contentH = bounds.maxY - bounds.minY + 32;
 
 	const applyView = useCallback((next: View) => {
 		viewRef.current = next;
@@ -331,19 +334,24 @@ export function SeatBooking({
 			g.mode = "none";
 			g.panStart = null;
 			g.pinchStart = null;
-			if (wasTap && !doubleTap && pending) {
-				// Overlapping expanded hit areas: prefer the nearest seat centre.
+			if (wasTap && !doubleTap) {
+				// Use the editor's seat centres. Touch tolerance stays 40px on screen.
 				const wx = (pt.x - viewRef.current.x) / viewRef.current.scale;
 				const wy = (pt.y - viewRef.current.y) / viewRef.current.scale;
+				const centerX = (seat: SessionSeat) => seat.x - bounds.minX + 16 + SEAT / 2;
+				const centerY = (seat: SessionSeat) => seat.y - bounds.minY + 16 + SEAT / 2;
 				const nearest = seats.reduce(
 					(best, seat) =>
-						Math.hypot(seat.x + SEAT / 2 - wx, seat.y + SEAT / 2 - wy) <
-						Math.hypot(best.x + SEAT / 2 - wx, best.y + SEAT / 2 - wy)
+						Math.hypot(centerX(seat) - wx, centerY(seat) - wy) <
+						Math.hypot(centerX(best) - wx, centerY(best) - wy)
 							? seat
 							: best,
 					seats[0],
 				);
-				const seat = nearest ?? byId.get(pending);
+				const distance = nearest
+					? Math.hypot(centerX(nearest) - wx, centerY(nearest) - wy) * viewRef.current.scale
+					: Infinity;
+				const seat = distance <= 20 ? nearest : pending ? byId.get(pending) : null;
 				if (seat) onSeatTap(seat);
 			}
 			g.pendingSeatId = null;
@@ -457,10 +465,10 @@ export function SeatBooking({
 									isSelected && "seat-selected",
 								)}
 								style={{
-									left: seat.x - (Math.max(SEAT, 40 / view.scale) - SEAT) / 2,
-									top: seat.y - (Math.max(SEAT, 40 / view.scale) - SEAT) / 2,
-									width: Math.max(SEAT, 40 / view.scale),
-									height: Math.max(SEAT, 40 / view.scale),
+									left: seat.x - bounds.minX + 16,
+									top: seat.y - bounds.minY + 16,
+									width: SEAT,
+									height: SEAT,
 									transform: `rotate(${seat.rotation}deg)`,
 									pointerEvents: "auto",
 								}}
@@ -469,8 +477,8 @@ export function SeatBooking({
 								<span
 									className="seat-face"
 									style={{
-										width: Math.max(SEAT, 28 / view.scale),
-										height: Math.max(SEAT, 28 / view.scale),
+										width: SEAT,
+										height: SEAT,
 									}}
 								>
 									{seat.number}
