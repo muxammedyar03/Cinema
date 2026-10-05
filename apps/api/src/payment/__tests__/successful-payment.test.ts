@@ -177,6 +177,28 @@ const paidInput: SuccessfulPaymentInput = {
 };
 
 describe("recordSuccessfulTelegramPayment", () => {
+	it("fulfills Rahmat once without labelling it as Click", async () => {
+		const store = memory();
+		store.orders.set("ord_1", seatedOrder());
+		store.seats.push(
+			{ id: "ss_a", orderItemId: "item_a", status: "HELD", holdExpiresAt: new Date() },
+			{ id: "ss_b", orderItemId: "item_b", status: "HELD", holdExpiresAt: new Date() },
+		);
+		const input = {
+			...paidInput,
+			provider: "RAHMAT" as const,
+			telegramPaymentChargeId: "rahmat:uuid1",
+			providerPaymentChargeId: "uuid1",
+		};
+		await recordSuccessfulTelegramPayment(store.db, input, NOW, () => "RAHMAT-CODE");
+		const again = await recordSuccessfulTelegramPayment(store.db, input, NOW);
+		assert.equal(again.alreadyProcessed, true);
+		assert.equal(store.payments.length, 1);
+		assert.equal(store.payments[0]?.provider, "RAHMAT");
+		assert.equal(store.payments[0]?.providerPaymentId, "uuid1");
+		assert.equal(store.orders.get("ord_1")?.tickets.length, 2);
+	});
+
 	it("marks the order paid, sells held seats, and issues one ticket per seat", async () => {
 		const store = memory();
 		store.orders.set("ord_1", seatedOrder());

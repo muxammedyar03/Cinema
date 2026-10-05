@@ -59,6 +59,7 @@ export function OrderHoldView({ orderId }: { orderId: string }) {
 	const [order, setOrder] = useState<OrderDetail | null>(null);
 	const [error, setError] = useState("");
 	const [now, setNow] = useState(() => Date.now());
+	const [rahmatEnabled, setRahmatEnabled] = useState(false);
 	const [clickEnabled, setClickEnabled] = useState(false);
 
 	const load = useCallback(async () => {
@@ -74,8 +75,13 @@ export function OrderHoldView({ orderId }: { orderId: string }) {
 				await ensureTelegramSession();
 				if (cancelled) return;
 				await load();
-				const options = await clientApi<{ click?: boolean }>("/payments/options").catch(() => null);
-				if (!cancelled) setClickEnabled(options?.click === true);
+				const options = await clientApi<{ click?: boolean; rahmat?: boolean }>(
+					"/payments/options",
+				).catch(() => null);
+				if (!cancelled) {
+					setClickEnabled(options?.click === true);
+					setRahmatEnabled(options?.rahmat === true);
+				}
 			} catch (err) {
 				if (!cancelled) setError(errorText(err, "Заказ не найден"));
 			}
@@ -181,7 +187,7 @@ export function OrderHoldView({ orderId }: { orderId: string }) {
 				<ClickCheckout orderId={order.id} onPaid={load} />
 			) : null}
 
-			{pending && !expired ? (
+			{pending && !expired && rahmatEnabled ? (
 				<RahmatCheckout
 					orderId={order.id}
 					amountUzs={order.totalUzs}

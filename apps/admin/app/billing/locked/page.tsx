@@ -2,6 +2,7 @@ import { buttonClassName, Card, CardBody } from "@cinema/ui";
 import { redirect } from "next/navigation";
 import { LogoutButton } from "../../../components/logout-button";
 import styles from "../../../components/platform/platform.module.css";
+import { RahmatSubscriptionPay } from "../../../components/rahmat-subscription-pay";
 import { formatMoneyUzs } from "../../../lib/platform/format";
 import { roleOf } from "../../../lib/rbac";
 import { getMe, serverApi } from "../../../lib/server-api";
@@ -13,6 +14,7 @@ type Access =
 			cinemaName: string;
 			lockAfterDays: number;
 			invoice: {
+				id: string;
 				publicNumber: string;
 				amountUzs: number;
 				dueAt: string;
@@ -63,12 +65,7 @@ export default async function BillingLockedPage() {
 						</div>
 					</div>
 					<div className={styles.stack}>
-						<a
-							className={buttonClassName({ className: styles.full })}
-							href="mailto:billing@cinema.local?subject=Оплата%20подписки"
-						>
-							Перейти к оплате
-						</a>
+						{access.invoice ? <RahmatSubscriptionPay invoiceId={access.invoice.id} /> : null}
 						<a
 							className={buttonClassName({ variant: "secondary", className: styles.full })}
 							href="mailto:support@cinema.local?subject=Нужна%20помощь%20по%20подписке"

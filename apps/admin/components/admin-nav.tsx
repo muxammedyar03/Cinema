@@ -120,6 +120,13 @@ const groups: NavGroup[] = [
 		roles: ["cinema", "staff"],
 		items: [
 			{ href: "/", label: "Панель", icon: LayoutDashboard, accent: "#4c8479", roles: ["cinema"] },
+			{
+				href: "/billing/my",
+				label: "Подписка",
+				icon: LayoutDashboard,
+				accent: "#4c8479",
+				roles: ["cinema"],
+			},
 			{ href: "/sessions", label: "Сеансы", icon: Clock3, accent: "#4c8479", roles: ["cinema"] },
 			{
 				href: "/sessions",

@@ -87,6 +87,7 @@ enum TicketStatus {
 }
 
 enum PaymentProvider {
+  RAHMAT
   CLICK
   PAYME
 }
@@ -467,4 +468,32 @@ model Notification {
   createdAt DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id])
+}
+
+// One durable attempt per obligation. Unknown provider outcomes must be reconciled,
+// never retried as a new charge automatically.
+model RahmatCheckout {
+  id String @id @default(cuid())
+  orderId String? @unique
+  subscriptionInvoiceId String? @unique
+  userId String
+  storeId String
+  amountTiyin Int
+  status String @default("CREATING")
+  providerUuid String? @unique
+  payUrl String?
+  deeplinkUrl String?
+  otpRequired Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RahmatCardBinding {
+  id String @id @default(cuid())
+  userId String
+  purpose String
+  sessionId String @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@index([userId, purpose])
 }

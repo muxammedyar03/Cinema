@@ -1,237 +1,164 @@
 "use client";
-
 import { Button } from "@cinema/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { clientApi } from "../lib/api";
 import { errorText } from "../lib/api-error";
-import { formatCountdown, formatPrice } from "../lib/format";
+import { formatPrice } from "../lib/format";
 import { openExternalUrl } from "../lib/telegram";
 import type { RahmatPayment } from "../lib/types";
-
-const HOLD_TTL_MS = 10 * 60 * 1000;
-const POLL_MS = 4000;
-
-function paymentIdOf(p: RahmatPayment): string | undefined {
-	return p.paymentId ?? p.id;
-}
-
-function isPaidStatus(status: string) {
-	return status === "PAID" || status === "success";
-}
-
-function isFailedStatus(status: string) {
-	return status === "FAILED" || status === "cancelled" || status === "error";
-}
 
 export function RahmatCheckout({
 	orderId,
 	amountUzs,
-	holdExpiresAt,
-	createdAt,
 	expired,
-	payReturn,
 	onPaid,
 	onOrderRefresh,
 }: {
 	orderId: string;
 	amountUzs: number;
+	expired: boolean;
 	holdExpiresAt: string | null;
 	createdAt?: string;
-	expired: boolean;
 	payReturn: string | null;
 	onPaid: () => void;
 	onOrderRefresh: () => Promise<void>;
 }) {
+	const onPaidRef = useRef(onPaid);
+	useEffect(() => {
+		onPaidRef.current = onPaid;
+	}, [onPaid]);
+
 	const [payment, setPayment] = useState<RahmatPayment | null>(null);
+	const [binding, setBinding] = useState<string | null>(null);
+	const [otp, setOtp] = useState("");
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState("");
-	const [now, setNow] = useState(() => Date.now());
-	const [awaiting, setAwaiting] = useState(false);
-	const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-	const paymentRef = useRef<RahmatPayment | null>(null);
-	const returnHandled = useRef(false);
-
+	const key = `rahmat-bind:${orderId}`;
 	useEffect(() => {
-		paymentRef.current = payment;
-	}, [payment]);
-
-	const holdLeft = holdExpiresAt ? new Date(holdExpiresAt).getTime() - now : 0;
-	const holdTotal = (() => {
-		if (holdExpiresAt && createdAt) {
-			return Math.max(1, new Date(holdExpiresAt).getTime() - new Date(createdAt).getTime());
+		setBinding(sessionStorage.getItem(key));
+	}, [key]);
+	const refresh = useCallback(async () => {
+		const row = await clientApi<RahmatPayment>(`/orders/${orderId}/payment`).catch(() => null);
+		if (row) {
+			const current = await clientApi<RahmatPayment>(`/payments/${row.paymentId}/sync`, {
+				method: "POST",
+			}).catch(() => row);
+			setPayment(current);
+			if (current.status === "PAID") onPaidRef.current();
 		}
-		return HOLD_TTL_MS;
-	})();
-	const holdPct = Math.max(0, Math.min(100, (holdLeft / holdTotal) * 100));
-
-	const stopPoll = useCallback(() => {
-		if (pollRef.current) {
-			clearInterval(pollRef.current);
-			pollRef.current = null;
-		}
-	}, []);
-
-	const syncPayment = useCallback(
-		async (id?: string) => {
-			const pid = id ?? (paymentRef.current ? paymentIdOf(paymentRef.current) : undefined);
+	}, [orderId]);
+	useEffect(() => {
+		let running = false;
+		const poll = async () => {
+			if (running) return;
+			running = true;
 			try {
-				if (pid) {
-					await clientApi(`/payments/${pid}/sync`, { method: "POST" }).catch(() => undefined);
-					const snap = await clientApi<RahmatPayment>(`/payments/${pid}`).catch(() => null);
-					if (snap) {
-						setPayment(snap);
-						if (isPaidStatus(snap.status)) {
-							stopPoll();
-							onPaid();
-							return "PAID";
-						}
-						if (isFailedStatus(snap.status)) {
-							setAwaiting(false);
-							setError("Оплата не прошла. Можно попробовать снова, пока бронь активна.");
-							return "FAILED";
-						}
-					}
-				}
-				const byOrder = await clientApi<RahmatPayment>(`/orders/${orderId}/payment`).catch(
-					() => null,
-				);
-				if (byOrder) {
-					setPayment(byOrder);
-					if (isPaidStatus(byOrder.status)) {
-						stopPoll();
-						onPaid();
-						return "PAID";
-					}
-				}
-				await onOrderRefresh();
-			} catch (err) {
-				setError(errorText(err, "Не удалось проверить оплату"));
+				await refresh();
+			} finally {
+				running = false;
 			}
-			return "PENDING";
-		},
-		[onOrderRefresh, onPaid, orderId, stopPoll],
-	);
-
-	const startPoll = useCallback(
-		(id?: string) => {
-			stopPoll();
-			setAwaiting(true);
-			pollRef.current = setInterval(() => {
-				void syncPayment(id);
-			}, POLL_MS);
-		},
-		[stopPoll, syncPayment],
-	);
-
-	useEffect(() => {
-		const t = setInterval(() => setNow(Date.now()), 1000);
-		return () => clearInterval(t);
-	}, []);
-
-	useEffect(() => () => stopPoll(), [stopPoll]);
-
-	useEffect(() => {
-		if (!payReturn || returnHandled.current) return;
-		returnHandled.current = true;
-		if (payReturn === "fail" || payReturn === "error" || payReturn === "cancelled") {
-			setError("Оплата не завершена. Можно открыть Rahmat снова.");
-			setAwaiting(true);
-			return;
-		}
-		setAwaiting(true);
-		void (async () => {
-			await syncPayment();
-			startPoll();
-		})();
-	}, [payReturn, startPoll, syncPayment]);
-
-	useEffect(() => {
-		function onVis() {
-			if (document.visibilityState === "visible" && (awaiting || payment)) {
-				void syncPayment();
-			}
-		}
-		document.addEventListener("visibilitychange", onVis);
-		return () => document.removeEventListener("visibilitychange", onVis);
-	}, [awaiting, payment, syncPayment]);
-
-	async function createAndOpen() {
-		if (expired) return;
+		};
+		void poll();
+		const timer = setInterval(() => {
+			if (!expired && document.visibilityState === "visible") void poll();
+		}, 5000);
+		return () => clearInterval(timer);
+	}, [refresh, expired]);
+	async function action(work: () => Promise<void>) {
 		setBusy(true);
 		setError("");
 		try {
-			const created = await clientApi<RahmatPayment>("/payments/rahmat/create", {
-				method: "POST",
-				body: JSON.stringify({ orderId }),
-			});
-			setPayment(created);
-			const url = created.deeplinkUrl || created.payUrl;
-			if (!url) {
-				setError("Rahmat не вернул ссылку на оплату");
-				return;
-			}
-			openExternalUrl(url);
-			setAwaiting(true);
-			startPoll(paymentIdOf(created));
-		} catch (err) {
-			setError(errorText(err, "Не удалось создать оплату Rahmat"));
+			await work();
+		} catch (e) {
+			setError(errorText(e, "Не удалось выполнить оплату"));
 		} finally {
 			setBusy(false);
 		}
 	}
-
-	function reopen() {
-		const url = payment?.deeplinkUrl || payment?.payUrl;
-		if (url) openExternalUrl(url);
-		else void createAndOpen();
+	async function bind() {
+		const result = await clientApi<{ sessionId: string; formUrl: string }>(
+			"/payments/rahmat/bind",
+			{ method: "POST", body: JSON.stringify({ orderId }) },
+		);
+		sessionStorage.setItem(key, result.sessionId);
+		setBinding(result.sessionId);
+		openExternalUrl(result.formUrl);
 	}
-
+	async function create() {
+		const row = await clientApi<RahmatPayment>("/payments/rahmat/create", {
+			method: "POST",
+			body: JSON.stringify({ orderId, bindingId: binding }),
+		});
+		setPayment(row);
+		if (row.status === "PAID") {
+			onPaid();
+			return;
+		}
+	}
+	async function confirm() {
+		const row = await clientApi<RahmatPayment>(`/payments/${payment?.paymentId}/confirm`, {
+			method: "POST",
+			body: JSON.stringify(payment?.otpRequired ? { otp } : {}),
+		});
+		setOtp("");
+		setPayment(row);
+		await onOrderRefresh();
+		if (row.status === "PAID") onPaid();
+	}
 	if (expired) return null;
-
 	return (
-		<div>
-			<div className="pay-card">
-				<p className="meta-line">Места удерживаются</p>
-				<p className="clock">{formatCountdown(holdLeft)}</p>
-				<div className="pay-track" aria-hidden="true">
-					<i style={{ width: `${holdPct}%` }} />
-				</div>
-			</div>
-
-			{awaiting ? (
-				<p className="note">Ожидаем оплату в Rahmat… не закрывайте бронь.</p>
-			) : (
-				<p className="note">Оплата через Rahmat · {formatPrice(amountUzs)}</p>
-			)}
-
+		<div className="stack">
+			<p className="note">
+				Rahmat · {formatPrice(amountUzs)}. Данные карты вводятся на защищённой странице Multicard.
+			</p>
 			{error ? <p className="note bad">{error}</p> : null}
-
-			<div className="stack">
-				<Button
-					type="button"
-					className="v2-full"
-					disabled={busy}
-					onClick={() =>
-						void (payment?.payUrl || payment?.deeplinkUrl ? reopen() : createAndOpen())
-					}
-				>
-					{busy
-						? "…"
-						: payment?.payUrl || payment?.deeplinkUrl
-							? "Открыть Rahmat"
-							: "Оплатить Rahmat"}
-				</Button>
-				{awaiting ? (
+			{!payment ? (
+				<>
+					<Button disabled={busy} onClick={() => void action(binding ? create : bind)}>
+						{binding ? "Карта привязана — продолжить оплату" : "Привязать карту и оплатить Rahmat"}
+					</Button>
+					{binding ? (
+						<Button variant="secondary" disabled={busy} onClick={() => void action(bind)}>
+							Привязать другую карту
+						</Button>
+					) : null}
+				</>
+			) : payment.status === "FAILED" ? (
+				<p className="note bad">
+					Оплата отклонена. Обратитесь в поддержку перед повторной попыткой.
+				</p>
+			) : payment.status === "CREATING" ? (
+				<p className="note">
+					Платёж обрабатывается. При неизвестном результате обратитесь в поддержку — повторное
+					списание заблокировано.
+				</p>
+			) : payment.status !== "PAID" ? (
+				<>
+					{payment.otpRequired ? (
+						<label>
+							Код из SMS
+							<input
+								aria-label="Код SMS"
+								inputMode="numeric"
+								autoComplete="one-time-code"
+								value={otp}
+								onChange={(e) => setOtp(e.target.value)}
+							/>
+						</label>
+					) : null}
 					<Button
-						type="button"
-						className="v2-full"
-						variant="secondary"
-						onClick={() => void syncPayment()}
+						disabled={busy || (payment.otpRequired && !/^\d{4,8}$/.test(otp))}
+						onClick={() => void action(confirm)}
 					>
+						Подтвердить оплату
+					</Button>
+					<Button variant="secondary" disabled={busy} onClick={() => void action(refresh)}>
 						Проверить оплату
 					</Button>
-				) : null}
-			</div>
+				</>
+			) : (
+				<p className="note">Оплачено</p>
+			)}
 		</div>
 	);
 }
