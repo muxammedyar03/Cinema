@@ -1,11 +1,12 @@
 "use client";
 
-import { Button, Card, Toast } from "@cinema/ui";
+import { Card, Toast } from "@cinema/ui";
 import { Minus, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { clientApi, ensureTelegramSession } from "../lib/api";
 import { formatCountdown, formatPrice } from "../lib/format";
+import { BookingAction } from "./booking-action";
 
 type HoldResult = {
 	orderId: string;
@@ -53,6 +54,7 @@ export function GaBooking({
 				body: JSON.stringify({ sessionId, quantity: qty }),
 			});
 			setHold(result);
+			router.push(`/orders/${result.orderId}`);
 		} catch {
 			setError("Не хватает мест или ошибка брони. Обновите страницу.");
 			router.refresh();
@@ -106,21 +108,14 @@ export function GaBooking({
 				</p>
 			) : null}
 			<Toast message={error} open={Boolean(error)} />
-			<div className="checkout-bar">
-				<div>
-					<small>{hold ? "Осталось времени" : `${qty} × ${formatPrice(basePriceUzs)}`}</small>
-					<b>{hold ? formatCountdown(holdLeft) : formatPrice(total)}</b>
-				</div>
-				{hold ? (
-					<Button type="button" onClick={() => router.push(`/orders/${hold.orderId}`)}>
-						Оплатить
-					</Button>
-				) : (
-					<Button type="button" disabled={busy || qty < 1} onClick={() => void book()}>
-						{busy ? "…" : "Продолжить"}
-					</Button>
-				)}
-			</div>
+			<BookingAction
+				summary={formatPrice(total)}
+				detail={`${qty} билета`}
+				label="Продолжить"
+				busy={busy}
+				disabled={qty < 1 || qty > maxQty}
+				onClick={() => void book()}
+			/>
 		</>
 	);
 }

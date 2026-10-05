@@ -1,21 +1,24 @@
 "use client";
 
-import { Button } from "@cinema/ui";
 import { useEffect, useRef, useState } from "react";
 import { clientApi } from "../lib/api";
 import { errorText } from "../lib/api-error";
 import { clickInvoiceOutcome } from "../lib/click-invoice";
+import { formatPrice } from "../lib/format";
 import { openTelegramInvoice } from "../lib/telegram";
 import type { OrderDetail } from "../lib/types";
+import { BookingAction } from "./booking-action";
 
 const POLL_MS = 1000;
 const POLL_TRIES = 20;
 
 export function ClickCheckout({
 	orderId,
+	amountUzs,
 	onPaid,
 }: {
 	orderId: string;
+	amountUzs?: number;
 	onPaid: () => Promise<OrderDetail | undefined>;
 }) {
 	const [busy, setBusy] = useState(false);
@@ -87,14 +90,12 @@ export function ClickCheckout({
 		<div className="stack">
 			{info ? <p className="note">{info}</p> : null}
 			{error ? <p className="note bad">{error}</p> : null}
-			<Button
-				type="button"
-				className="v2-full"
-				disabled={busy || awaiting}
+			<BookingAction
+				summary={amountUzs ? formatPrice(amountUzs) : "Click"}
+				label={amountUzs ? `Оплатить ${formatPrice(amountUzs)}` : "Оплатить через Click"}
+				busy={busy || awaiting}
 				onClick={() => void pay()}
-			>
-				{busy || awaiting ? "…" : "Оплатить через Click"}
-			</Button>
+			/>
 		</div>
 	);
 }

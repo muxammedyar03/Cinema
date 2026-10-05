@@ -2,14 +2,15 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { hasRating, sixDayKeys } from "../lib/afisha";
 import { formatMinutes, formatPrice, formatTime } from "../lib/format";
 import type { MovieDetail, PublicCinemaProfile } from "../lib/types";
-import { Availability } from "./availability";
-import { CinemaCard } from "./cinema-card";
+import { BookingAction } from "./booking-action";
+
 import { DateStrip } from "./date-strip";
-import { LinkButton } from "./link-button";
+
 import { SessionChip } from "./session-chip";
 
 function dayKey(iso: string): string {
@@ -23,6 +24,7 @@ export function MovieScreen({
 	movie: MovieDetail;
 	cinemas: PublicCinemaProfile[];
 }) {
+	const router = useRouter();
 	const days = useMemo(() => sixDayKeys(), []);
 	const sessions = useMemo(
 		() =>
@@ -61,7 +63,6 @@ export function MovieScreen({
 				</Link>
 			</div>
 			<div className="detail-copy">
-				<span className="eyebrow">На большом экране</span>
 				<h1>{movie.title}</h1>
 				<div className="meta">
 					{hasRating(movie.rating) ? <strong>★ {movie.rating.toFixed(1)}</strong> : null}
@@ -71,9 +72,13 @@ export function MovieScreen({
 					<span>{formatMinutes(movie.durationMin)}</span>
 					{movie.ageRating ? <span>{movie.ageRating}</span> : null}
 				</div>
-				{movie.description ? <p className="description">{movie.description}</p> : null}
-				{cinema ? <CinemaCard cinema={cinema} /> : null}
-				<h2>Выберите удобный сеанс</h2>
+
+				{cinema ? (
+					<Link className="cinema-label" href={`/cinemas/${cinema.id}`}>
+						{cinema.name} · О кинотеатре
+					</Link>
+				) : null}
+				<h2>Выберите сеанс</h2>
 			</div>
 			<DateStrip days={days} active={day} onSelect={selectDay} />
 			<div className="pad">
@@ -98,21 +103,18 @@ export function MovieScreen({
 					</div>
 				)}
 				{selected ? (
-					<>
-						<p className="price-note">от {formatPrice(selected.basePriceUzs)}</p>
-						<Availability
-							timeLabel={formatTime(selected.startsAt)}
-							remaining={selected.remaining}
-							capacity={selected.capacity}
-						/>
-						{selected.remaining > 0 ? (
-							<LinkButton href={`/sessions/${selected.id}`} className="v2-full">
-								Выбрать места
-							</LinkButton>
-						) : (
-							<p className="note">На этот сеанс мест не осталось.</p>
-						)}
-					</>
+					<BookingAction
+						summary={`${formatTime(selected.startsAt)} · от ${formatPrice(selected.basePriceUzs)}`}
+						label="Выбрать места"
+						disabled={selected.remaining <= 0}
+						onClick={() => router.push(`/sessions/${selected.id}`)}
+					/>
+				) : null}
+				{movie.description ? (
+					<details className="movie-description">
+						<summary>О фильме</summary>
+						<p className="description">{movie.description}</p>
+					</details>
 				) : null}
 			</div>
 		</>
