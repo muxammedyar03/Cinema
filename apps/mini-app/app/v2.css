@@ -1466,11 +1466,53 @@ input:focus-visible {
 	}
 }
 
-.refund-confirm {
- position: fixed; inset: 0; z-index: 100; background: color-mix(in srgb, var(--bg) 85%, transparent);
- display: grid; place-items: center; padding: 16px;
-}
-.refund-confirm > div {
- padding: 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
- display: flex; flex-direction: column; gap: 12px; max-width: 360px;
-}
+/* Compact booking flow: fixed actions and a bounded, independent seat canvas. */
+.app-shell-focus { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+.app-shell-focus .app-header { padding: 10px 16px; }
+.app-shell-focus .pad { padding-inline: 16px; }
+.app-shell-focus .detail-poster { height: min(30dvh, 210px); }
+.app-shell-focus .detail-copy { padding: 0 16px 8px; margin-top: -24px; }
+.app-shell-focus .detail-copy h1 { font-size: 24px; margin: 4px 0; }
+.app-shell-focus .meta { gap: 8px; margin: 8px 0; }
+.app-shell-focus .detail-copy h2 { margin: 8px 0; }
+.app-shell-focus .dates { padding: 0 16px 12px; }
+.app-shell-focus .cinema-label { margin-bottom: 8px; }
+.app-shell-focus .times { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.app-shell-focus .time { padding: 8px 4px; }
+.movie-description { margin: 12px 0; font-size: 13px; }
+.movie-description h2 { font-size: 16px; margin: 0 0 8px; }
+.movie-description .description { white-space: pre-line; }
+.cinema-profile-link { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin: 12px 0 24px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; color: var(--muted); font-size: 12px; text-decoration: none; }
+.cinema-profile-link b { color: var(--ink); }
+.cinema-profile-link > span:last-child { flex-shrink: 0; color: var(--primary); }
+.checkout-bar { z-index: 50; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); }
+.checkout-bar > div { min-width: 0; }
+.checkout-bar small { max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.checkout-bar b { font-size: 15px; }
+.checkout-bar button { flex-shrink: 0; max-width: 60%; font-size: 13px; }
+.telegram-back .back { display: none; }
+.app-shell-seating { height: 100dvh; min-height: 0; padding-bottom: calc(84px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; overflow: hidden; overscroll-behavior: none; }
+.app-shell-seating main { flex: 1; min-height: 0; }
+.seat-page { height: 100%; display: flex; flex-direction: column; padding: 0 12px; gap: 8px; overflow: hidden; }
+.booking-heading { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.booking-heading h1 { font-size: 22px; line-height: 1.2; margin: 0; }
+.booking-heading small { color: var(--muted); font-size: 12px; }
+.seat-page .screen-arc { margin: 4px auto 0; height: 22px; padding-top: 4px; flex-shrink: 0; }
+.seat-page .zoom-bar { margin: 0; flex-shrink: 0; }
+.seat-page .seat-viewport { flex: 1; height: auto; min-height: 0; touch-action: none; overscroll-behavior: contain; }
+.seat-page .legend { flex-shrink: 0; flex-wrap: nowrap; gap: 8px; margin: 0; padding: 4px 0; }
+.seat { font-size: 12px; }
+.payment-summary { padding: 12px 16px; }
+.payment-summary h1 { font-size: 24px; line-height: 1.2; margin: 0 0 8px; }
+.payment-summary p { font-size: 13px; color: var(--muted); margin: 6px 0; }
+.payment-methods { padding: 0 16px; }
+.payment-methods .hold-line { text-align: left; margin: 8px 0 12px; }
+.payment-methods fieldset { border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+.payment-methods label { display: flex; gap: 12px; align-items: center; min-height: 44px; }
+.expired-action { flex-direction: column; }
+
+.seat-page .seat { background: transparent; border: 0; }
+.seat-face { display: grid; place-items: center; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--elev); }
+.seat-selected .seat-face { background: var(--primary); color: var(--nav-ink); }
+.seat-taken .seat-face, .seat-blocked .seat-face { background: var(--bg); color: var(--faint); }
+.seat-vip .seat-face { border-color: var(--primary); }
