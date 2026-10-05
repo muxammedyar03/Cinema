@@ -174,7 +174,7 @@ describe("runCinemaDigest", () => {
 			assert.ok(j.text.startsWith("<b>Navoiy Cinema</b> — Новые сеансы"));
 			assert.equal(j.text.split("\n").length, 1 + 3); // 3 distinct films
 			assert.deepEqual(j.replyMarkup, {
-				inline_keyboard: [[{ text: "Открыть афишу", url: DEEP_LINK }]],
+				inline_keyboard: [[{ text: "Открыть афишу", web_app: { url: DEEP_LINK } }]],
 			});
 		}
 		// one Notification row per follower, all 10 sessions in its payload
