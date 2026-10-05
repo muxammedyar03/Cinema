@@ -9,6 +9,7 @@ import {
 	moviesOnDay,
 	pickFeatured,
 	sixDayKeys,
+	tashkentDayKey,
 } from "../afisha";
 import type { CatalogMovie } from "../types";
 
@@ -96,13 +97,16 @@ it("never shows another day's sessions in the selected afisha", () => {
 		],
 	});
 	const days = [{ date: "2026-10-05", movies: [today, mixed] }];
-	assert.deepEqual(moviesOnDay(days, "2026-10-06"), []);
+	const before = new Date("2026-10-05T16:00:00+05:00");
+	assert.deepEqual(moviesOnDay(days, "2026-10-06", before), []);
 	assert.deepEqual(
-		moviesOnDay(days, "2026-10-05")
+		moviesOnDay(days, "2026-10-05", before)
 			.find((item) => item.id === "mixed")
 			?.sessions.map((s) => s.id),
 		["s2"],
 	);
+	assert.deepEqual(moviesOnDay(days, "2026-10-05", new Date("2026-10-05T21:00:00+05:00")), []);
+	assert.equal(tashkentDayKey(new Date("2026-10-05T20:30:00Z")), "2026-10-06");
 });
 
 describe("collectGenres and rating", () => {
