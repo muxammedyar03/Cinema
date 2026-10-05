@@ -1487,6 +1487,7 @@ input:focus-visible {
 .app-shell-focus .cinema-label { margin-bottom: 8px; }
 .app-shell-focus .times { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .app-shell-focus .time { padding: 8px 4px; }
+.app-shell-focus .time-ended { opacity: .55; cursor: not-allowed; }
 .movie-description { margin: 12px 0; font-size: 13px; }
 .movie-description h2 { font-size: 16px; margin: 0 0 8px; }
 .movie-description .description { white-space: pre-line; }
