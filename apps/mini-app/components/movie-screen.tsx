@@ -3,8 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
-import { hasRating } from "../lib/afisha";
+import { useEffect, useMemo, useState } from "react";
+import { hasRating, tashkentDayKey } from "../lib/afisha";
 import { formatMinutes, formatPrice, formatTime } from "../lib/format";
 import type { MovieDetail, PublicCinemaProfile } from "../lib/types";
 import { BookingAction } from "./booking-action";
@@ -12,10 +12,6 @@ import { BookingAction } from "./booking-action";
 import { DateStrip } from "./date-strip";
 
 import { SessionChip } from "./session-chip";
-
-function dayKey(iso: string): string {
-	return new Date(iso).toLocaleDateString("en-CA", { timeZone: "Asia/Tashkent" });
-}
 
 export function MovieScreen({
 	movie,
@@ -25,30 +21,61 @@ export function MovieScreen({
 	cinemas: PublicCinemaProfile[];
 }) {
 	const router = useRouter();
+	const [now, setNow] = useState(() => Date.now());
+	useEffect(() => {
+		const timer = setInterval(() => setNow(Date.now()), 30_000);
+		return () => clearInterval(timer);
+	}, []);
 	const sessions = useMemo(
 		() =>
-			movie.sessions
-				.filter((session) => new Date(session.startsAt).getTime() >= Date.now())
-				.sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()),
+			[...movie.sessions].sort(
+				(a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
+			),
 		[movie.sessions],
 	);
+	const today = tashkentDayKey(new Date(now));
 	const days = useMemo(
-		() => [...new Set(sessions.map((session) => dayKey(session.startsAt)))],
-		[sessions],
+		() =>
+			[...new Set(sessions.map((session) => tashkentDayKey(new Date(session.startsAt))))].filter(
+				(key) => key >= today,
+			),
+		[sessions, today],
 	);
 	const [day, setDay] = useState(() => {
-		return days[0] ?? "";
+		return (
+			days.find((key) =>
+				sessions.some(
+					(session) =>
+						tashkentDayKey(new Date(session.startsAt)) === key &&
+						new Date(session.startsAt).getTime() > now,
+				),
+			) ??
+			days[0] ??
+			""
+		);
 	});
-	const daySessions = sessions.filter((session) => dayKey(session.startsAt) === day);
-	const [sessionId, setSessionId] = useState(daySessions[0]?.id ?? sessions[0]?.id ?? "");
+	const daySessions = sessions.filter(
+		(session) => tashkentDayKey(new Date(session.startsAt)) === day,
+	);
+	const [sessionId, setSessionId] = useState(
+		daySessions.find((session) => new Date(session.startsAt).getTime() > now)?.id ?? "",
+	);
 	const selected =
-		daySessions.find((session) => session.id === sessionId) ?? daySessions[0] ?? null;
+		daySessions.find(
+			(session) => session.id === sessionId && new Date(session.startsAt).getTime() > now,
+		) ??
+		daySessions.find((session) => new Date(session.startsAt).getTime() > now) ??
+		null;
 	const cinema = selected ? cinemas.find((item) => item.id === selected.cinemaId) : cinemas[0];
 	const genres = (movie.genres ?? []).map((genre) => genre.trim()).filter(Boolean);
 
 	function selectDay(next: string) {
 		setDay(next);
-		const first = sessions.find((session) => dayKey(session.startsAt) === next);
+		const first = sessions.find(
+			(session) =>
+				tashkentDayKey(new Date(session.startsAt)) === next &&
+				new Date(session.startsAt).getTime() > now,
+		);
 		setSessionId(first?.id ?? "");
 	}
 
@@ -94,11 +121,15 @@ export function MovieScreen({
 								key={session.id}
 								session={session}
 								active={session.id === selected?.id}
+								disabled={new Date(session.startsAt).getTime() <= now}
 								onSelect={() => setSessionId(session.id)}
 							/>
 						))}
 					</div>
 				)}
+				{daySessions.length > 0 && !selected ? (
+					<p className="note">Сеанс уже начался. Доступных сеансов на эту дату нет.</p>
+				) : null}
 				{selected ? (
 					<BookingAction
 						summary={`${formatTime(selected.startsAt)} · от ${formatPrice(selected.basePriceUzs)}`}
