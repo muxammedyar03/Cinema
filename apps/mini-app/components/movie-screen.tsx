@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { hasRating, sixDayKeys } from "../lib/afisha";
+import { hasRating } from "../lib/afisha";
 import { formatMinutes, formatPrice, formatTime } from "../lib/format";
 import type { MovieDetail, PublicCinemaProfile } from "../lib/types";
 import { BookingAction } from "./booking-action";
@@ -25,17 +25,19 @@ export function MovieScreen({
 	cinemas: PublicCinemaProfile[];
 }) {
 	const router = useRouter();
-	const days = useMemo(() => sixDayKeys(), []);
 	const sessions = useMemo(
 		() =>
-			[...movie.sessions].sort(
-				(a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
-			),
+			movie.sessions
+				.filter((session) => new Date(session.startsAt).getTime() >= Date.now())
+				.sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()),
 		[movie.sessions],
 	);
+	const days = useMemo(
+		() => [...new Set(sessions.map((session) => dayKey(session.startsAt)))],
+		[sessions],
+	);
 	const [day, setDay] = useState(() => {
-		const first = sessions[0] ? dayKey(sessions[0].startsAt) : "";
-		return days.includes(first) ? first : (days[0] ?? "");
+		return days[0] ?? "";
 	});
 	const daySessions = sessions.filter((session) => dayKey(session.startsAt) === day);
 	const [sessionId, setSessionId] = useState(daySessions[0]?.id ?? sessions[0]?.id ?? "");
@@ -73,11 +75,6 @@ export function MovieScreen({
 					{movie.ageRating ? <span>{movie.ageRating}</span> : null}
 				</div>
 
-				{cinema ? (
-					<Link className="cinema-label" href={`/cinemas/${cinema.id}`}>
-						{cinema.name} · О кинотеатре
-					</Link>
-				) : null}
 				<h2>Выберите сеанс</h2>
 			</div>
 			<DateStrip days={days} active={day} onSelect={selectDay} />
@@ -111,10 +108,19 @@ export function MovieScreen({
 					/>
 				) : null}
 				{movie.description ? (
-					<details className="movie-description">
-						<summary>О фильме</summary>
+					<section className="movie-description">
+						<h2>О фильме</h2>
 						<p className="description">{movie.description}</p>
-					</details>
+					</section>
+				) : null}
+				{cinema ? (
+					<Link className="cinema-profile-link" href={`/cinemas/${cinema.id}`}>
+						<span>
+							<b>{cinema.name}</b>
+							{cinema.address ? ` · ${cinema.address}` : ""}
+						</span>
+						<span>О кинотеатре →</span>
+					</Link>
 				) : null}
 			</div>
 		</>
