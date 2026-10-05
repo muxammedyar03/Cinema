@@ -7,12 +7,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ClickCheckout } from "../../../components/click-checkout";
 import { LinkButton } from "../../../components/link-button";
 import { RahmatCheckout } from "../../../components/rahmat-checkout";
-import { SelfRefundPanel } from "../../../components/self-refund";
 import { TicketQr } from "../../../components/ticket-qr";
 import { clientApi, ensureTelegramSession } from "../../../lib/api";
 import { errorText } from "../../../lib/api-error";
-import { formatPrice, formatSessionDate, formatTime } from "../../../lib/format";
+import { formatCountdown, formatPrice, formatSessionDate, formatTime } from "../../../lib/format";
 import type { OrderDetail, OrderTicket } from "../../../lib/types";
+import { SelfRefundPanel } from "../../../components/self-refund";
 
 function statusLabel(status: string) {
 	switch (status) {
@@ -59,6 +59,8 @@ export function OrderHoldView({ orderId }: { orderId: string }) {
 	const [order, setOrder] = useState<OrderDetail | null>(null);
 	const [error, setError] = useState("");
 	const [now, setNow] = useState(() => Date.now());
+	const [method, setMethod] = useState("click");
+	const [rahmatEnabled, setRahmatEnabled] = useState(false);
 	const [clickEnabled, setClickEnabled] = useState(false);
 
 	const load = useCallback(async () => {
@@ -74,8 +76,14 @@ export function OrderHoldView({ orderId }: { orderId: string }) {
 				await ensureTelegramSession();
 				if (cancelled) return;
 				await load();
-				const options = await clientApi<{ click?: boolean }>("/payments/options").catch(() => null);
-				if (!cancelled) setClickEnabled(options?.click === true);
+				const options = await clientApi<{ click?: boolean; rahmat?: boolean }>(
+					"/payments/options",
+				).catch(() => null);
+				if (!cancelled) {
+					setClickEnabled(options?.click === true);
+					setRahmatEnabled(options?.rahmat === true);
+					setMethod(options?.click ? "click" : "rahmat");
+				}
 			} catch (err) {
 				if (!cancelled) setError(errorText(err, "Заказ не найден"));
 			}
@@ -125,63 +133,110 @@ export function OrderHoldView({ orderId }: { orderId: string }) {
 
 	return (
 		<>
-			<article className="ticket">
-				<div className="ticket-top">
-					<Badge tone={statusTone(expired && pending ? "EXPIRED" : order.status)}>
-						{shownStatus}
-					</Badge>
-					<h2>{order.session.movie.title}</h2>
+			{pending || expired ? (
+				<div className="payment-summary">
+					<h1>{order.session.movie.title}</h1>
 					<p>
-						{order.cinema.name} · #{order.publicNumber}
+						{formatSessionDate(order.session.startsAt)} · {formatTime(order.session.startsAt)} ·{" "}
+						{order.session.hall.name}
 					</p>
-					<div className="ticket-info">
-						<div>
-							<span>Дата</span>
-							<b>{formatSessionDate(order.session.startsAt)}</b>
-						</div>
-						<div>
-							<span>Время</span>
-							<b>{formatTime(order.session.startsAt)}</b>
-						</div>
-						<div>
-							<span>Зал</span>
-							<b>{order.session.hall.name}</b>
-						</div>
-						<div>
-							<span>{gaQty > 0 ? "Билеты" : "Места"}</span>
-							<b>{placesLabel}</b>
-						</div>
-						<div>
-							<span>Сумма</span>
-							<b>{formatPrice(order.totalUzs)}</b>
-						</div>
-						<div>
-							<span>Кинотеатр</span>
-							<b>{order.cinema.name}</b>
+					<p>
+						{order.cinema.name} · Места: {placesLabel}
+					</p>
+					<b>{formatPrice(order.totalUzs)}</b>
+				</div>
+			) : (
+				<article className="ticket">
+					<div className="ticket-top">
+						<Badge tone={statusTone(expired && pending ? "EXPIRED" : order.status)}>
+							{shownStatus}
+						</Badge>
+						<h2>{order.session.movie.title}</h2>
+						<p>
+							{order.cinema.name} · #{order.publicNumber}
+						</p>
+						<div className="ticket-info">
+							<div>
+								<span>Дата</span>
+								<b>{formatSessionDate(order.session.startsAt)}</b>
+							</div>
+							<div>
+								<span>Время</span>
+								<b>{formatTime(order.session.startsAt)}</b>
+							</div>
+							<div>
+								<span>Зал</span>
+								<b>{order.session.hall.name}</b>
+							</div>
+							<div>
+								<span>{gaQty > 0 ? "Билеты" : "Места"}</span>
+								<b>{placesLabel}</b>
+							</div>
+							<div>
+								<span>Сумма</span>
+								<b>{formatPrice(order.totalUzs)}</b>
+							</div>
+							<div>
+								<span>Кинотеатр</span>
+								<b>{order.cinema.name}</b>
+							</div>
 						</div>
 					</div>
-				</div>
-				<div className="ticket-bottom">
-					{showQr ? (
-						tickets.map((ticket, index) => (
-							<TicketQr
-								key={ticket.id}
-								code={ticket.code}
-								status={ticket.status}
-								label={`${ticketSeatLabel(order, ticket, index)} · ${order.session.hall.name}`}
-							/>
-						))
-					) : (
-						<p>{paid ? "Оплата получена. Готовим QR…" : "QR появится после оплаты"}</p>
-					)}
-				</div>
-			</article>
-
-			{pending && !expired && clickEnabled ? (
-				<ClickCheckout orderId={order.id} onPaid={load} />
-			) : null}
+					<div className="ticket-bottom">
+						{showQr ? (
+							tickets.map((ticket, index) => (
+								<TicketQr
+									key={ticket.id}
+									code={ticket.code}
+									status={ticket.status}
+									label={`${ticketSeatLabel(order, ticket, index)} · ${order.session.hall.name}`}
+								/>
+							))
+						) : (
+							<p>{paid ? "Оплата получена. Готовим QR…" : "QR появится после оплаты"}</p>
+						)}
+					</div>
+				</article>
+			)}
 
 			{pending && !expired ? (
+				<div className="payment-methods">
+					<p className="hold-line">Места удерживаются {formatCountdown(holdLeft)}</p>
+					<fieldset>
+						<legend>Способ оплаты</legend>
+						{clickEnabled ? (
+							<label>
+								<input
+									type="radio"
+									name="payment"
+									checked={method === "click"}
+									onChange={() => setMethod("click")}
+								/>{" "}
+								Click
+							</label>
+						) : null}
+						{rahmatEnabled ? (
+							<label>
+								<input
+									type="radio"
+									name="payment"
+									checked={method === "rahmat"}
+									onChange={() => setMethod("rahmat")}
+								/>{" "}
+								Rahmat
+							</label>
+						) : null}
+						{!clickEnabled && !rahmatEnabled ? (
+							<p className="note">Оплата временно недоступна. Обратитесь в кинотеатр.</p>
+						) : null}
+					</fieldset>
+				</div>
+			) : null}
+			{pending && !expired && clickEnabled && method === "click" ? (
+				<ClickCheckout amountUzs={order.totalUzs} orderId={order.id} onPaid={load} />
+			) : null}
+
+			{pending && !expired && rahmatEnabled && method === "rahmat" ? (
 				<RahmatCheckout
 					orderId={order.id}
 					amountUzs={order.totalUzs}
@@ -189,14 +244,12 @@ export function OrderHoldView({ orderId }: { orderId: string }) {
 					createdAt={order.createdAt}
 					expired={expired}
 					payReturn={payReturn}
-					onPaid={() => void load()}
-					onOrderRefresh={async () => {
-						await load();
-					}}
+					onPaid={load}
+					onOrderRefresh={load}
 				/>
 			) : null}
 
-			{expired ? <p className="note">Время брони истекло. Выберите места снова.</p> : null}
+			{expired ? <p className="note">Время брони истекло. Выберите места заново.</p> : null}
 			{payReturn === "fail" || payReturn === "error" ? (
 				<p className="note bad">Возврат из Rahmat: оплата не завершена.</p>
 			) : null}
@@ -225,19 +278,21 @@ export function OrderHoldView({ orderId }: { orderId: string }) {
 				/>
 			) : null}
 
-			<div className="stack">
-				{order.status === "EXPIRED" || expired ? (
-					<LinkButton href={`/sessions/${order.session.id}`} className="v2-full">
-						Выбрать места снова
+			{!pending || expired ? (
+				<div className={expired ? "stack checkout-bar expired-action" : "stack"}>
+					{order.status === "EXPIRED" || expired ? (
+						<LinkButton href={`/sessions/${order.session.id}`} className="v2-full">
+							Выбрать места заново
+						</LinkButton>
+					) : null}
+					<LinkButton href="/orders" variant="secondary" className="v2-full">
+						Мои билеты
 					</LinkButton>
-				) : null}
-				<LinkButton href="/orders" variant="secondary" className="v2-full">
-					Мои билеты
-				</LinkButton>
-				<Link href="/" className="v2-btn v2-btn-secondary v2-full">
-					На афишу
-				</Link>
-			</div>
+					<Link href="/" className="v2-btn v2-btn-secondary v2-full">
+						На афишу
+					</Link>
+				</div>
+			) : null}
 		</>
 	);
 }

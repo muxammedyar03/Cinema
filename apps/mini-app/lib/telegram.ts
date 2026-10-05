@@ -1,5 +1,14 @@
 export type TelegramWebApp = {
 	initData: string;
+	isVersionAtLeast?: (version: string) => boolean;
+	disableVerticalSwipes?: () => void;
+	enableVerticalSwipes?: () => void;
+	BackButton?: {
+		show: () => void;
+		hide: () => void;
+		onClick: (fn: () => void) => void;
+		offClick: (fn: () => void) => void;
+	};
 	initDataUnsafe?: {
 		user?: {
 			id: number;

@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Toast } from "@cinema/ui";
+import { Toast } from "@cinema/ui";
 import { Minus, Plus, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -9,9 +9,10 @@ import { errorText } from "../lib/api-error";
 import { formatCountdown, formatPrice } from "../lib/format";
 import type { SessionSeat } from "../lib/types";
 import { cx } from "../lib/ui";
+import { BookingAction } from "./booking-action";
 
 const SEAT = 30;
-const SCALE_MIN = 0.35;
+const SCALE_MIN = 0.1;
 const SCALE_MAX = 4;
 const DRAG_THRESHOLD = 8;
 
@@ -54,7 +55,7 @@ function mid(a: { x: number; y: number }, b: { x: number; y: number }) {
 }
 
 function fitView(vw: number, vh: number, contentW: number, contentH: number): View {
-	const scale = clampScale(Math.min(vw / contentW, vh / contentH) * 0.88);
+	const scale = clampScale((vw / contentW) * 0.96);
 	return {
 		scale,
 		x: (vw - contentW * scale) / 2,
@@ -76,6 +77,7 @@ export function SeatBooking({
 	const router = useRouter();
 	const viewportRef = useRef<HTMLDivElement>(null);
 	const viewRef = useRef<View>({ x: 0, y: 0, scale: 1 });
+	const lastTapRef = useRef<{ at: number; x: number; y: number } | null>(null);
 	const pointersRef = useRef(new Map<number, { x: number; y: number }>());
 	const gestureRef = useRef<{
 		mode: "none" | "pan" | "pinch";
@@ -102,7 +104,7 @@ export function SeatBooking({
 	const [error, setError] = useState("");
 	const [hold, setHold] = useState<HoldResult | null>(null);
 	const [now, setNow] = useState(() => Date.now());
-	const [tipId, setTipId] = useState<string | null>(null);
+
 	const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });
 	const [fitted, setFitted] = useState(false);
 
@@ -200,7 +202,6 @@ export function SeatBooking({
 	}
 
 	function onSeatTap(seat: SessionSeat) {
-		setTipId(seat.id);
 		if (hold) return;
 		if (seat.status !== "AVAILABLE" || seat.type === "BLOCKED") return;
 		setSelected((prev) =>
@@ -295,6 +296,14 @@ export function SeatBooking({
 		const g = gestureRef.current;
 		const pending = g.pendingSeatId;
 		const wasTap = !g.moved;
+		const pt = localPoint(e);
+		const last = lastTapRef.current;
+		const doubleTap = wasTap && last && Date.now() - last.at < 300 && dist(last, pt) < 24;
+		if (wasTap) lastTapRef.current = { ...pt, at: Date.now() };
+		if (doubleTap) {
+			applyView(zoomAt(viewRef.current, pt.x, pt.y, viewRef.current.scale * 1.6));
+			g.pendingSeatId = null;
+		}
 
 		pointersRef.current.delete(e.pointerId);
 		try {
@@ -322,11 +331,20 @@ export function SeatBooking({
 			g.mode = "none";
 			g.panStart = null;
 			g.pinchStart = null;
-			if (wasTap && pending) {
-				const seat = byId.get(pending);
+			if (wasTap && !doubleTap && pending) {
+				// Overlapping expanded hit areas: prefer the nearest seat centre.
+				const wx = (pt.x - viewRef.current.x) / viewRef.current.scale;
+				const wy = (pt.y - viewRef.current.y) / viewRef.current.scale;
+				const nearest = seats.reduce(
+					(best, seat) =>
+						Math.hypot(seat.x + SEAT / 2 - wx, seat.y + SEAT / 2 - wy) <
+						Math.hypot(best.x + SEAT / 2 - wx, best.y + SEAT / 2 - wy)
+							? seat
+							: best,
+					seats[0],
+				);
+				const seat = nearest ?? byId.get(pending);
 				if (seat) onSeatTap(seat);
-			} else if (wasTap) {
-				setTipId(null);
 			}
 			g.pendingSeatId = null;
 			g.moved = false;
@@ -344,6 +362,7 @@ export function SeatBooking({
 				body: JSON.stringify({ sessionId, seatIds: selected }),
 			});
 			setHold(result);
+			router.push(`/orders/${result.orderId}`);
 		} catch (err) {
 			const msg = errorText(err, "Не удалось забронировать");
 			setError(
@@ -382,11 +401,22 @@ export function SeatBooking({
 
 			<div
 				ref={viewportRef}
+				role="application"
+				aria-label="Схема зала. Два пальца — масштаб, перетаскивание — перемещение."
+				onKeyDown={(e) => {
+					if (e.key === "+") bumpZoom(1.25);
+					if (e.key === "-") bumpZoom(0.8);
+					if (e.key === "0") resetFit();
+				}}
 				className={cx("seat-viewport", fitted && "is-ready")}
 				onPointerDown={onPointerDown}
 				onPointerMove={onPointerMove}
 				onPointerUp={onPointerUp}
-				onPointerCancel={onPointerUp}
+				onPointerCancel={() => {
+					pointersRef.current.clear();
+					gestureRef.current.pendingSeatId = null;
+					gestureRef.current.mode = "none";
+				}}
 			>
 				<div
 					className="absolute left-0 top-0 will-change-transform"
@@ -404,13 +434,19 @@ export function SeatBooking({
 						const isTaken = status === "held" || status === "sold";
 						const isBlocked = status === "blocked" || type === "blocked";
 						const isFree = status === "available" && !isBlocked;
-						const showTip = tipId === seat.id;
 
 						return (
 							<button
 								key={seat.id}
 								type="button"
 								data-seat-id={seat.id}
+								onKeyDown={(e) => {
+									if (e.key === "Enter" || e.key === " ") {
+										e.preventDefault();
+										e.stopPropagation();
+										onSeatTap(seat);
+									}
+								}}
 								disabled={Boolean(hold)}
 								className={cx(
 									"seat",
@@ -421,30 +457,24 @@ export function SeatBooking({
 									isSelected && "seat-selected",
 								)}
 								style={{
-									left: seat.x,
-									top: seat.y,
-									width: SEAT,
-									height: SEAT,
+									left: seat.x - (Math.max(SEAT, 40 / view.scale) - SEAT) / 2,
+									top: seat.y - (Math.max(SEAT, 40 / view.scale) - SEAT) / 2,
+									width: Math.max(SEAT, 40 / view.scale),
+									height: Math.max(SEAT, 40 / view.scale),
 									transform: `rotate(${seat.rotation}deg)`,
 									pointerEvents: "auto",
 								}}
 								aria-label={`${seat.rowLabel}${seat.number}, ${seatStatusLabel(seat)}, ${formatPrice(seat.priceUzs)}`}
 							>
-								{seat.number}
-								{showTip ? (
-									<span
-										className="seat-tip"
-										style={{ transform: `translateX(-50%) rotate(${-seat.rotation}deg)` }}
-									>
-										<span className="block">
-											{seat.rowLabel}
-											{seat.number}
-											{type === "vip" ? " · VIP" : ""}
-										</span>
-										<span className="block">{formatPrice(seat.priceUzs)}</span>
-										<span className="block">{seatStatusLabel(seat)}</span>
-									</span>
-								) : null}
+								<span
+									className="seat-face"
+									style={{
+										width: Math.max(SEAT, 28 / view.scale),
+										height: Math.max(SEAT, 28 / view.scale),
+									}}
+								>
+									{seat.number}
+								</span>
 							</button>
 						);
 					})}
@@ -466,11 +496,6 @@ export function SeatBooking({
 				</span>
 			</div>
 
-			<div className="selection" aria-live="polite">
-				<p>Ваши места</p>
-				<strong>{selectedLabels || "Нажмите на свободное место"}</strong>
-			</div>
-
 			{hold ? (
 				<p className="hold-line" aria-live="polite">
 					Бронь удерживается {formatCountdown(holdLeft)}
@@ -478,33 +503,18 @@ export function SeatBooking({
 			) : null}
 			<Toast message={error} open={Boolean(error)} />
 
-			<div className="checkout-bar">
-				<div>
-					<small>
-						{hold
-							? "Осталось времени"
-							: selected.length > 0
-								? `${selected.length} билетов · Итого`
-								: `от ${formatPrice(basePriceUzs)}`}
-					</small>
-					<b>
-						{hold
-							? formatCountdown(holdLeft)
-							: selected.length > 0
-								? formatPrice(total)
-								: `${remaining} мест`}
-					</b>
-				</div>
-				{hold ? (
-					<Button type="button" onClick={() => router.push(`/orders/${hold.orderId}`)}>
-						Оплатить
-					</Button>
-				) : (
-					<Button type="button" disabled={busy || selected.length === 0} onClick={book}>
-						{busy ? "…" : "Продолжить"}
-					</Button>
-				)}
-			</div>
+			<BookingAction
+				summary={
+					selected.length
+						? `${selected.length} билета · ${formatPrice(total)}`
+						: `от ${formatPrice(basePriceUzs)}`
+				}
+				detail={selectedLabels || `Доступно ${remaining} мест`}
+				label="Продолжить"
+				busy={busy}
+				disabled={!selected.length}
+				onClick={() => void book()}
+			/>
 		</>
 	);
 }
