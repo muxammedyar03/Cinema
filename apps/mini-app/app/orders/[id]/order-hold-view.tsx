@@ -7,12 +7,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ClickCheckout } from "../../../components/click-checkout";
 import { LinkButton } from "../../../components/link-button";
 import { RahmatCheckout } from "../../../components/rahmat-checkout";
+import { SelfRefundPanel } from "../../../components/self-refund";
 import { TicketQr } from "../../../components/ticket-qr";
 import { clientApi, ensureTelegramSession } from "../../../lib/api";
 import { errorText } from "../../../lib/api-error";
 import { formatCountdown, formatPrice, formatSessionDate, formatTime } from "../../../lib/format";
 import type { OrderDetail, OrderTicket } from "../../../lib/types";
-import { SelfRefundPanel } from "../../../components/self-refund";
 
 function statusLabel(status: string) {
 	switch (status) {
