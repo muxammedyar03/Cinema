@@ -50,7 +50,7 @@ Unknown POST outcomes remain CREATING and block fresh charges. No automatic retr
 
 1. Apply via open.rhmt.uz for internet acquiring; obtain the two kassas/contracts described by support.
 2. Obtain per-kassa application_id, secret, numeric store ID, bank-recipient UUIDs, acquiring fee and fiscal settings.
-3. Fill API environment variables in `.env.example`. Secrets belong only on the VPS API, never in NEXT_PUBLIC variables or Vercel frontend configuration. Keep callback secrets stable until outstanding invoices complete.
+3. Fill API environment variables in `deploy/rahmat.env.example`. Secrets belong only on the VPS API, never in NEXT_PUBLIC variables or Vercel frontend configuration. Keep callback secrets stable until outstanding invoices complete.
 4. Configure HTTPS public API and frontend URLs. The success callback URL is sent in each request. Webhook mode must be enabled by Multicard separately; configure its `/events` URL with support.
 5. Run `prisma migrate deploy`, regenerate the Prisma client, rebuild and restart the API. Existing Click/PAYME rows are preserved.
 6. Verify sandbox: card binding, SMS/no-SMS confirmation, split bank recipients, correct fee and fiscal receipt, subscription checkout, tenant access, duplicate/parallel callbacks, booking expiry, declined charges, lost response and repeated status queries.
