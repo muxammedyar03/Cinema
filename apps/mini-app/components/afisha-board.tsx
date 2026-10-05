@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
-	allMovies,
 	collectGenres,
 	minSessionPrice,
 	moviesOnDay,
@@ -35,11 +34,11 @@ export function AfishaBoard({
 	});
 	const [genre, setGenre] = useState("Все");
 
-	const featured = pickFeatured(allMovies(catalog.days), {
+	const dayMovies = moviesOnDay(catalog.days, day);
+	const featured = pickFeatured(dayMovies, {
 		featuredMovieId: catalog.featuredMovieId,
 		featuredSource: catalog.featuredSource,
 	});
-	const dayMovies = moviesOnDay(catalog.days, day);
 	const genres = collectGenres(dayMovies);
 	const visible =
 		genre === "Все" ? dayMovies : dayMovies.filter((movie) => movie.genres?.includes(genre));
