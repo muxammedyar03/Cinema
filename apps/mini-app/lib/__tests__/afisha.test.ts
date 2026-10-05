@@ -6,6 +6,7 @@ import {
 	collectGenres,
 	hasRating,
 	minSessionPrice,
+	moviesOnDay,
 	pickFeatured,
 	sixDayKeys,
 } from "../afisha";
@@ -83,6 +84,25 @@ describe("pickFeatured", () => {
 	it("returns null when the afisha is empty", () => {
 		assert.equal(pickFeatured([]), null);
 	});
+});
+
+it("never shows another day's sessions in the selected afisha", () => {
+	const today = movie({ id: "today", sessions: [session("s1", "2026-10-05T17:00:00+05:00")] });
+	const mixed = movie({
+		id: "mixed",
+		sessions: [
+			session("s2", "2026-10-05T20:00:00+05:00"),
+			session("s3", "2026-10-06T18:00:00+05:00"),
+		],
+	});
+	const days = [{ date: "2026-10-05", movies: [today, mixed] }];
+	assert.deepEqual(moviesOnDay(days, "2026-10-06"), []);
+	assert.deepEqual(
+		moviesOnDay(days, "2026-10-05")
+			.find((item) => item.id === "mixed")
+			?.sessions.map((s) => s.id),
+		["s2"],
+	);
 });
 
 describe("collectGenres and rating", () => {
