@@ -2,7 +2,7 @@
 
 import { Button, Wizard, type WizardStep, WizardSummary } from "@cinema/ui";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { CreateAction, CreateBanner } from "../../components/create-action";
 import fields from "../../components/platform/fields.module.css";
 import { clientApi } from "../../lib/api";
@@ -69,6 +69,7 @@ export function NewSessionAction({
 	variant?: "banner" | "header" | "card";
 	movieId?: string;
 }) {
+	const createdSessionId = useRef<string | null>(null);
 	const router = useRouter();
 	const [open, setOpen] = useState(false);
 	const [draft, setDraft] = useState<Draft>(emptyDraft);
@@ -87,6 +88,7 @@ export function NewSessionAction({
 	}
 
 	async function show() {
+		createdSessionId.current = null;
 		const next = { ...emptyDraft(), movieId: movieId ?? "" };
 		setDraft(next);
 		setOpen(true);
@@ -309,40 +311,53 @@ export function NewSessionAction({
 			<Wizard
 				open={open}
 				title="Новый сеанс"
-				subtitle="Черновик сеанса, затем публикация."
+				subtitle="Создайте сеанс — он сразу появится в афише."
 				steps={steps}
 				data={draft}
 				onChange={setDraft}
-				onReset={() => setDraft(emptyDraft())}
+				onReset={() => {
+					if (!createdSessionId.current) setDraft(emptyDraft());
+				}}
 				onClose={() => setOpen(false)}
-				submitLabel="Создать"
+				submitLabel="Создать и разместить"
 				onSubmit={async (data) => {
+					if (!createdSessionId.current) {
+						try {
+							const session = await clientApi<{ id: string }>("/admin/sessions", {
+								method: "POST",
+								body: JSON.stringify({
+									movieId: data.movieId,
+									cinemaId: data.cinemaId,
+									hallId: data.hallId,
+									startsAt: new Date(`${data.date}T${data.time}`).toISOString(),
+									basePriceUzs: Number(data.basePriceUzs),
+									...(data.generalAdmission
+										? { generalAdmission: true }
+										: data.vipPriceUzs.trim()
+											? { vipPriceUzs: Number(data.vipPriceUzs) }
+											: {}),
+								}),
+							});
+							createdSessionId.current = session.id;
+						} catch (cause) {
+							throw new Error(
+								errorText(cause, "Не удалось создать сеанс. Проверьте зал и повторите попытку."),
+							);
+						}
+					}
 					try {
-						await clientApi("/admin/sessions", {
+						await clientApi(`/admin/sessions/${createdSessionId.current}/publish`, {
 							method: "POST",
-							body: JSON.stringify({
-								movieId: data.movieId,
-								cinemaId: data.cinemaId,
-								hallId: data.hallId,
-								startsAt: new Date(`${data.date}T${data.time}`).toISOString(),
-								basePriceUzs: Number(data.basePriceUzs),
-								...(data.generalAdmission
-									? { generalAdmission: true }
-									: data.vipPriceUzs.trim()
-										? { vipPriceUzs: Number(data.vipPriceUzs) }
-										: {}),
-							}),
 						});
 					} catch (cause) {
 						throw new Error(
 							errorText(
 								cause,
-								data.generalAdmission
-									? "Не удалось создать GA-сеанс."
-									: "Не удалось создать сеанс. В зале нужны места в активном layout.",
+								"Сеанс создан как черновик, но не размещён. Повторите попытку — новый сеанс не создастся.",
 							),
 						);
 					}
+					createdSessionId.current = null;
 					setOpen(false);
 					router.refresh();
 				}}
