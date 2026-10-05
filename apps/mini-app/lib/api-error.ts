@@ -13,6 +13,10 @@ export class ApiError extends Error {
 }
 
 const RU: Record<string, string> = {
+	ORDER_NOT_FOUND: "Заказ не найден. Откройте его из списка ваших билетов",
+	REFUND_SELECTION_REQUIRED: "Выберите билеты для возврата",
+	REFUND_ALREADY_PENDING: "Заявка на возврат этих билетов уже оформлена",
+	REFUND_NOT_FOUND: "Заявка на возврат не найдена. Обратитесь в кинотеатр",
 	INIT_DATA_REQUIRED: "Откройте приложение в Telegram",
 	INIT_DATA_INVALID: "Не удалось войти через Telegram",
 	INIT_DATA_EXPIRED: "Сессия Telegram истекла. Перезапустите приложение",

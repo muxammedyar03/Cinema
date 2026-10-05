@@ -7,7 +7,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { RedisService } from "../redis/redis.service";
 
 const TZ = "Asia/Tashkent";
-const CATALOG_TTL = 45;
+const CATALOG_TTL = 2;
 
 function dayKey(date: Date): string {
 	return date.toLocaleDateString("en-CA", { timeZone: TZ });

@@ -167,6 +167,7 @@ export type OrderItem = {
 };
 
 export type OrderDetail = {
+	refunds?: Array<{ id: string; status: string; amountUzs: number; ticketIds: string[] }>;
 	id: string;
 	publicNumber: number;
 	status: OrderStatus | string;

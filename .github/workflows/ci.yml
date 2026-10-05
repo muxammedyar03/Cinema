@@ -122,6 +122,14 @@ jobs:
           --shadow-database-url "$SHADOW_DATABASE_URL"
           --exit-code
 
+      - name: Apply migrations to disposable CI database
+        run: pnpm --filter @cinema/api exec prisma migrate deploy
+
+      - name: Refund database integration
+        env:
+          REFUND_INTEGRATION_TEST: "1"
+        run: pnpm --filter @cinema/api exec tsx scripts/refund-integration.ts
+
   deploy-vps:
     name: deploy-vps
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'

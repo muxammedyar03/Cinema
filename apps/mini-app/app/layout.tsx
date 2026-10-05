@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { AppShell } from "../components/app-shell";
 import { BottomDock } from "../components/bottom-dock";
+import { CatalogRefresh } from "../components/catalog-refresh";
 import { TelegramBoot } from "../components/telegram-boot";
 import { ThemeProvider } from "../components/theme-provider";
 
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 				<Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
 				<ThemeProvider>
 					<TelegramBoot />
+					<CatalogRefresh />
 					<AppShell>{children}</AppShell>
 					<BottomDock />
 				</ThemeProvider>

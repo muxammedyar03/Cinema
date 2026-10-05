@@ -201,10 +201,25 @@ export function OrderHoldView({ orderId }: { orderId: string }) {
 				<p className="note bad">Возврат из Rahmat: оплата не завершена.</p>
 			) : null}
 
+			{order.refunds?.map((refund) => (
+				<p className="note" key={refund.id}>
+					{refund.status === "PENDING"
+						? "Заявка на возврат оформлена. Кинотеатр обрабатывает её вручную; срок зачисления уточните в кинотеатре."
+						: refund.status === "SUCCEEDED"
+							? "Возврат оформлен"
+							: "Возврат отклонён. Обратитесь в кинотеатр."}{" "}
+					· {formatPrice(refund.amountUzs)}
+				</p>
+			))}
 			{paid ? (
 				<SelfRefundPanel
 					orderId={order.id}
-					tickets={tickets}
+					tickets={tickets.filter(
+						(ticket) =>
+							!order.refunds?.some(
+								(refund) => refund.status === "PENDING" && refund.ticketIds.includes(ticket.id),
+							),
+					)}
 					startsAt={order.session.startsAt}
 					onDone={() => void load()}
 				/>

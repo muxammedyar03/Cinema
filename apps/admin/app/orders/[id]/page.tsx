@@ -9,6 +9,7 @@ import { cx, ui } from "../../../lib/ui";
 import { OrderRefundPanel } from "./refund-panel";
 
 type AdminOrder = {
+	refunds?: Array<{ id: string; status: string; amountUzs: number; ticketIds: string[] }>;
 	id: string;
 	publicNumber: number;
 	status: string;
@@ -61,7 +62,7 @@ export default async function AdminOrderDetailPage({
 			<Shell user={user}>
 				<h1 className={ui.pageTitle}>Заказ</h1>
 				<p className={ui.sub}>
-					Не удалось загрузить заказ. Нужен GET /admin/orders/:id по контракту.
+					Не удалось загрузить заказ. Проверьте доступ к кинотеатру и повторите попытку.
 				</p>
 				<Link className={cx(ui.btn, ui.btnGhost, "mt-4")} href="/orders">
 					К списку
@@ -80,7 +81,7 @@ export default async function AdminOrderDetailPage({
 				<div>
 					<h1 className={ui.pageTitle}>Заказ #{order.publicNumber}</h1>
 					<p className={ui.sub}>
-						{movie} · {cinema} · {order.status} · Rahmat only (MVP)
+						{movie} · {cinema} · {order.status}
 					</p>
 				</div>
 				<Link className={cx(ui.btn, ui.btnGhost)} href="/m/tickets/verify">
@@ -122,8 +123,16 @@ export default async function AdminOrderDetailPage({
 				)}
 			</div>
 			<div className={ui.card}>
-				<div className={ui.cardH}>Возврат (Rahmat)</div>
-				<OrderRefundPanel orderId={order.id} tickets={tickets} />
+				<div className={ui.cardH}>Возврат</div>
+				<OrderRefundPanel
+					orderId={order.id}
+					tickets={tickets.filter(
+						(t) =>
+							!order.refunds?.some((r) => r.status === "PENDING" && r.ticketIds.includes(t.id)),
+					)}
+					refunds={order.refunds}
+					canResolve={roleOf(user) === "cinema"}
+				/>
 			</div>
 			<p className="text-xs text-faint">{money(order.totalUzs)}</p>
 		</Shell>

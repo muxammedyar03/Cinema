@@ -1,8 +1,8 @@
 "use client";
 
 import { Button, Card, Toast } from "@cinema/ui";
-import { useMemo, useState } from "react";
-import { clientApi } from "../lib/api";
+import { useMemo, useRef, useState } from "react";
+import { ApiError, clientApi } from "../lib/api";
 import { errorText } from "../lib/api-error";
 import { formatPrice } from "../lib/format";
 import { canSelfRefund, newIdempotencyKey } from "../lib/tickets";
@@ -27,6 +27,8 @@ export function SelfRefundPanel({
 }) {
 	const active = useMemo(() => tickets.filter((ticket) => ticket.status === "ACTIVE"), [tickets]);
 	const [selected, setSelected] = useState<string[]>([]);
+	const keyRef = useRef(newIdempotencyKey());
+	const [confirming, setConfirming] = useState(false);
 	const [reason, setReason] = useState("");
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState("");
@@ -36,16 +38,15 @@ export function SelfRefundPanel({
 	if (active.length === 0) return null;
 
 	function toggle(id: string) {
+		keyRef.current = newIdempotencyKey();
 		setSelected((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
 	}
 
-	const chosen =
-		selected.length === 0 ? active : active.filter((ticket) => selected.includes(ticket.id));
+	const chosen = active.filter((ticket) => selected.includes(ticket.id));
 	const amount = chosen.reduce((sum, ticket) => sum + (ticket.unitPriceUzs ?? 0), 0);
-	const full = selected.length === 0 || selected.length === active.length;
 
 	async function submit() {
-		if (!allowed) return;
+		if (!allowed || !chosen.length || !confirming) return;
 		setBusy(true);
 		setError("");
 		setInfo("");
@@ -53,19 +54,25 @@ export function SelfRefundPanel({
 			const result = await clientApi<RefundResult>(`/orders/${orderId}/refunds`, {
 				method: "POST",
 				body: JSON.stringify({
-					ticketIds: selected,
+					ticketIds: chosen.map((t) => t.id),
 					reason: reason.trim() || undefined,
-					idempotencyKey: newIdempotencyKey(),
+					idempotencyKey: keyRef.current,
 				}),
 			});
 			setInfo(
 				result.status === "PENDING"
-					? "Возврат принят. Ждём подтверждение Rahmat…"
-					: "Возврат оформлен",
+					? `Заявка на возврат оформлена · ${formatPrice(result.amountUzs ?? amount)}. Кинотеатр обработает её вручную через платёжного провайдера. Срок зачисления уточните в кинотеатре.`
+					: `Возврат оформлен · ${formatPrice(result.amountUzs ?? amount)}`,
 			);
+			setConfirming(false);
+			keyRef.current = newIdempotencyKey();
 			onDone();
 		} catch (err) {
-			setError(errorText(err, "Не удалось оформить возврат"));
+			setError(
+				err instanceof ApiError && err.status === 404
+					? "Сервис возвратов временно недоступен. Обратитесь в кинотеатр с номером заказа."
+					: errorText(err, "Не удалось оформить возврат"),
+			);
 		} finally {
 			setBusy(false);
 		}
@@ -84,7 +91,7 @@ export function SelfRefundPanel({
 					) : (
 						<>
 							<p className="description">
-								Пустой выбор — вернуть все активные билеты. Можно вернуть и один билет.
+								Выберите билеты. Возврат выполняет кинотеатр через платёжного провайдера.
 							</p>
 							<ul className="refund-list">
 								{active.map((ticket, index) => (
@@ -113,19 +120,43 @@ export function SelfRefundPanel({
 							<Button
 								type="button"
 								className="v2-full"
-								disabled={busy}
-								onClick={() => void submit()}
+								disabled={busy || chosen.length === 0}
+								onClick={() => setConfirming(true)}
 							>
-								{busy
-									? "…"
-									: full
-										? `Вернуть все${amount ? ` · ${formatPrice(amount)}` : ""}`
-										: `Вернуть выбранные${amount ? ` · ${formatPrice(amount)}` : ""}`}
+								{busy ? "Подождите…" : `Вернуть ${chosen.length} билета · ${formatPrice(amount)}`}
 							</Button>
 						</>
 					)}
 				</div>
 			</Card>
+			{confirming ? (
+				<div
+					className="refund-confirm"
+					role="dialog"
+					aria-modal="true"
+					aria-labelledby="refund-title"
+				>
+					<div>
+						<h2 id="refund-title">Оформить возврат?</h2>
+						<p>
+							{chosen.length} билета · {formatPrice(amount)}
+						</p>
+						<p>Деньги вернёт кинотеатр через провайдера. Это заявка, а не мгновенное зачисление.</p>
+						<Button type="button" disabled={busy} onClick={() => void submit()}>
+							Подтвердить возврат
+						</Button>
+						<Button
+							type="button"
+							variant="secondary"
+							disabled={busy}
+							onClick={() => setConfirming(false)}
+						>
+							Отмена
+						</Button>
+					</div>
+				</div>
+			) : null}
+			{info ? <output className="note">{info}</output> : null}
 			<Toast message={error || info} open={Boolean(error || info)} />
 		</div>
 	);

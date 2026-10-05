@@ -211,7 +211,7 @@ export class BookingService {
 					},
 				},
 				items: true,
-				tickets: { select: { id: true, code: true, status: true } },
+				tickets: true,
 			},
 		});
 		if (!order) throw new NotFoundException("Order not found");
@@ -254,7 +254,21 @@ export class BookingService {
 					seatType: seat?.type ?? null,
 				};
 			}),
-			tickets: order.tickets,
+			tickets: order.tickets.map((ticket) => {
+				const item = order.items.find(
+					(i) => i.type === ticket.type && (ticket.type !== "SEAT" || i.seatId === ticket.seatId),
+				);
+				const seat = ticket.seatId ? seatMap.get(ticket.seatId) : null;
+				return {
+					...ticket,
+					seatLabel: seat ? `${seat.rowLabel}${seat.number}` : null,
+					unitPriceUzs: item?.unitPriceUzs,
+				};
+			}),
+			refunds: await this.prisma.refund.findMany({
+				where: { orderId },
+				select: { id: true, status: true, amountUzs: true, ticketIds: true },
+			}),
 		};
 	}
 

@@ -409,6 +409,12 @@ model Payment {
 }
 
 model Refund {
+  idempotencyKey String? @unique
+  ticketIds String[] @default([])
+  initiatedByUserId String?
+  resolvedByUserId String?
+  resolvedAt DateTime?
+  @@index([orderId, status])
   id               String       @id @default(cuid())
   paymentId        String
   orderId          String

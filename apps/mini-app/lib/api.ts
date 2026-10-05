@@ -10,6 +10,7 @@ export async function clientApi<T>(path: string, init?: RequestInit): Promise<T>
 	const res = await fetch(`${API}${path}`, {
 		...init,
 		credentials: "include",
+		cache: "no-store",
 		headers: {
 			"Content-Type": "application/json",
 			...(initData ? { "X-Telegram-Init-Data": initData } : {}),
