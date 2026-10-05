@@ -5,6 +5,7 @@ import { CurrentUser } from "../auth/current-user.decorator";
 import { SessionGuard } from "../auth/session.guard";
 import { InternalSecretGuard } from "./internal-secret.guard";
 import { PaymentService } from "./payment.service";
+import { RahmatClient } from "./rahmat-client";
 
 const preCheckoutSchema = z.object({
 	orderId: z.string().min(1).max(128),
@@ -24,12 +25,15 @@ const successfulPaymentSchema = z.object({
 
 @Controller()
 export class PaymentController {
-	constructor(private readonly payments: PaymentService) {}
+	constructor(
+		private readonly payments: PaymentService,
+		private readonly rahmat: RahmatClient,
+	) {}
 
 	@Get("payments/options")
 	@UseGuards(SessionGuard)
 	options() {
-		return { click: this.payments.clickEnabled() };
+		return { click: this.payments.clickEnabled(), rahmat: this.rahmat.enabled("TICKET") };
 	}
 
 	@Post("orders/:id/telegram-invoice")

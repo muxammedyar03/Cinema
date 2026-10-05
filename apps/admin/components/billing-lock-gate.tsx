@@ -21,7 +21,11 @@ export function BillingLockGate({ isSuper }: { isSuper: boolean }) {
 
 	useEffect(() => {
 		if (isSuper) return;
-		if (pathname.startsWith("/billing/locked") || pathname.startsWith("/login")) {
+		if (
+			pathname.startsWith("/billing/locked") ||
+			pathname.startsWith("/billing/my") ||
+			pathname.startsWith("/login")
+		) {
 			setChecked(true);
 			return;
 		}

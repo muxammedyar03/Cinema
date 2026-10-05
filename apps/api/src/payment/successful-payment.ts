@@ -16,6 +16,7 @@ export type SuccessfulPaymentInput = {
 	telegramPaymentChargeId: string;
 	providerPaymentChargeId: string;
 	telegramUserId?: string;
+	provider?: "CLICK" | "RAHMAT";
 };
 
 export type SuccessfulPaymentResult = {
@@ -183,7 +184,7 @@ export async function recordSuccessfulTelegramPayment(
 	await tx.payment.create({
 		data: {
 			orderId: order.id,
-			provider: "CLICK",
+			provider: input.provider ?? "CLICK",
 			providerPaymentId: providerPaymentKey(
 				input.providerPaymentChargeId,
 				input.telegramPaymentChargeId,

@@ -23,6 +23,24 @@ export function InvoiceRowActions({
 	const [busy, setBusy] = useState(false);
 	const [err, setErr] = useState<string | null>(null);
 
+	async function payRahmat() {
+		setBusy(true);
+		setErr(null);
+		try {
+			const result = await clientApi<{ payUrl?: string; deeplinkUrl?: string }>(
+				`/admin/billing/invoices/${invoiceId}/rahmat`,
+				{ method: "POST" },
+			);
+			const url = result.payUrl;
+			if (!url) throw new Error("Платёж обрабатывается; обратитесь в поддержку");
+			window.location.assign(url);
+		} catch (error) {
+			setErr(errorText(error, "Не удалось открыть Rahmat"));
+		} finally {
+			setBusy(false);
+		}
+	}
+
 	async function markPaid() {
 		setBusy(true);
 		setErr(null);
@@ -58,9 +76,14 @@ export function InvoiceRowActions({
 				Кинотеатр
 			</ButtonLink>
 			{status !== "PAID" && status !== "VOID" ? (
-				<Button size="small" disabled={busy} onClick={() => void markPaid()}>
-					Оплачено
-				</Button>
+				<>
+					<Button size="small" disabled={busy} onClick={() => void payRahmat()}>
+						Оплатить Rahmat
+					</Button>
+					<Button size="small" disabled={busy} onClick={() => void markPaid()}>
+						Оплачено
+					</Button>
+				</>
 			) : null}
 			{unlock ? (
 				<Button

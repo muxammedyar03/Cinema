@@ -199,6 +199,7 @@ export type OrderRow = {
 };
 
 export type RahmatPayment = {
+	otpRequired?: boolean;
 	paymentId?: string;
 	id?: string;
 	orderId: string;
