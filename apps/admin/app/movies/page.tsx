@@ -26,39 +26,43 @@ export default async function MoviesPage() {
 				actions={canManage ? <NewMovieAction /> : null}
 			/>
 			{movies.length === 0 ? (
-				<div className="rounded-xl border border-line bg-white px-5 py-10 text-center text-sm text-[#78859c]">
+				<div className="rounded-xl border border-line bg-white dark:bg-gray-800 px-5 py-10 text-center text-sm text-[#78859c]">
 					<Clapperboard className="mx-auto mb-3 size-8" strokeWidth={1.4} />
 					Фильмов пока нет
 				</div>
 			) : (
-				<div className="grid grid-cols-2 gap-5 lg:grid-cols-3 xl:grid-cols-4">
+				<div className="grid grid-cols-2 gap-5 lg:grid-cols-3 xl:grid-cols-4 mb-20">
 					{movies.map((movie) => (
 						<article
 							key={movie.id}
-							className={`overflow-hidden min-w-72 rounded-xl border border-line bg-white ${movie.status === "ARCHIVED" ? "opacity-60" : ""}`}
+							className={`relative min-w-72 rounded-xl border border-line bg-white focus-within:z-10 dark:bg-gray-800 ${movie.status === "ARCHIVED" ? "opacity-60" : ""}`}
 						>
-							{movie.posterUrl ? (
-								<Image
-									src={movie.posterUrl}
-									alt=""
-									width={640}
-									height={840}
-									unoptimized
-									className="h-[350px] w-full object-cover object-[center_25%]"
-								/>
-							) : (
-								<div className="grid h-[280px] place-items-center bg-[#eef2fa] text-[#8a97ad]">
-									<Clapperboard className="size-10" strokeWidth={1.4} />
-								</div>
-							)}
+							<div className="overflow-hidden rounded-t-xl">
+								{movie.posterUrl ? (
+									<Image
+										src={movie.posterUrl}
+										alt=""
+										width={640}
+										height={840}
+										unoptimized
+										className="h-[350px] w-full object-cover object-[center_25%]"
+									/>
+								) : (
+									<div className="grid h-[280px] place-items-center bg-[#eef2fa] text-[#8a97ad]">
+										<Clapperboard className="size-10" strokeWidth={1.4} />
+									</div>
+								)}
+							</div>
 							<div className="p-5">
 								<h2 className="text-[19px] font-semibold text-[#19253d]">{movie.title}</h2>
 								<p className="mt-1.5 mb-4 text-[13px] text-[#8794a7]">{movieMeta(movie)}</p>
-								{canManage && movie.status === "ACTIVE" ? (
-									<NewSessionAction variant="card" movieId={movie.id} />
-								) : null}
 								{canManage ? (
-									<div className="mt-3">
+									<div className="flex items-center gap-2">
+										{movie.status === "ACTIVE" ? (
+											<div className="min-w-0 flex-1">
+												<NewSessionAction variant="card" movieId={movie.id} />
+											</div>
+										) : null}
 										<MovieRowActions movie={movie} />
 									</div>
 								) : null}

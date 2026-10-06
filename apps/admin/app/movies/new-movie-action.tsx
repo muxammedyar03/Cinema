@@ -41,6 +41,15 @@ const GENRE_SUGGESTIONS = [
 	"Приключения",
 	"Семейный",
 	"Романтика",
+	"Криминал",
+	"Детектив",
+	"Военный",
+	"Вестерн",
+	"Исторический",
+	"Мистика",
+	"Спорт",
+	"Мюзикл",
+	"Фэнтези",
 ];
 
 const EMPTY: Draft = {
@@ -402,6 +411,10 @@ export function NewMovieAction() {
 	);
 }
 
+export function MovieEditDialog({ movieId, open, onClose }: { movieId: string; open: boolean; onClose: () => void }) {
+	return <MovieEditor open={open} movieId={movieId} onClose={onClose} />;
+}
+
 export function EditMovieButton({ movieId }: { movieId: string }) {
 	const [open, setOpen] = useState(false);
 	return (
@@ -414,7 +427,7 @@ export function EditMovieButton({ movieId }: { movieId: string }) {
 				<Pencil className="size-3.5" strokeWidth={2} />
 				Изменить
 			</button>
-			<MovieEditor open={open} movieId={movieId} onClose={() => setOpen(false)} />
+			<MovieEditDialog movieId={movieId} open={open} onClose={() => setOpen(false)} />
 		</>
 	);
 }

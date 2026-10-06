@@ -106,7 +106,7 @@ export function SessionsBoard({
 					))}
 				</div>
 				<input
-					className="h-10 w-full max-w-[260px] rounded-lg border border-line bg-white px-3 text-[13px] text-[#19253d] outline-none placeholder:text-[#8a97ad]"
+					className="h-10 w-full max-w-[260px] rounded-lg border border-line bg-white dark:bg-gray-800 px-3 text-[13px] text-foreground outline-none placeholder:text-[#8a97ad]"
 					placeholder="Поиск по названию или залу..."
 					value={query}
 					onChange={(event) => {
@@ -115,7 +115,7 @@ export function SessionsBoard({
 					}}
 				/>
 			</div>
-			<div className="overflow-hidden rounded-xl border border-line bg-white text-[#19253d]">
+			<div className="overflow-hidden rounded-xl border border-line bg-white dark:bg-gray-800 text-[#19253d]">
 				{slice.length === 0 ? (
 					<p className="px-5 py-10 text-center text-sm text-[#78859c]">Сеансов нет</p>
 				) : (
@@ -214,7 +214,7 @@ export function SessionsBoard({
 						</table>
 					</div>
 				)}
-				<div className="border-t border-[#edf0f6] px-5">
+				<div className="border-t border-[#edf0f6] dark:border-gray-700 px-5">
 					<ListPager
 						page={safePage}
 						pages={pages}

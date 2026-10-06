@@ -3,6 +3,9 @@
 @import "@cinema/ui/theme.css";
 @import "./layout-editor.css";
 
+/* App theme is data-theme, not the OS color scheme. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 @layer base {
 	* {
 		box-sizing: border-box;
