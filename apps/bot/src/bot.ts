@@ -5,10 +5,10 @@ import {
 	HELP_TEXT,
 	replyMenuKeyboard,
 	startInlineKeyboard,
-	ticketsInlineKeyboard,
 	WELCOME_TEXT,
 } from "./menus.js";
 import { registerPaymentHandlers } from "./payments.js";
+import { replyTicketQr, replyTickets } from "./tickets.js";
 
 export function createBot(token = botConfig.token()): Bot {
 	const bot = new Bot(token);
@@ -16,7 +16,7 @@ export function createBot(token = botConfig.token()): Bot {
 	bot.command("start", async (ctx) => {
 		await ctx.reply(WELCOME_TEXT, {
 			parse_mode: "HTML",
-			reply_markup: startInlineKeyboard(),
+			reply_markup: startInlineKeyboard(ctx.chat.type === "private"),
 		});
 		await ctx.reply("Меню быстрого доступа:", {
 			reply_markup: replyMenuKeyboard(),
@@ -62,6 +62,14 @@ export function createBot(token = botConfig.token()): Bot {
 		await ctx.reply(HELP_TEXT, { parse_mode: "HTML" });
 	});
 
+	bot.callbackQuery(/^tickets:(active|history):(\d+)$/, async (ctx) => {
+		await ctx.answerCallbackQuery();
+		await replyTickets(ctx, Number(ctx.match[2]), ctx.match[1]);
+	});
+	bot.callbackQuery(/^ticket:qr:([A-Za-z0-9_-]+)$/, async (ctx) => {
+		await ctx.answerCallbackQuery();
+		await replyTicketQr(ctx, ctx.match[1]);
+	});
 	registerPaymentHandlers(bot);
 
 	bot.catch((err) => {
@@ -73,12 +81,6 @@ export function createBot(token = botConfig.token()): Bot {
 
 async function replyAfisha(ctx: Context) {
 	await ctx.reply("🎬 Актуальная афиша доступна в Mini App:", {
-		reply_markup: afishaInlineKeyboard(),
-	});
-}
-
-async function replyTickets(ctx: Context) {
-	await ctx.reply("🎟 Ваши билеты открываются в Mini App:", {
-		reply_markup: ticketsInlineKeyboard(),
+		reply_markup: afishaInlineKeyboard(ctx.chat?.type === "private"),
 	});
 }

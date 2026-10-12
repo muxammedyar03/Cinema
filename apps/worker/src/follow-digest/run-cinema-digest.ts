@@ -149,7 +149,18 @@ async function fanOut(
 	const { cinemaId, deepLink, stamp, now } = input;
 	const windowKey = digestWindowKey(cinemaId, stamp);
 	const text = formatAfishaDigestRu({ cinemaName, sessions, now });
-	const replyMarkup = { inline_keyboard: [[{ text: DIGEST_BUTTON_TEXT, url: deepLink }]] };
+	const replyMarkup = {
+		inline_keyboard: [
+			[
+				{
+					text: DIGEST_BUTTON_TEXT,
+					...(deepLink.startsWith("https://t.me/")
+						? { url: deepLink }
+						: { web_app: { url: deepLink } }),
+				},
+			],
+		],
+	};
 	const sessionPayload = [...sessions]
 		.sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime())
 		.map((s) => ({
