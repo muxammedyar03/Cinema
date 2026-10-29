@@ -100,7 +100,7 @@ export function Shell({ user, children }: { user: SessionUser; children: ReactNo
 	const role = roleOf(user);
 	const cinemaName = primaryCinemaName(user);
 	const [collapsed, setCollapsed] = useState(false);
-
+	const [showProfileGate, setShowProfileGate] = useState(true);
 	useEffect(() => {
 		setCollapsed(localStorage.getItem(KEY) === "1");
 	}, []);
@@ -133,7 +133,13 @@ export function Shell({ user, children }: { user: SessionUser; children: ReactNo
 			</aside>
 			<main className="min-w-0 px-[34px] pb-[70px] pt-[30px]">
 				<HeaderBar />
-				{role !== "super" && primaryCinemaId(user) ? <ProfileGate user={user} /> : null}
+				{role !== "super" && primaryCinemaId(user) ? (
+					<ProfileGate
+						showProfileGate={showProfileGate}
+						setShowProfileGate={setShowProfileGate}
+						user={user}
+					/>
+				) : null}
 				{children}
 			</main>
 		</div>

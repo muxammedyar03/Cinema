@@ -8,7 +8,7 @@ import { type MovieListItem } from "./movie-table-row";
 import { NewMovieAction } from "./new-movie-action";
 
 function movieMeta(movie: MovieListItem) {
-	return [movie.genres[0], `${movie.durationMin} мин`, movie.ageRating].filter(Boolean).join(" · ");
+	return [movie.genres[0], `${movie.durationMin} мин`, movie.ageRating, movie.audioLanguages[0].toUpperCase()].filter(Boolean).join(" · ");
 }
 
 export default async function MoviesPage() {
@@ -54,8 +54,12 @@ export default async function MoviesPage() {
 								)}
 							</div>
 							<div className="p-5">
-								<h2 className="text-[19px] font-semibold text-[#19253d]">{movie.title}</h2>
-								<p className="mt-1.5 mb-4 text-[13px] text-[#8794a7]">{movieMeta(movie)}</p>
+								<h2 className="text-[19px] font-semibold text-foreground">{movie.title}</h2>
+								<p className="mt-1.5 mb-2 text-[13px] text-muted-foreground">{movieMeta(movie)}</p>
+								<p className={`mb-4 text-[13px] ${movie.status == "ACTIVE" ? "text-green-500" : "text-red-500"}`}>{movie.status == "ACTIVE" ? "В прокате" : "Завершен"}</p>
+								<p className="mt-1.5 mb-4 flex flex-wrap gap-2">{movie.genres.map((genre) => 
+									<span key={genre} className="text-[13px] bg-gray-200 dark:bg-gray-700 rounded-full px-3 py-1">{genre}</span>
+								)}</p>
 								{canManage ? (
 									<div className="flex items-center gap-2">
 										{movie.status === "ACTIVE" ? (

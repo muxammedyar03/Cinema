@@ -8,11 +8,11 @@ import { clientApi } from "../lib/api";
 import { primaryCinemaId, roleOf } from "../lib/rbac";
 import { cx } from "../lib/ui";
 
-export function ProfileGate({ user }: { user: SessionUser }) {
+export function ProfileGate({ user, showProfileGate, setShowProfileGate }: { user: SessionUser, showProfileGate: boolean, setShowProfileGate: (show: boolean) => void }) {
 	const pathname = usePathname();
 	const cinemaId = primaryCinemaId(user);
 	const [missing, setMissing] = useState(0);
-	const skip = roleOf(user) === "super" || !cinemaId || pathname.startsWith("/profile");
+	const skip = roleOf(user) === "super" || !cinemaId || pathname.startsWith("/profile") || !showProfileGate;
 
 	useEffect(() => {
 		if (skip || !cinemaId) return;
